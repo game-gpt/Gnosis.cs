@@ -27,7 +27,7 @@ pub enum WasiValue {
     Integer32(i32),
     /// The 64-bit signed integer from `-9223372036854775808` to `9223372036854775807`
     Integer64(i64),
-    /// The 32-bit floating point number
+    /// The 64-bit floating point number
     Float32(f32),
     /// The 64-bit floating point number
     Float64(f64),

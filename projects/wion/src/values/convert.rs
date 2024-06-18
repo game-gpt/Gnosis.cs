@@ -50,7 +50,7 @@ impl From<i64> for WasiValue {
 
 impl From<f32> for WasiValue {
     fn from(value: f32) -> Self {
-        Self::Float32(value)
+        Self::Float64(value as f64)
     }
 }
 
@@ -185,7 +185,7 @@ impl WasiValue {
     /// Try to convert the value to a 32-bit floating point number
     pub fn as_f32(&self) -> Option<f32> {
         match self {
-            Self::Float32(v) => Some(*v),
+            Self::Float64(v) => Some(*v as f32),
             _ => None,
         }
     }
