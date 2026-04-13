@@ -8,6 +8,45 @@ exclude = [
     "projects/.DS_Store",
 ]
 
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+authors = ["GG Teams"]
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+toml = "1.1.2"
+image = "0.25.10"
+wgpu = { version = "29.0.1", default-features = false, features = ["naga-ir", "dx12", "vulkan"] }
+winit = "0.30.13"
+
+gg-core = { path = "../gnostic-gamer/projects/core/gg-core" }
+gg-ecs = { path = "../gnostic-gamer/projects/core/gg-ecs" }
+gg-asset = { path = "../gnostic-gamer/projects/core/gg-asset" }
+gg-compiler = { path = "../gnostic-gamer/projects/compiler/gg-compiler" }
+gg-ir = { path = "../gnostic-gamer/projects/compiler/gg-ir" }
+gg-bytecode = { path = "../gnostic-gamer/projects/compiler/gg-bytecode" }
+gg-runtime-ui = { path = "../gnostic-gamer/projects/runtime/gg-runtime-ui" }
+gg-render = { path = "../gnostic-gamer/projects/runtime/gg-render" }
+gg-render-wgpu = { path = "../gnostic-gamer/projects/runtime/gg-render-wgpu" }
+gg-ui = { path = "../gnostic-gamer/projects/core/gg-ui" }
+gg-manifest = { path = "../gnostic-gamer/projects/toolchain/gg-manifest" }
+gg-plugin-dialogue = { path = "../gnostic-gamer/projects/engines/gg-plugin-dialogue" }
+gg-plugin-portrait = { path = "../gnostic-gamer/projects/engines/gg-plugin-portrait" }
+gg-plugin-scene-transition = { path = "../gnostic-gamer/projects/engines/gg-plugin-scene-transition" }
+gg-plugin-save = { path = "../gnostic-gamer/projects/engines/gg-plugin-save" }
+gg-platform-desktop = { path = "../gnostic-gamer/projects/compiler/gg-platform-desktop" }
+
+gg-engine = { path = "../gnostic-gamer/projects/engines/gg-engine" }
+gg-engine-galgame = { path = "projects/gg-engine-galgame" }
+gg-engine-platformer = { path = "projects/gg-engine-platformer" }
+gg-engine-stg = { path = "projects/gg-engine-stg" }
+
+oak-markdown = { path = "../oaks/examples/oak-markdown" }
+oak-core = { path = "../oaks/projects/oak-core" }
+
 [profile.release]
 lto = true
 panic = "abort"
