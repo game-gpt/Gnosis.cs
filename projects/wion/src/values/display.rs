@@ -37,7 +37,7 @@ impl Debug for WasiValue {
                 write!(f, "{}i64", v)
             }
             Self::Float32(v) => {
-                write!(f, "{}f64", v)
+                write!(f, "{}f32", v)
             }
             Self::Float64(v) => {
                 write!(f, "{}f64", v)
@@ -48,8 +48,8 @@ impl Debug for WasiValue {
             Self::UTF8(v) => {
                 write!(f, "{:?}", v)
             }
-            Self::Object(_) => f.write_str("Any"),
-            Self::Buffer(v) => {
+            WasiValue::Object(_) => f.write_str("Any"),
+            WasiValue::Buffer(v) => {
                 write!(f, "{:?}", v)
             }
         }
@@ -74,7 +74,7 @@ impl IndentDisplay for WasiValue {
             Self::Integer16(v) => write!(f, "{}", v),
             Self::Integer32(v) => write!(f, "{}", v),
             Self::Integer64(v) => write!(f, "{}", v),
-
+            Self::Float32(v) => write!(f, "{}", v),
             Self::Float64(v) => write!(f, "{}", v),
             Self::Unicode(v) => write!(f, "{:?}", v),
             Self::UTF8(v) => write!(f, "{:?}", v),
