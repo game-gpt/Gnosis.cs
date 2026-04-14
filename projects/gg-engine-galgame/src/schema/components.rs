@@ -3,7 +3,7 @@
 //! 定义 Galgame 引擎所需的所有 ECS 组件类型。
 
 use gg_render::TextureId;
-use pleroma::VariableValue;
+use gg_core::VariableValue;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

@@ -1,6 +1,6 @@
 //! 预导入模块
 
-pub use crate::{
+pub use crate::compiler::{
     codegen::GalgameCodegen,
     compiler::GalgameCompiler,
     error::{GalgameError, GalgameResult},

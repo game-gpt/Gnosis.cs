@@ -10,4 +10,4 @@ pub use components::*;
 pub use manifest::*;
 pub use resources::*;
 
-pub use pleroma::GameState;
+pub use gg_core::GameState;

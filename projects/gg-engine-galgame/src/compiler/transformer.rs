@@ -1,7 +1,7 @@
 //! Galgame 编译转换器模块
 //! 实现 gg-compiler 的 Transformer trait，将 .galgame 源码转换为字节码
 
-use gg_compiler_core::{
+use gg_compiler::{
     artifact::{Artifact, ArtifactKey, ArtifactSet},
     context::BuildContext,
     transformer::Transformer,

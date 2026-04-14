@@ -7,7 +7,7 @@ use oak_markdown::{
     ast::{Block, MarkdownRoot},
 };
 
-use crate::{
+use crate::compiler::{
     error::{GalgameError, GalgameResult},
     ir::{CharacterDefIr, ChoiceIr, CommandIr, DialogueIr, FrontMatterIr, GalgameIr, VariableValueIr},
 };

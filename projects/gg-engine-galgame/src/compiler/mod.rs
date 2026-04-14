@@ -11,3 +11,10 @@ pub mod ir;
 pub mod parser;
 pub mod prelude;
 pub mod transformer;
+
+pub use compiler::GalgameCompiler;
+pub use error::{GalgameError, GalgameResult};
+pub use ir::GalgameIr;
+pub use parser::GalgameParser;
+pub use codegen::GalgameCodegen;
+pub use transformer::GalgameTransformer;

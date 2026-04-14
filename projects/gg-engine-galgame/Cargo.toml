@@ -5,13 +5,16 @@ edition = { workspace = true }
 authors = { workspace = true }
 license = { workspace = true }
 
+[features]
+default = []
+editor = ["gg-editor-shell", "gg-editor-scene", "gg-editor-inspector", "gg-editor-asset-browser"]
+
 [dependencies]
 winit = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 toml = { workspace = true }
 image = { workspace = true }
-
 
 gg-core = { workspace = true }
 gg-ecs = { workspace = true }
@@ -23,6 +26,7 @@ gg-engine = { workspace = true }
 gg-plugin-dialogue = { workspace = true }
 gg-plugin-portrait = { workspace = true }
 gg-plugin-scene-transition = { workspace = true }
+gg-plugin-save = { workspace = true }
 gg-runtime-ui = { workspace = true }
 gg-render = { workspace = true }
 gg-render-wgpu = { workspace = true }
@@ -30,3 +34,8 @@ gg-ui = { workspace = true }
 gg-manifest = { workspace = true }
 oak-markdown = { workspace = true }
 oak-core = { workspace = true }
+
+gg-editor-shell = { workspace = true, optional = true }
+gg-editor-scene = { workspace = true, optional = true }
+gg-editor-inspector = { workspace = true, optional = true }
+gg-editor-asset-browser = { workspace = true, optional = true }

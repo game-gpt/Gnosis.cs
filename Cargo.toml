@@ -37,6 +37,10 @@ gg-plugin-dialogue = { path = "../gnostic-gamer/projects/engines/gg-plugin-dialo
 gg-plugin-portrait = { path = "../gnostic-gamer/projects/engines/gg-plugin-portrait" }
 gg-plugin-scene-transition = { path = "../gnostic-gamer/projects/engines/gg-plugin-scene-transition" }
 gg-plugin-save = { path = "../gnostic-gamer/projects/engines/gg-plugin-save" }
+gg-editor-shell = { path = "../gnostic-gamer/projects/editor/gg-editor-shell" }
+gg-editor-scene = { path = "../gnostic-gamer/projects/editor/gg-editor-scene" }
+gg-editor-inspector = { path = "../gnostic-gamer/projects/editor/gg-editor-inspector" }
+gg-editor-asset-browser = { path = "../gnostic-gamer/projects/editor/gg-editor-asset-browser" }
 gg-platform-desktop = { path = "../gnostic-gamer/projects/compiler/gg-platform-desktop" }
 
 gg-engine = { path = "../gnostic-gamer/projects/engines/gg-engine" }

@@ -4,9 +4,9 @@
 use gg_bytecode::BytecodeWriter;
 use gg_ir::{IrFunction, IrModule, IrValue, OpCode};
 
-use crate::{
+use crate::compiler::{
     error::{GalgameError, GalgameResult},
-    ir::{CommandIr, GalgameIr},
+    ir::{ChoiceIr, CommandIr, GalgameIr},
 };
 
 /// Galgame 字节码生成器
@@ -142,7 +142,7 @@ impl GalgameCodegen {
     }
 
     /// 发射选项跳转指令
-    fn emit_choices(module: &mut IrModule, instructions: &mut Vec<OpCode>, choices: &[ir::ChoiceIr]) {
+    fn emit_choices(module: &mut IrModule, instructions: &mut Vec<OpCode>, choices: &[ChoiceIr]) {
         let count_idx = module.add_or_get_constant(IrValue::Int(choices.len() as i64));
         instructions.push(OpCode::LoadConst(count_idx));
 

@@ -36,7 +36,10 @@ fn main() -> GResult<()> {
     }
 
     if is_editor_mode {
+        #[cfg(feature = "editor")]
         return run_editor_mode();
+        #[cfg(not(feature = "editor"))]
+        return Err(GError { kind: GErrorKind::Runtime, message: "Editor mode not available (compile with --features editor)".to_string() });
     }
 
     let config_path = project_path.join("game.toml");
@@ -59,6 +62,7 @@ fn main() -> GResult<()> {
 ///
 /// 创建 EditorShell，注册场景视图、属性检查器和资源浏览器面板，
 /// 然后启动 winit 桌面事件循环。
+#[cfg(feature = "editor")]
 fn run_editor_mode() -> GResult<()> {
     let mut shell = gg_editor_shell::EditorShell::new();
 

@@ -747,6 +747,8 @@ impl GalgameEngine {
             (nodes.and_then(|n| n.history_panel_id), nodes.and_then(|n| n.history_content_id))
         };
 
+        let entries = self.world.get_resource::<DialogueHistory>().map(|h| h.entries.clone()).unwrap_or_default();
+
         if let Some(ui_tree) = Self::ui_tree_mut(&mut self.world) {
             if let Some(panel_id) = history_panel_id {
                 if let Some(node) = ui_tree.get_mut(panel_id) {
@@ -763,7 +765,6 @@ impl GalgameEngine {
                         }
                     }
 
-                    let entries = self.world.get_resource::<DialogueHistory>().map(|h| h.entries.clone()).unwrap_or_default();
                     for (i, entry) in entries.iter().rev().take(50).enumerate() {
                         let speaker_name = entry.speaker_name.as_deref().unwrap_or("");
                         let text = if speaker_name.is_empty() {
@@ -837,10 +838,10 @@ impl GalgameEngine {
                                 }
                                 winit::event::WindowEvent::MouseWheel { delta, .. } => match delta {
                                     winit::event::MouseScrollDelta::LineDelta(_, y) => {
-                                        if y > 0.0 {
+                                        if *y > 0.0 {
                                             self.show_history = true;
                                         }
-                                        else if y < 0.0 {
+                                        else if *y < 0.0 {
                                             self.show_history = false;
                                         }
                                     }

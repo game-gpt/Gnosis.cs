@@ -3,7 +3,7 @@
 
 use std::path::Path;
 
-use crate::{
+use crate::compiler::{
     codegen::GalgameCodegen,
     error::GalgameResult,
     ir::{DialogueDB, GalgameIr, StorySequence},
@@ -48,7 +48,7 @@ impl GalgameCompiler {
     /// 编译单个文件为 StorySequence
     pub fn compile_file(path: &Path) -> GalgameResult<StorySequence> {
         let content = std::fs::read_to_string(path)
-            .map_err(|e| crate::error::GalgameError::ParseError(format!("Failed to read file '{}': {}", path.display(), e)))?;
+            .map_err(|e| crate::compiler::error::GalgameError::ParseError(format!("Failed to read file '{}': {}", path.display(), e)))?;
         let compiler = Self::new();
         let ir = compiler.parse(&content)?;
         Ok(StorySequence { nodes: ir.dialogues })
@@ -58,12 +58,12 @@ impl GalgameCompiler {
     pub fn compile_directory(dir: &Path) -> GalgameResult<DialogueDB> {
         let mut db = DialogueDB::new();
         let entries = std::fs::read_dir(dir).map_err(|e| {
-            crate::error::GalgameError::ParseError(format!("Failed to read directory '{}': {}", dir.display(), e))
+            crate::compiler::error::GalgameError::ParseError(format!("Failed to read directory '{}': {}", dir.display(), e))
         })?;
 
         for entry in entries {
             let entry =
-                entry.map_err(|e| crate::error::GalgameError::ParseError(format!("Failed to read directory entry: {}", e)))?;
+                entry.map_err(|e| crate::compiler::error::GalgameError::ParseError(format!("Failed to read directory entry: {}", e)))?;
             let path = entry.path();
             if path.extension().and_then(|e| e.to_str()) == Some("galgame") {
                 let file_name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown").to_string();
