@@ -43,6 +43,14 @@ public sealed class UiRenderer : IWidgetRenderer
     {
     }
 
+    public void PushClip(float x, float y, float width, float height)
+    {
+    }
+
+    public void PopClip()
+    {
+    }
+
     public byte[] GetFramebufferData()
     {
         return Array.Empty<byte>();

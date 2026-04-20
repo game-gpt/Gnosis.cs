@@ -564,7 +564,7 @@ public sealed class SpirvGenerator
 
     #region Private Methods - Type Mapping
 
-    private uint MapType(ShaderIrType type) => type switch
+    private uint MapType(ShaderIrType? type) => type switch
     {
         ShaderIrType.VoidType => _typeCache.GetVoidType(),
         ShaderIrType.BoolType => _typeCache.GetBoolType(),
@@ -579,6 +579,7 @@ public sealed class SpirvGenerator
         ShaderIrType.PointerType p => _typeCache.GetPointerType(MapType(p.PointeeType), MapStorageClass(p.Storage)),
         ShaderIrType.FunctionType fn => _typeCache.GetFunctionType(MapType(fn.ReturnType), fn.ParameterTypes.Select(MapType).ToArray()),
         ShaderIrType.AccelerationStructureType => _typeCache.GetAccelerationStructureType(),
+        null => _typeCache.GetVoidType(),
         _ => _typeCache.GetVoidType()
     };
 
@@ -669,7 +670,7 @@ public sealed class SpirvGenerator
         _ => 0
     };
 
-    private static bool IsFloatType(ShaderIrType type) => type is ShaderIrType.FloatType or ShaderIrType.VectorType { ElementType: ShaderIrType.FloatType };
+    private static bool IsFloatType(ShaderIrType? type) => type is ShaderIrType.FloatType or ShaderIrType.VectorType { ElementType: ShaderIrType.FloatType };
 
     #endregion
 }

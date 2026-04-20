@@ -19,8 +19,12 @@
     <Compile Remove="UI\**" />
     <Compile Remove="Widget\**" />
     <Compile Remove="Renderer\**" />
+    <Compile Remove="Shader\Backends\**" />
+    <Compile Remove="Shader\ShaderFormatHandler.cs" />
+    <Compile Remove="Shader\IShaderFormat.cs" />
     <Compile Remove="Pipeline\**" />
     <Compile Remove="RHI\**" />
+    <Compile Remove="ShaderGenerator\**" />
   </ItemGroup>
 
 </Project>
