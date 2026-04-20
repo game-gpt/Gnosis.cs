@@ -1,4 +1,4 @@
-namespace GnosisEngine.Shader.ValueObjects;
+namespace Gnosis.Shader.ValueObjects;
 
 public enum ShaderLanguage
 {

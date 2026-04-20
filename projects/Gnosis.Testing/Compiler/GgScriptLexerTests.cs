@@ -2,7 +2,7 @@ using Gnosis.Compiler.Frontend;
 using Gnosis.Compiler.ValueObjects;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Compiler;
+namespace Gnosis.Testing.Compiler;
 
 [TestFixture]
 public class GgScriptLexerTests

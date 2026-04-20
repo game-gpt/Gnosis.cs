@@ -1,4 +1,4 @@
-namespace Gnosis.GameUI;
+namespace Gnosis.GameUI.Enums;
 
 public enum UIElementType
 {

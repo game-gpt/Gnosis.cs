@@ -3,7 +3,7 @@ using Gnosis.Compiler.ValueObjects;
 using Gnosis.Compiler.ValueObjects.AST;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Compiler;
+namespace Gnosis.Testing.Compiler;
 
 [TestFixture]
 public class GgScriptParserTests

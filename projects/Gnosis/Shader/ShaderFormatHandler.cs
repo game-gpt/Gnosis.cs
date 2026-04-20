@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Gnosis.Formats;
 using Gnosis.Formats.Enums;
-using GnosisEngine.Shader.ValueObjects;
+using Gnosis.Shader.ValueObjects;
 
-namespace GnosisEngine.Shader;
+namespace Gnosis.Shader;
 
 public class ShaderFormatHandler : FormatHandlerBase, IShaderFormat
 {

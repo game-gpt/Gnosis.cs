@@ -1,11 +1,9 @@
-using Gnosis.Compiler.Backend;
-using Gnosis.Compiler.Backend.Spirv;
 using Gnosis.Compiler.Backend.ShaderIR;
+using Gnosis.Compiler.Backend.Spirv;
 using Gnosis.Compiler.ValueObjects.AST;
-using GnosisEngine.Shader;
-using GnosisEngine.Shader.ValueObjects;
+using Gnosis.Shader.ValueObjects;
 
-namespace GnosisEngine.Shader.Backends;
+namespace Gnosis.Shader.Backends;
 
 public sealed class DiffusionShaderBackend : IShaderBackend
 {

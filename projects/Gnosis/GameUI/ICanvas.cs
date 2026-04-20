@@ -1,3 +1,5 @@
+using Gnosis.GameUI.Enums;
+
 namespace Gnosis.GameUI;
 
 public interface ICanvas

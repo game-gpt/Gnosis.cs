@@ -5,8 +5,8 @@ using Gnosis.Compiler.Backend.Spirv;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.ValueObjects;
 using Gnosis.Compiler.ValueObjects.AST;
-using GnosisEngine.Shader;
-using GnosisEngine.Shader.ValueObjects;
+using Gnosis.Shader;
+using Gnosis.Shader.ValueObjects;
 
 namespace Gnosis.Compiler.Frontend;
 

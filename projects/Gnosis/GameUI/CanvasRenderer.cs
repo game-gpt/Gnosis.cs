@@ -1,4 +1,5 @@
 using Gnosis.GameUI;
+using Gnosis.GameUI.ValueObjects;
 
 namespace Gnosis.GameUI;
 

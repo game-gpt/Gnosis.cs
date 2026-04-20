@@ -322,6 +322,11 @@ public class GgShaderParser : IParser
 
             if (Check(TokenType.Keyword, "let"))
             {
+                if (IsUniformBindingLet())
+                {
+                    return ParseUniformBindingDecl();
+                }
+
                 return ParseVariableDecl();
             }
 
@@ -342,6 +347,16 @@ public class GgShaderParser : IParser
                 if (Check(TokenType.Identifier, "cbuffer"))
                 {
                     return ParseCbufferDecl(attrs);
+                }
+
+                if (Check(TokenType.Keyword, "let"))
+                {
+                    if (IsUniformBindingLet())
+                    {
+                        return ParseUniformBindingDecl(attrs);
+                    }
+
+                    return ParseVariableDecl();
                 }
 
                 _diagnostics?.AddError(
@@ -434,6 +449,69 @@ public class GgShaderParser : IParser
         Match(TokenType.Delimiter, ";");
 
         return new VariableDecl(SourceSpan.FromToken(startToken), name, varType, initializer, isMutable);
+    }
+
+    private bool IsUniformBindingLet()
+    {
+        var t1 = PeekAt(1);
+        var t2 = PeekAt(2);
+        var t3 = PeekAt(3);
+
+        if (t1.TokenType != TokenType.Operator || t1.Value != "<")
+        {
+            return false;
+        }
+
+        if (t2.TokenType != TokenType.Identifier || (t2.Value != "uniform" && t2.Value != "storage"))
+        {
+            return false;
+        }
+
+        if (t3.TokenType != TokenType.Operator || t3.Value != ">")
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private UniformBindingDecl ParseUniformBindingDecl(IReadOnlyList<AttributeDecl>? attrs = null)
+    {
+        var startToken = ConsumeKeyword("let", "GG3070", "期望 'let' 关键字");
+
+        Consume(TokenType.Operator, "<", "GG3071", "期望 '<'");
+
+        var bindingType = Consume(TokenType.Identifier, "GG3072", "期望 'uniform' 或 'storage'").Value;
+
+        Consume(TokenType.Operator, ">", "GG3073", "期望 '>'");
+
+        var name = Consume(TokenType.Identifier, "GG3074", "期望绑定名").Value;
+
+        ConsumeColon("GG3075", "期望 ':'");
+
+        var typeAnnotation = ParseTypeAnnotation();
+
+        Match(TokenType.Delimiter, ";");
+
+        int? group = null;
+        int? binding = null;
+
+        if (attrs is not null)
+        {
+            foreach (var attr in attrs)
+            {
+                if (attr.Name == "Group" && attr.Arguments.Count > 0 && int.TryParse(attr.Arguments[0].Value, out var g))
+                {
+                    group = g;
+                }
+                else if (attr.Name == "Binding" && attr.Arguments.Count > 0 && int.TryParse(attr.Arguments[0].Value, out var b))
+                {
+                    binding = b;
+                }
+            }
+        }
+
+        return new UniformBindingDecl(SourceSpan.FromToken(startToken), name, bindingType, typeAnnotation, group, binding, attrs ?? Array.Empty<AttributeDecl>());
     }
 
     private StructDecl ParseStructDecl(IReadOnlyList<AttributeDecl>? attrs = null)
@@ -1154,4 +1232,12 @@ public class GgShaderParser : IParser
 
     #endregion
 
-    #region Nest
+    #region Nested Types
+
+    private sealed class ParseException : Exception
+    {
+        public ParseException(string message) : base(message) { }
+    }
+
+    #endregion
+}

@@ -1,3 +1,5 @@
+using Gnosis.GameUI.ValueObjects;
+
 namespace Gnosis.GameUI;
 
 public interface ICanvasRenderer

@@ -1,12 +1,12 @@
 using Gnosis.Compiler.Backend;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Frontend;
 using Gnosis.Compiler.Formats;
+using Gnosis.Compiler.Frontend;
 using Gnosis.Compiler.ValueObjects;
 using Gnosis.Compiler.ValueObjects.AST;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Compiler;
+namespace Gnosis.Testing.Compiler;
 
 [TestFixture]
 public class BytecodeGeneratorTests

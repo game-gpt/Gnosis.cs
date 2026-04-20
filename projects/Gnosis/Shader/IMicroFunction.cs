@@ -1,6 +1,6 @@
-using GnosisEngine.Shader.ValueObjects;
+using Gnosis.Shader.ValueObjects;
 
-namespace GnosisEngine.Shader;
+namespace Gnosis.Shader;
 
 public interface IMicroFunction
 {

@@ -1,3 +1,6 @@
+using Gnosis.GameUI.Enums;
+using Gnosis.GameUI.ValueObjects;
+
 namespace Gnosis.GameUI;
 
 public interface IUIElement

@@ -1,4 +1,4 @@
-namespace Gnosis.GameUI;
+namespace Gnosis.GameUI.ValueObjects;
 
 public readonly struct UIVertex
 {

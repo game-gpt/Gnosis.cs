@@ -1,4 +1,6 @@
 using Gnosis.GameUI;
+using Gnosis.GameUI.Enums;
+using Gnosis.GameUI.ValueObjects;
 
 namespace Gnosis.GameUI;
 
