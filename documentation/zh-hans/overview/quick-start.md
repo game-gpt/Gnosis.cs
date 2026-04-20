@@ -88,7 +88,7 @@ output = "cooked/"
 
 ### 编写 gg 代码
 
-创建 `scripts/main.gg`：
+创建 `scripts/main.scirpt`：
 
 ```tsx
 // 组件定义
@@ -213,34 +213,7 @@ widget Inspector {
 
 ## 多阶段构建流程
 
-```mermaid
-flowchart LR
-    subgraph 负二阶段["负二阶段"]
-        A1["加载插件"] --> A2["注入宏"]
-    end
-
-    subgraph 负一阶段["负一阶段"]
-        B1["导入资产"] --> B2["平台特化"]
-    end
-
-    subgraph 阶段一["阶段一"]
-        C1["编译 gg"] --> C2["生成字节码"]
-        C1 --> C3["生成 VM 源码"]
-    end
-
-    subgraph 阶段二["阶段二"]
-        D1["AOT 编译"] --> D2["运行时内核"]
-    end
-
-    subgraph 阶段三["阶段三"]
-        E1["打包资产"] --> E2["发布"]
-    end
-
-    负二阶段 --> 负一阶段
-    负一阶段 --> 阶段一
-    阶段一 --> 阶段二
-    阶段二 --> 阶段三
-```
+> 各阶段的详细说明与构建命令请参阅 [开发入门 - 多阶段构建流程](../development/getting-started.md#多阶段构建流程)。
 
 ---
 
@@ -329,7 +302,7 @@ export function main() {
 
 ### Q: 热更新是否符合 iOS App Store 政策？
 
-是的。虚拟机是 AOT 编译的本地代码，下载的 `.ggc` 文件是数据，由解释器读取，完全符合商店政策。
+是的。虚拟机是 AOT 编译的本地代码，下载的 `.code` 文件是数据，由解释器读取，完全符合商店政策。
 
 ### Q: 如何选择帧同步与状态同步？
 

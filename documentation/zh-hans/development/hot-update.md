@@ -12,7 +12,7 @@ Gnosis 引擎通过**字节码解释**实现热更新能力，完全绕过 JIT �
 | :--- | :--- |
 | **零 JIT 依赖** | 字节码由 AOT 编译的虚拟机解释执行，无需运行时编译 |
 | **跨平台兼容** | 完全符合 iOS App Store、PlayStation、Xbox 等商店政策 |
-| **增量更新** | 仅下载变更的 `.ggc` 模块和资产差分文件 |
+| **增量更新** | 仅下载变更的 `.code` 模块和资产差分文件 |
 | **无缝切换** | 运行时动态加载，无需重启游戏 |
 
 ## 热重载（开发期）
@@ -24,7 +24,7 @@ Gnosis 引擎通过**字节码解释**实现热更新能力，完全绕过 JIT �
 ```mermaid
 flowchart LR
     A[文件变更] --> B[增量编译]
-    B --> C[生成 .ggc]
+    B --> C[生成 .code]
     C --> D[通知虚拟机]
     D --> E[替换模块定义]
     E --> F[ECS 世界更新]
@@ -150,12 +150,12 @@ export function main() {
     "diffs": [
         {
             "name": "combat_system",
-            "url": "https://cdn.example.com/v1.2.3/combat_system.ggc",
+            "url": "https://cdn.example.com/v1.2.3/combat_system.code",
             "hash": "sha256:abc123..."
         },
         {
             "name": "quest_system",
-            "url": "https://cdn.example.com/v1.2.3/quest_system.ggc",
+            "url": "https://cdn.example.com/v1.2.3/quest_system.code",
             "hash": "sha256:def456..."
         }
     ],
@@ -178,12 +178,12 @@ VFS 是热更新的基础设施，支持运行时文件覆盖：
 │                     VFS 层次结构                              │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              热更新覆盖层 (优先级最高)                  │   │
-│  │  combat_system.ggc  │  new_panel.texture             │   │
+│  │  combat_system.code  │  new_panel.texture             │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                          ↓                                   │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              基础资产层 (打包时嵌入)                    │   │
-│  │  core.ggc  │  player.texture  │  ui.texture          │   │
+│  │  core.code  │  player.texture  │  ui.texture          │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -209,7 +209,7 @@ Gnosis 引擎通过**字节码解释**完全绕过 JIT 限制：
 flowchart LR
     subgraph 构建时
         A[gg 源码] --> B[gg_compiler]
-        B --> C[.ggc 字节码]
+        B --> C[.code 字节码]
         B --> D[VM C 源码]
         D --> E[AOT 编译]
         E --> F[本地二进制]
@@ -226,7 +226,7 @@ flowchart LR
 | 设计点 | 说明 |
 | :--- | :--- |
 | **虚拟机 AOT 编译** | 虚拟机内核为纯 C 代码，经 AOT 编译为本地二进制 |
-| **字节码即数据** | `.ggc` 文件是纯数据，由虚拟机读取解释 |
+| **字节码即数据** | `.code` 文件是纯数据，由虚拟机读取解释 |
 | **无动态代码生成** | 运行时不生成任何可执行代码 |
 | **符合商店政策** | 字节码下载被视为资源加载，非代码注入 |
 
@@ -276,15 +276,15 @@ OP_ADD_F: {
 ```
 modules/
 ├── core/              # 核心系统，更新频率低
-│   ├── ecs_core.gg
-│   └── input.gg
+│   ├── ecs_core.scirpt
+│   └── input.scirpt
 ├── gameplay/          # 游戏玩法，更新频率高
-│   ├── combat.gg
-│   ├── quest.gg
-│   └── skill.gg
+│   ├── combat.scirpt
+│   ├── quest.scirpt
+│   └── skill.scirpt
 └── ui/                # UI 系统，更新频率高
-    ├── hud.gg
-    └── menu.gg
+    ├── hud.scirpt
+    └── menu.scirpt
 ```
 
 ### 版本兼容性
@@ -341,5 +341,5 @@ Gnosis 引擎的热更新机制通过多阶段编程范式实现：
 ## 下一步
 
 - 阅读 [架构设计](architecture.md) 了解多阶段编程模型
-- 阅读 [gg 语言指南](gg-language.md) 学习模块划分
+- 阅读 [gg 语言指南](../languages/gg-script.md) 学习模块划分
 - 阅读 [网络架构](network.md) 了解更新分发策略

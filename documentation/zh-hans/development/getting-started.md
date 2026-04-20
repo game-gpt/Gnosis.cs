@@ -9,7 +9,7 @@ gg 引擎采用**多阶段编程（MSP）**范式，技术栈分为三层：
 | 层次 | 技术栈 | 运行时形态 | 职责 |
 | :--- | :--- | :--- | :--- |
 | **C# 元语言层** | C# | 构建时工具链 | 编译器、虚拟机生成器、资产管线 |
-| **gg 字节码** | gg 语言 | 字节码模块 (.ggc) | 游戏逻辑、编辑器、热更新内容 |
+| **gg 字节码** | gg 语言 | 字节码模块 (.code) | 游戏逻辑、编辑器、热更新内容 |
 | **C AOT 内核** | C（由 C# 生成） | 本地二进制 | 虚拟机解释器、ECS 运行时、渲染绑定 |
 
 ## 环境要求
@@ -66,7 +66,7 @@ Gnosis.cs/
 │   ├── ecs_runtime/              # ECS 运行时 (C)
 │   └── rhi/                      # 渲染硬件接口 (C)
 ├── editor/
-│   ├── editor_main.gg            # 编辑器主场景
+│   ├── editor_main.scirpt            # 编辑器主场景
 │   └── widgets/                  # Widget 组件 (gg)
 ├── examples/
 │   └── my-first-game/            # 示例游戏项目
@@ -117,7 +117,7 @@ dotnet build -c Release
 dotnet run --project src/Gnosis.Compiler -- compile ./my-game/src --arch x64
 
 # 输出：
-# - my-game.ggc (字节码)
+# - my-game.code (字节码)
 # - vm_generated/ (虚拟机 C 源码)
 ```
 
@@ -175,7 +175,7 @@ dotnet run --project src/Gnosis.Editor -- ./examples/my-first-game
 
 编辑器支持 gg 源码的热重载：
 
-1. 修改 `.gg` 源文件
+1. 修改 `.scirpt` 源文件
 2. C# 元语言服务自动增量编译
 3. 虚拟机替换内存中的模块定义
 4. ECS 世界自动使用新定义
@@ -222,8 +222,8 @@ export function main() {
     "dotnet.defaultSolution": "Gnosis.sln",
     "editor.formatOnSave": true,
     "files.associations": {
-        "*.gg": "gg",
-        "*.ggs": "gg-shader"
+        "*.scirpt": "gg",
+        "*.shader": "gg-shader"
     }
 }
 ```
@@ -246,11 +246,11 @@ export function main() {
 
 ### 热更新失败
 
-检查网络连接和 CDN 配置，确保 `.ggc` 字节码文件格式正确。
+检查网络连接和 CDN 配置，确保 `.code` 字节码文件格式正确。
 
 ## 下一步
 
 - 阅读 [架构设计](architecture.md) 了解多阶段编程模型
-- 阅读 [gg 语言指南](gg-language.md) 学习 ECS 编程
+- 阅读 [gg 语言指南](../languages/gg-script.md) 学习 ECS 编程
 - 阅读 [渲染系统](rendering.md) 了解 RHI 抽象层
 - 查看 [示例项目](../../examples/) 了解实际用法

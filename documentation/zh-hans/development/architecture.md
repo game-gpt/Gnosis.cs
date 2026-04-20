@@ -169,7 +169,7 @@ flowchart LR
     subgraph 阶段一["阶段一：元语言执行"]
         src --> compiler["gg_compiler"]
         macro_table --> compiler
-        compiler --> bytecode["gg 字节码 (.ggc)"]
+        compiler --> bytecode["gg 字节码 (.code)"]
         compiler --> vm_src["虚拟机源码 (C)"]
     end
 
@@ -236,6 +236,10 @@ flowchart LR
 | `gg_vm` | 字节码解释器 |
 | `ecs_runtime` | ECS 运行时 |
 | `rhi` | 渲染硬件接口抽象层 |
+| `widget` | 编辑器 UI 系统（声明式 Widget 树，按需重绘） |
+| `game_ui` | 游戏运行时 UI 系统（ECS Canvas 批处理，每帧重绘） |
+
+> **注意**：`widget` 与 `game_ui` 是两套完全独立的 UI 体系。`widget` 服务于编辑器界面，走独立于游戏循环的 ImGUI 式绘制；`game_ui` 服务于游戏运行时 UI（HUD、血条等），走 ECS + 材质系统 + 批处理优化路径。二者共享同一 RHI 后端，但渲染策略完全不同。详见 [gg-widget 语言指南](../languages/gg-widget.md)。
 
 ## ECS 架构
 
@@ -282,17 +286,15 @@ plugin WeChatChannel {
 
 ### 热重载（开发期）
 
-文件变更时：
-1. 增量编译新 `.ggc` 模块
-2. 通知虚拟机替换内存中的模块定义
-3. ECS 世界自动使用新定义创建后续实体
+文件变更时：1. 增量编译新 `.code` 模块 2. 通知虚拟机替换内存中的模块定义 3. ECS 世界自动使用新定义创建后续实体
+
+> 热重载的完整工作流程、虚拟机热替换逻辑与使用示例请参阅 [热更新与热重载](hot-update.md#热重载开发期)。
 
 ### 热更新（发布后）
 
-游戏启动时：
-1. 检查更新清单
-2. 下载增量 `.ggc` 字节码与资产差分文件
-3. 通过 VFS 覆盖旧版本
+游戏启动时：1. 检查更新清单 2. 下载增量 `.code` 字节码与资产差分文件 3. 通过 VFS 覆盖旧版本
+
+> 热更新的完整工作流程、更新清单格式与 VFS 架构请参阅 [热更新与热重载](hot-update.md#热更新发布后)。
 
 ## 设计原则
 
@@ -305,6 +307,6 @@ plugin WeChatChannel {
 
 ## 下一步
 
-- 阅读 [gg 语言指南](gg-language.md) 学习 ECS 编程
+- 阅读 [gg 语言指南](../languages/gg-script.md) 学习 ECS 编程
 - 阅读 [网络架构](network.md) 了解帧同步与状态同步
 - 阅读 [渲染系统](rendering.md) 了解 RHI 抽象层

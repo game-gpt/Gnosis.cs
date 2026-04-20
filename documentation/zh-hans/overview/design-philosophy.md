@@ -276,12 +276,12 @@ sequenceDiagram
 
 | 能力名称 | 启用方式 | 功能描述 |
 |----------|----------|----------|
-| `integrity_check` | `anti_cheat: basic` | 对 `@sensitive` 函数进行 CRC 校验 |
-| `memory_obfuscate` | `memory_protect: basic` | 对 `@encrypted` 字段自动异或加密 |
+| `integrity_check` | `anti_cheat: basic` | 对 `[Sensitive]` 函数进行 CRC 校验 |
+| `memory_obfuscate` | `memory_protect: basic` | 对 `[Encrypted]` 字段自动异或加密 |
 | `archive_bind` | `save_protect: basic` | 存档 AES-GCM 加密并绑定硬件指纹 |
-| `honeypot_field` | `@honeypot` 装饰器 | 生成蜜罐变量，被修改时触发软惩罚 |
-| `server_authority` | `@server_only` | 强制逻辑在服务器执行 |
-| `rate_limit` | `@rate_limit` | 限制函数调用频率，防脚本刷量 |
+| `honeypot_field` | `[Honeypot]` 装饰器 | 生成蜜罐变量，被修改时触发软惩罚 |
+| `server_authority` | `[ServerOnly]` | 强制逻辑在服务器执行 |
+| `rate_limit` | `[RateLimit]` | 限制函数调用频率，防脚本刷量 |
 
 ### 核心原则
 

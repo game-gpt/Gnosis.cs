@@ -18,7 +18,7 @@ Gnosis 引擎的编辑器完全由 gg 语言编写，运行于 gg 虚拟机之�
 ```mermaid
 flowchart TB
     subgraph Editor["编辑器 (gg 编写)"]
-        editor_main["editor_main.gg"]
+        editor_main["editor_main.scirpt"]
         widgets["Widget 系统"]
         editor_api["editor_api (C# 绑定)"]
     end
@@ -45,8 +45,8 @@ flowchart TB
 
 | 组件 | 文件 | 职责 |
 | :--- | :--- | :--- |
-| 编辑器入口 | `editor_main.gg` | 初始化编辑器，创建主场景 |
-| Widget 系统 | `widgets/*.gg` | UI 组件定义与渲染 |
+| 编辑器入口 | `editor_main.scirpt` | 初始化编辑器，创建主场景 |
+| Widget 系统 | `widgets/*.scirpt` | UI 组件定义与渲染 |
 | 编辑器 API | `editor_api` | C# 绑定，提供底层能力 |
 | 热重载服务 | `hot_reload_service` | 监控文件变更，触发重载 |
 
@@ -153,62 +153,11 @@ widget LifecycleWidget {
 
 ## Widget 与 Component 的区别
 
-Widget 和 Component 是 gg 语言中两个截然不同的概念，必须明确区分：
+Widget 和 Component 是 gg 语言中两个截然不同的概念，必须明确区分。
 
-### 概念对比
+> **重要**：gg 引擎中还存在第三种 UI 概念——**Game UI**。Widget 专指编辑器 UI，Game UI 专指游戏运行时 UI（HUD、血条等），二者是两套完全独立的体系。详见 [gg-widget 语言指南 - Game UI 系统](../languages/gg-widget.md#game-ui-系统)。
 
-| 概念 | Widget | Component |
-| :--- | :--- | :--- |
-| 定义位置 | 编辑器 gg 模块 | 游戏 gg 模块 |
-| 用途 | 绘制编辑器用户界面 | 存储游戏实体数据 |
-| 运行时表现 | 由 UI 渲染系统绘制 | 存储于 ECS 世界 |
-| 生命周期 | 编辑器会话期间 | 游戏运行期间 |
-| 数据来源 | 编辑器状态、用户输入 | 游戏逻辑、网络同步 |
-| 关键字 | `widget` | `component` |
-
-### 代码示例对比
-
-**Widget（编辑器 UI）**：
-
-```tsx
-widget HealthBar {
-    property target_entity: Entity;
-    property bar_color: color = "#ff0000";
-
-    render() {
-        var health = target_entity.get<Health>();
-        <progress_bar 
-            value="<%= health.current %>"
-            max="<%= health.max %>"
-            color="<%= this.bar_color %>"
-        />
-    }
-}
-```
-
-**Component（游戏数据）**：
-
-```tsx
-export component Health {
-    current: int = 100;
-    max: int = 100;
-}
-
-export component Damage {
-    value: int = 10;
-}
-```
-
-### 使用场景
-
-| 场景 | 使用 Widget | 使用 Component |
-| :--- | :--- | :--- |
-| 显示实体属性 | ✅ | ❌ |
-| 存储玩家金币 | ❌ | ✅ |
-| 绘制按钮 | ✅ | ❌ |
-| 记录角色位置 | ❌ | ✅ |
-| 创建下拉菜单 | ✅ | ❌ |
-| 网络同步数据 | ❌ | ✅ |
+> Widget、Component 与 Game UI 的详细区分请参阅 [gg-widget 语言指南 - 关键区分：Widget 与 Game UI](../languages/gg-widget.md#⚠️-关键区分widget-与-game-ui)。
 
 ## 编辑器主场景
 
@@ -451,7 +400,7 @@ widget property_field {
 
 ```tsx
 function on_file_changed(file_path: string) {
-    if (file_path.ends_with(".gg")) {
+    if (file_path.ends_with(".scirpt")) {
         var module_name = get_module_name(file_path);
         var new_bytecode = compile_module(file_path);
         vm_reload_module(module_name, new_bytecode);
@@ -523,6 +472,6 @@ widget OptimizedList {
 
 ## 下一步
 
-- 阅读 [gg 语言指南](gg-language.md) 学习 gg 语法
+- 阅读 [gg 语言指南](../languages/gg-script.md) 学习 gg 语法
 - 阅读 [资产管线](architecture.md) 了解资产预处理流程
 - 查看 [示例项目](../../examples/) 了解编辑器扩展实践

@@ -25,39 +25,7 @@ Gnosis 引擎（以下简称 **gg 引擎**）是一款面向**跨平台游戏开
 
 gg 引擎采用**多阶段编程（Multi-Stage Programming, MSP）**范式，将构建过程划分为多个阶段：
 
-```mermaid
-flowchart LR
-    subgraph 负二阶段["负二阶段：插件配置"]
-        plugins["gg 插件"] --> macro_table["全局宏表"]
-    end
-
-    subgraph 负一阶段["负一阶段：资产预处理"]
-        raw["原始资产"] --> cooked["平台特化资产"]
-    end
-
-    subgraph 阶段零["阶段〇：开发编辑"]
-        editor["编辑器"] <--> src["gg 源码"]
-    end
-
-    subgraph 阶段一["阶段一：元语言执行"]
-        src --> bytecode["gg 字节码"]
-        src --> vm_src["虚拟机源码"]
-    end
-
-    subgraph 阶段二["阶段二：AOT 编译"]
-        vm_src --> kernel["运行时内核"]
-    end
-
-    subgraph 阶段三["阶段三：打包发布"]
-        bytecode --> final["最终游戏包"]
-    end
-
-    负二阶段 --> 阶段零
-    负一阶段 --> 阶段零
-    阶段零 --> 阶段一
-    阶段一 --> 阶段二
-    阶段二 --> 阶段三
-```
+> 各阶段的详细划分、职责与数据流请参阅 [架构设计 - 多阶段编程模型](../development/architecture.md#多阶段编程模型)。
 
 **核心优势**：构建时的每一次决策都固化为后一阶段的常量，最终输出一个**零反射、零 JIT、天然支持热更新**的跨平台游戏运行时。
 
@@ -112,7 +80,7 @@ flowchart TB
     end
 
     subgraph Editor["编辑器 (gg 编写)"]
-        editor_main["editor_main.gg"]
+        editor_main["editor_main.scirpt"]
         widgets["Widget 系统"]
         editor_api["editor_api (C# 绑定)"]
     end
@@ -126,7 +94,7 @@ flowchart TB
 
     subgraph Assets["资产与代码"]
         gg_src["gg 源码"]
-        ggc["gg 字节码 (.ggc)"]
+        ggc["gg 字节码 (.code)"]
         raw_assets["原始资产"]
         cooked["预处理资产"]
     end

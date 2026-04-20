@@ -22,11 +22,20 @@ Gnosis 引擎是一款面向跨平台游戏开发的全栈技术方案，采用*
 |------|------|
 | [开发入门](../development/getting-started.md) | 开发环境配置与工作流程 |
 | [架构设计](../development/architecture.md) | 引擎整体架构详解 |
-| [gg 语言](../development/gg-language.md) | gg 语言语法与 ECS 编程范式 |
-| [gg-shader](../development/gg-shader.md) | 着色器语言与渲染管线 |
 | [网络架构](../development/network.md) | 帧同步与状态同步的融合 |
-| [渲染系统](../development/rendering.md) | RHI 抽象层与渲染后端 |
+| [渲染系统](../development/rendering.md) | RHI 抽象层、渲染管线与管线优化 |
+| [编辑器架构](../development/editor.md) | 编辑器架构与 Widget 系统 |
+| [热更新与热重载](../development/hot-update.md) | 热重载与热更新机制 |
 | [反作弊系统](../development/anti-cheat.md) | 分层防御与安全加固 |
+
+### 语言指南
+
+| 文档 | 描述 |
+|------|------|
+| [gg-script](../languages/gg-script.md) | gg 语言语法与 ECS 编程范式 |
+| [gg-shader](../languages/gg-shader.md) | 着色器语言与渲染管线 |
+| [gg-widget](../languages/gg-widget.md) | Widget 与 Game UI 构建语言 |
+| [gg-object](../languages/gg-object.md) | 对象配置语言 (ggon) |
 
 ### 维护指南
 
@@ -141,13 +150,18 @@ documentation/zh-hans/
 │   ├── introduction.md     # 项目介绍
 │   ├── quick-start.md      # 快速开始
 │   └── design-philosophy.md # 设计哲学
+├── languages/              # 语言指南
+│   ├── gg-script.md        # gg 语言语法与 ECS 编程
+│   ├── gg-shader.md        # gg-shader 着色器语言
+│   ├── gg-widget.md        # gg-widget Widget 与 Game UI
+│   └── gg-object.md        # ggon 对象配置语言
 ├── development/            # 开发指南
 │   ├── getting-started.md  # 开发入门
 │   ├── architecture.md     # 架构设计
-│   ├── gg-language.md      # gg 语言
-│   ├── gg-shader.md        # 着色器语言
+│   ├── rendering.md        # 渲染系统与管线优化
+│   ├── editor.md           # 编辑器架构
+│   ├── hot-update.md       # 热更新与热重载
 │   ├── network.md          # 网络架构
-│   ├── rendering.md        # 渲染系统
 │   └── anti-cheat.md       # 反作弊系统
 └── maintenance/            # 维护指南
     ├── coding-standards.md # 编码规范

@@ -71,12 +71,12 @@ graph TB
 **组件标记**：
 
 ```tsx
-@encrypted component PlayerData {
+[Encrypted] component PlayerData {
     gold: int;
     level: int;
 }
 
-@sensitive(check_freq = "once_per_session")
+[Sensitive(check_freq = "once_per_session")]
 export function calculate_damage(att: int, def: int): int {
     // 关键逻辑
 }
@@ -87,10 +87,10 @@ export function calculate_damage(att: int, def: int): int {
 **蜜罐变量**：
 
 ```tsx
-@encrypted component PlayerStatus {
+[Encrypted] component PlayerStatus {
     health: int;
     
-    @honeypot(trigger = "on_cheat_suspected")
+    [Honeypot(trigger = "on_cheat_suspected")]
     _health_fake: int;
 }
 ```
@@ -98,7 +98,7 @@ export function calculate_damage(att: int, def: int): int {
 **自定义检测**：
 
 ```tsx
-@custom_check(interval = 5.0)
+[CustomCheck(interval = 5.0)]
 function advanced_sanity_check() {
     if (player.position.y < -1000 && player.is_alive) {
         report_event("underground_player", { pos: player.position });
@@ -163,7 +163,7 @@ public class MyMLPredictor : MLPredictor
 // 创建一个玩家永远看不到的假实体
 var honeypot_entity = world.spawn_entity();
 honeypot_entity.add(Health { current: 9999 });
-honeypot_entity.add(@honeypot TagHoneypot);
+honeypot_entity.add(TagHoneypot);
 
 // 系统检测
 system HoneypotMonitor {
@@ -185,13 +185,13 @@ system HoneypotMonitor {
 在组件中添加蜜罐字段，使用诱惑性命名：
 
 ```tsx
-@encrypted component PlayerStatus {
+[Encrypted] component PlayerStatus {
     health: int;
     
-    @honeypot(trigger = "on_cheat_suspected")
+    [Honeypot(trigger = "on_cheat_suspected")]
     _god_mode: bool = false;  // 诱惑性命名
     
-    @honeypot(trigger = "on_cheat_suspected")
+    [Honeypot(trigger = "on_cheat_suspected")]
     _unlimited_ammo: bool = false;  // 诱惑性命名
 }
 ```
@@ -202,7 +202,7 @@ system HoneypotMonitor {
 
 ```tsx
 // 服务器生成不可达宝箱
-@server_only
+[ServerOnly]
 function spawn_trap_chest() {
     var chest = world.spawn_entity();
     chest.add(Position { x: 0, y: -9999, z: 0 });  // 不可达位置
@@ -210,7 +210,7 @@ function spawn_trap_chest() {
 }
 
 // 服务器交互处理
-@server_only
+[ServerOnly]
 function on_interact(player: Entity, target: Entity) {
     if (target.has_component(Chest) && target.get_component(Chest).trap) {
         player.mark_as_cheater("interacted_with_honeypot_chest");

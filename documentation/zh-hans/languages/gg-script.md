@@ -6,51 +6,54 @@
 
 gg 语言专为游戏逻辑设计，具有以下特性：
 
-| 特性 | 描述 |
-| :--- | :--- |
-| TypeScript 风格语法 | 简洁易学，类型安全 |
-| 原生 ECS 支持 | 组件、系统、查询一等公民 |
-| 编译时元编程 | `<% %>` 块在编译时执行 |
-| 零运行时反射 | 所有类型信息在编译时解析 |
+| 特性              | 描述              |
+| :-------------- | :-------------- |
+| 原生 ECS 支持       | 组件、系统、查询一等公民    |
+| 编译时元编程          | `<% %>` 块在编译时执行 |
+| 零运行时反射          | 所有类型信息在编译时解析    |
 
 ## 基础语法
 
 ### 变量声明
 
 ```tsx
-var x: int = 42;
-var y: float = 3.14;
-var name: string = "hello";
-var flag: bool = true;
+let x: i32 = 42;
+let mut y: f32 = 3.14;
+let name: string = "hello";
+let flag: bool = true;
 ```
 
 ### 函数定义
 
 ```tsx
-function add(a: int, b: int): int {
+micro add(a: i32, b: i32): i32 {
     return a + b;
 }
 
-export function main() {
-    var result = add(1, 2);
+micro main() {
+    let result = add(1, 2);
 }
 ```
 
 ### 控制流
 
 ```tsx
-if (x > 0) {
-    // ...
+if x > 0 {
+    # ...
 } else {
-    // ...
+    # ...
 }
 
-for (var i = 0; i < 10; i++) {
-    // ...
+loop {
+    # ...
 }
 
-while (condition) {
-    // ...
+loop item in collection {
+    # ...
+}
+
+while condition {
+    # ...
 }
 ```
 
@@ -59,54 +62,54 @@ while (condition) {
 组件是纯数据容器，不包含任何逻辑：
 
 ```tsx
-export component Position {
-    x: float;
-    y: float;
+component Position {
+    x: f32;
+    y: f32;
 }
 
-export component Velocity {
-    vx: float;
-    vy: float;
+component Velocity {
+    vx: f32;
+    vy: f32;
 }
 
-export component Health {
-    current: int = 100;
-    max: int = 100;
+component Health {
+    current: i32 = 100;
+    max: i32 = 100;
 }
 
-export component PlayerTag {
-    player_id: int;
+component PlayerTag {
+    player_id: i32;
 }
 ```
 
 ### 组件属性
 
 ```tsx
-@encrypted
-export component PlayerData {
+[Encrypted]
+component PlayerData {
     gold: int;
     level: int;
     
-    @honeypot(trigger = "on_cheat_suspected")
+    [Honeypot(trigger = "on_cheat_suspected")]
     _gold_fake: int;
 }
 ```
 
-| 属性 | 描述 |
-| :--- | :--- |
-| `@encrypted` | 内存加密保护 |
-| `@honeypot` | 蜜罐陷阱 |
-| `@replicated` | 网络复制 |
+| 属性            | 描述     |
+| :------------ | :----- |
+| `[Encrypted]`  | 内存加密保护 |
+| `[Honeypot]`   | 蜜罐陷阱   |
+| `[Replicated]` | 网络复制   |
 
 ## 系统定义
 
 系统包含游戏逻辑，通过查询访问组件：
 
 ```tsx
-export system MoveSystem {
+system MoveSystem {
     query = Query.all(Position, Velocity);
 
-    on_update(delta: float) {
+    on_update(delta: f32) {
         <% foreach (var (pos, vel) in query) { %>
             pos.x += vel.vx * delta;
             pos.y += vel.vy * delta;
@@ -118,12 +121,12 @@ export system MoveSystem {
 ### 系统生命周期
 
 ```tsx
-export system MySystem {
+system MySystem {
     on_load() {
         // 系统加载时调用
     }
     
-    on_update(delta: float) {
+    on_update(delta: f32) {
         // 每帧调用
     }
     
@@ -136,24 +139,24 @@ export system MySystem {
 ### 网络系统
 
 ```tsx
-@server_only
-export function handle_attack(player: Entity, target: Entity) {
-    // 仅在服务器执行
+[ServerOnly]
+micro handle_attack(player: Entity, target: Entity) {
+    # 仅在服务器执行
 }
 
 system ServerMovement {
-    on_server_update(delta: float) {
-        // 服务器权威逻辑
+    on_server_update(delta: f32) {
+        # 服务器权威逻辑
     }
 }
 
 system ClientPredictionMovement {
-    on_client_update(delta: float) {
-        // 客户端预测逻辑
+    on_client_update(delta: f32) {
+        # 客户端预测逻辑
     }
     
     on_receive_server_state(msg: ServerStateMessage) {
-        // 和解逻辑
+        # 和解逻辑
     }
 }
 ```
@@ -162,11 +165,11 @@ system ClientPredictionMovement {
 
 ### 查询类型
 
-| 查询 | 描述 |
-| :--- | :--- |
+| 查询                | 描述       |
+| :---------------- | :------- |
 | `Query.all(A, B)` | 包含所有指定组件 |
 | `Query.any(A, B)` | 包含任意指定组件 |
-| `Query.none(A)` | 不包含指定组件 |
+| `Query.none(A)`   | 不包含指定组件  |
 
 ### 查询示例
 
@@ -176,7 +179,7 @@ system DamageSystem {
     query_players = Query.all(PlayerTag, Health);
     query_enemies = Query.all(EnemyTag).none(PlayerTag);
 
-    on_update(delta: float) {
+    on_update(delta: f32) {
         <% foreach (var (health, damage) in query_all) { %>
             health.current -= damage.value;
         <% } %>
@@ -192,10 +195,10 @@ system DamageSystem {
 
 ```tsx
 on_update(delta: float) {
-    <% foreach (var (pos, vel) in query) { %>
+    <% loop (pos, vel) in query %>
         pos.x += vel.vx * delta;
         pos.y += vel.vy * delta;
-    <% } %>
+    <% end loop %>
 }
 ```
 
@@ -211,12 +214,25 @@ on_update(delta: float) {
 <% } %>
 ```
 
-### 宏展开
+### 循环语法
 
 ```tsx
-<% foreach (var i in range(0, 10)) { %>
-    var value_<%= i %> = <%= i * 2 %>;
-<% } %>
+<% loop i in range(0, 10) %>
+    let value_<%= i %> = <%= i * 2 %>;
+<% end loop %>
+```
+
+### 模式匹配
+
+```tsx
+<% match value %>
+    <% case 0 %>
+        # 处理 0 的情况
+    <% case 1 %>
+        # 处理 1 的情况
+    <% case _ %>
+        # 处理其他情况
+<% end match %>
 ```
 
 ### 编译时 ECS 特化
@@ -240,68 +256,29 @@ ST_FIELD R0, offsetof(Position.x), R1
 
 编辑器本身完全由 gg 语言编写，运行于 gg 虚拟机之上。UI 组件称为 **Widget**，与 ECS 的 **Component** 明确区分。
 
+> **注意**：Widget 仅用于编辑器 UI。游戏运行时 UI（HUD、血条、技能轮盘等）使用独立的 **Game UI** 系统，基于 ECS 组件和系统构建，与 Widget 是两套完全不同的体系。详见 [gg-widget 语言指南 - Game UI 系统](gg-widget.md#game-ui-系统)。
+
 ### Widget 与 Component 区别
 
-| 概念 | 定义位置 | 用途 | 运行时表现 |
-| :--- | :--- | :--- | :--- |
-| **Widget** | 编辑器 gg 模块 | 绘制编辑器用户界面 | 由 UI 渲染系统绘制，不进入游戏世界 |
-| **Component** | 游戏 gg 模块 | 存储游戏实体数据 | 存储于 ECS 世界，由系统查询并处理 |
+| 概念            | 定义位置      | 用途        | 运行时表现               |
+| :------------ | :-------- | :-------- | :------------------ |
+| **Widget**    | 编辑器 gg 模块 | 绘制编辑器用户界面 | 由 UI 渲染系统绘制，不进入游戏世界 |
+| **Component** | 游戏 gg 模块  | 存储游戏实体数据  | 存储于 ECS 世界，由系统查询并处理 |
 
 ### Inspector Widget 示例
 
-```tsx
-widget Inspector {
-    property selected_entity: Entity;
-
-    render() {
-        <% foreach (var comp in get_components_of(selected_entity)) { %>
-            <collapsible_section title="<%= comp.name %>">
-                <% foreach (var prop in comp.properties) { %>
-                    <% if (prop.type == "float") { %>
-                        <float_field 
-                            label="<%= prop.name %>"
-                            value="<%= selected_entity.get_float(comp.name, prop.name) %>"
-                            on_change="(v) => selected_entity.set_float(comp.name, prop.name, v)"
-                        />
-                    <% } else if (prop.type == "int") { %>
-                        <int_field ... />
-                    <% } %>
-                <% } %>
-            </collapsible_section>
-        <% } %>
-    }
-}
-```
+> 完整的 Inspector Widget 示例请参阅 [编辑器架构 - Inspector Widget](../development/editor.md#inspector-widget-完整示例)。
 
 ### 编辑器主场景示例
 
-```tsx
-export scene EditorMain {
-    on_load() {
-        editor_core.init();
-        this.ui_root = widget_dock_layout.create({
-            children: [
-                widget_main_menu.create(),
-                widget_toolbar.create(),
-                widget_content_browser.create(),
-                widget_viewport_3d.create(),
-                widget_inspector.create()
-            ]
-        });
-    }
-
-    on_update(delta: float) {
-        editor_input.process_shortcuts();
-    }
-}
-```
+> 编辑器主场景的完整实现请参阅 [编辑器架构 - 编辑器主场景](../development/editor.md#编辑器主场景)。
 
 ## 实体操作
 
 ### 创建实体
 
 ```tsx
-var entity = create_entity();
+let entity = create_entity();
 entity.add(Position { x: 100.0, y: 200.0 });
 entity.add(Velocity { vx: 0.0, vy: 0.0 });
 ```
@@ -315,11 +292,11 @@ destroy_entity(entity);
 ### 组件访问
 
 ```tsx
-var pos = entity.get<Position>();
+let pos = entity.get<Position>();
 pos.x = 150.0;
 
-if (entity.has<Health>()) {
-    var health = entity.get<Health>();
+if entity.has<Health>() {
+    let health = entity.get<Health>();
     health.current -= 10;
 }
 ```
@@ -327,8 +304,8 @@ if (entity.has<Health>()) {
 ## 场景定义
 
 ```tsx
-export scene GameMain {
-    var player: Entity;
+scene GameMain {
+    let player: Entity;
 
     on_load() {
         player = create_entity();
@@ -336,8 +313,8 @@ export scene GameMain {
         player.add(Position { x: 100.0, y: 100.0 });
     }
 
-    on_update(delta: float) {
-        // 游戏逻辑
+    on_update(delta: f32) {
+        # 游戏逻辑
     }
 }
 ```
@@ -350,7 +327,7 @@ plugin WeChatChannel {
     provides_macros = ["WECHAT", "WECHAT_SHARE"];
     provides_capabilities = ["WeChatLogin", "WeChatShare"];
 
-    export function login(): Promise<UserInfo> {
+    micro login(): Promise<UserInfo> {
         return new Promise((resolve, reject) => {
             wx_login({
                 success: (res) => resolve({ code: res.code })
@@ -382,6 +359,7 @@ plugin WeChatChannel {
 
 ## 下一步
 
-- 阅读 [网络架构](network.md) 了解帧同步与状态同步
-- 阅读 [反作弊体系](anti-cheat.md) 了解安全防护
+- 阅读 [网络架构](../development/network.md) 了解帧同步与状态同步
+- 阅读 [反作弊体系](../development/anti-cheat.md) 了解安全防护
 - 查看 [示例项目](../../examples/) 了解实际用法
+
