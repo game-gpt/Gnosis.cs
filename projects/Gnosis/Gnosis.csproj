@@ -22,7 +22,6 @@
     <Compile Remove="Shader\**" />
     <Compile Remove="Pipeline\**" />
     <Compile Remove="RHI\**" />
-    <Compile Remove="GameUI\**" />
   </ItemGroup>
 
 </Project>

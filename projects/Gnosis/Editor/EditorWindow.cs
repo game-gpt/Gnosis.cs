@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GnosisEngine.UI;
 using GnosisEngine.UI.Layout;
-using GnosisEngine.Widget;
+using Gnosis;
 
 using UiColor = GnosisEngine.UI.Color;
 using UiDock = GnosisEngine.UI.Dock;
