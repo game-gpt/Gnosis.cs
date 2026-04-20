@@ -1,0 +1,35 @@
+namespace Gnosis.Compiler.ValueObjects.AST;
+
+public enum NodeType
+{
+    CompilationUnit,
+    ComponentDecl,
+    SystemDecl,
+    WidgetDecl,
+    SceneDecl,
+    PluginDecl,
+    FunctionDecl,
+    VariableDecl,
+    ImportDecl,
+    FieldDecl,
+    ParameterDecl,
+    TypeAnnotation,
+    AttributeDecl,
+    QueryExpr,
+    MetaBlock,
+    BlockStmt,
+    IfStmt,
+    LoopStmt,
+    WhileStmt,
+    ReturnStmt,
+    ExprStmt,
+    BinaryExpr,
+    UnaryExpr,
+    CallExpr,
+    MemberAccessExpr,
+    IndexExpr,
+    LiteralExpr,
+    IdentifierExpr,
+    LambdaExpr,
+    AssignmentExpr
+}

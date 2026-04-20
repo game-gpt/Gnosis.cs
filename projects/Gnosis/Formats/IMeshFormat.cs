@@ -14,7 +14,7 @@ public record MeshData
     public IReadOnlyList<int> Indices { get; init; } = new List<int>();
     public IReadOnlyList<MeshSubMesh> SubMeshes { get; init; } = new List<MeshSubMesh>();
     public IReadOnlyList<MeshBone> Bones { get; init; } = new List<MeshBone>();
-    public MeshBounds Bounds { get; init; }
+    public MeshBounds Bounds { get; init; } = new();
 }
 
 public record MeshVertex

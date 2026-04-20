@@ -1,5 +1,3 @@
-using Gnosis.Renderer.Enums;
-
 namespace Gnosis.Formats;
 
 public interface IMaterialFormat : IFormatHandler
@@ -43,4 +41,13 @@ public enum MaterialPropertyType
     Bool = 5,
     Matrix = 6,
     Texture = 7
+}
+
+public enum BlendMode
+{
+    None,
+    Alpha,
+    Additive,
+    Multiply,
+    Screen
 }
