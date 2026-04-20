@@ -5,10 +5,18 @@ time-travel.*
 
 # IDE
 .vscode/
-.vs/
 .idea/
+.trae/
+.vs/
 *.iml
 
 # Rust
 target/
 Cargo.lock
+
+# C# 
+bin/
+obj/
+
+# Node
+node_modules/
