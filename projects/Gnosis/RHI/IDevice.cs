@@ -1,4 +1,4 @@
-namespace Gnosis.Renderer;
+namespace GnosisEngine.RHI;
 
 public interface IDevice
 {
@@ -7,7 +7,7 @@ public interface IDevice
     IResource CreateShader(byte[] spirvBytecode);
     IPipelineState CreatePipelineState(PipelineStateDesc desc);
     ICommandTable CreateCommandTable();
-    
+
     void Submit(ICommandTable commandTable);
     void WaitIdle();
 }

@@ -1,6 +1,6 @@
-using Gnosis.Renderer.Enums;
+using GnosisEngine.RHI.Enums;
 
-namespace Gnosis.Renderer;
+namespace GnosisEngine.RHI;
 
 public interface IResource : IDisposable
 {

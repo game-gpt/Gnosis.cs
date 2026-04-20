@@ -1,4 +1,4 @@
-namespace Gnosis.Renderer;
+namespace GnosisEngine.RHI;
 
 public record PipelineStateDesc(
     ulong ShaderHandle,

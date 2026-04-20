@@ -1,4 +1,4 @@
-namespace Gnosis.Renderer.Enums;
+namespace GnosisEngine.RHI.Enums;
 
 public enum BlendMode
 {

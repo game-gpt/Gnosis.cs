@@ -1,6 +1,6 @@
 using Gnosis.Core.ValueObjects;
 
-namespace Gnosis.Renderer;
+namespace GnosisEngine.RHI;
 
 public interface ITransform
 {
