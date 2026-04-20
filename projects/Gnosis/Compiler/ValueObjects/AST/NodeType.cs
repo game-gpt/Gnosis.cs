@@ -31,5 +31,11 @@ public enum NodeType
     LiteralExpr,
     IdentifierExpr,
     LambdaExpr,
-    AssignmentExpr
+    AssignmentExpr,
+    StructDecl,
+    ForStmt,
+    DiscardStmt,
+    SwizzleExpr,
+    UsingDecl,
+    UniformBindingDecl
 }

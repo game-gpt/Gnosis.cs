@@ -106,7 +106,7 @@ public partial class GgWidgetCompiler
             return null;
         }
 
-        var isMutable = match.Groups[1].Value == "let";
+        var isMutable = line.TrimStart().StartsWith("let ");
         var name = match.Groups[2].Value;
         var typeStr = match.Groups[3].Success ? match.Groups[3].Value.Trim() : null;
         var defaultStr = match.Groups[4].Success ? match.Groups[4].Value.Trim() : null;
@@ -565,7 +565,7 @@ public partial class GgWidgetCompiler
 
     #region Generated Regex
 
-    [GeneratedRegex(@"(?:let|const)\s+(\w+)(?::\s*(\w+))?(?:\s*=\s*(.+?))?;?\s*$")]
+    [GeneratedRegex(@"(let|const)\s+(\w+)(?::\s*(\w+))?(?:\s*=\s*(.+?))?;?\s*$")]
     private static partial Regex PropertyDeclRegex();
 
     [GeneratedRegex(@"([@:]?[\w-]+)(?:=""([^""]*)""|='([^']*)')?")]

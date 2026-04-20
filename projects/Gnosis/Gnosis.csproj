@@ -19,7 +19,6 @@
     <Compile Remove="UI\**" />
     <Compile Remove="Widget\**" />
     <Compile Remove="Renderer\**" />
-    <Compile Remove="Shader\**" />
     <Compile Remove="Pipeline\**" />
     <Compile Remove="RHI\**" />
   </ItemGroup>

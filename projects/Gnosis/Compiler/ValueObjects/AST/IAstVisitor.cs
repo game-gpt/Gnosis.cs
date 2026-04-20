@@ -32,4 +32,10 @@ public interface IAstVisitor<out T>
     T VisitIdentifierExpr(IdentifierExpr node);
     T VisitLambdaExpr(LambdaExpr node);
     T VisitAssignmentExpr(AssignmentExpr node);
+    T VisitStructDecl(StructDecl node);
+    T VisitForStmt(ForStmt node);
+    T VisitDiscardStmt(DiscardStmt node);
+    T VisitSwizzleExpr(SwizzleExpr node);
+    T VisitUsingDecl(UsingDecl node);
+    T VisitUniformBindingDecl(UniformBindingDecl node);
 }

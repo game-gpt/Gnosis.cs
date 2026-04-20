@@ -39,7 +39,7 @@ public class GgScriptLexer : ILexer
 
     private static readonly HashSet<char> Delimiters = new()
     {
-        '(', ')', '{', '}', '[', ']', ',', ';', ':', '.'
+        '(', ')', '{', '}', ',', ';', '.'
     };
 
     private string _source = string.Empty;
@@ -261,7 +261,21 @@ public class GgScriptLexer : ILexer
 
         if (c == '[')
         {
-            return ScanAttribute(startLine, startColumn);
+            var next = PeekNext();
+
+            if (next == '_' || char.IsLetter(next))
+            {
+                return ScanAttribute(startLine, startColumn);
+            }
+
+            Advance();
+            return new Token(TokenType.Delimiter, "[", startLine, startColumn);
+        }
+
+        if (c == ']')
+        {
+            Advance();
+            return new Token(TokenType.Delimiter, "]", startLine, startColumn);
         }
 
         if (IsOperatorStart(c))
@@ -503,7 +517,7 @@ public class GgScriptLexer : ILexer
         return c switch
         {
             '+' or '-' or '*' or '/' or '%' or '=' or '!' or '<' or '>' or '&'
-            or '|' or '^' or '~' or '?' => true,
+            or '|' or '^' or '~' or '?' or ':' => true,
             _ => false
         };
     }

@@ -116,7 +116,8 @@ public sealed class EditorWindow : Window
         {
             Background = new UiColor(0.15f, 0.15f, 0.17f),
             Width = 200,
-            Padding = new EdgeInsets(10, 10, 10, 10)
+            Padding = new EdgeInsets(10, 10, 10, 10),
+            CrossAxisAlignment = CrossAxisAlignment.Stretch
         };
 
         panel.AddChild(new TextWidget("Hierarchy") { FontSize = 14, Foreground = new UiColor(0.9f, 0.9f, 0.9f) });
@@ -136,7 +137,8 @@ public sealed class EditorWindow : Window
         {
             Background = new UiColor(0.15f, 0.15f, 0.17f),
             Width = 260,
-            Padding = new EdgeInsets(10, 10, 10, 10)
+            Padding = new EdgeInsets(10, 10, 10, 10),
+            CrossAxisAlignment = CrossAxisAlignment.Stretch
         };
 
         panel.AddChild(new TextWidget("Inspector") { FontSize = 14, Foreground = new UiColor(0.9f, 0.9f, 0.9f) });
@@ -179,7 +181,8 @@ public sealed class EditorWindow : Window
         {
             Background = new UiColor(0.12f, 0.12f, 0.14f),
             Height = 150,
-            Padding = new EdgeInsets(10, 10, 10, 10)
+            Padding = new EdgeInsets(10, 10, 10, 10),
+            CrossAxisAlignment = CrossAxisAlignment.Stretch
         };
 
         panel.AddChild(new TextWidget("Console") { FontSize = 14, Foreground = new UiColor(0.9f, 0.9f, 0.9f) });

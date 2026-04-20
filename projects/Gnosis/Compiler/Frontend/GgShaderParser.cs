@@ -1,10 +1,11 @@
+using System.Text;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.ValueObjects;
 using Gnosis.Compiler.ValueObjects.AST;
 
 namespace Gnosis.Compiler.Frontend;
 
-public class GgScriptParser : IParser
+public class GgShaderParser : IParser
 {
     #region Fields
 
@@ -17,7 +18,7 @@ public class GgScriptParser : IParser
 
     #region Constructors
 
-    public GgScriptParser(DiagnosticSink? diagnostics = null)
+    public GgShaderParser(DiagnosticSink? diagnostics = null)
     {
         _diagnostics = diagnostics;
     }
@@ -59,6 +60,12 @@ public class GgScriptParser : IParser
     private Token Peek()
     {
         return _current < _tokens.Count ? _tokens[_current] : _tokens[^1];
+    }
+
+    private Token PeekAt(int offset)
+    {
+        var index = _current + offset;
+        return index < _tokens.Count ? _tokens[index] : _tokens[^1];
     }
 
     private Token Previous()
@@ -159,6 +166,99 @@ public class GgScriptParser : IParser
         throw new ParseException(message);
     }
 
+    private bool CheckDot()
+    {
+        return Check(TokenType.Punctuation, ".") || Check(TokenType.Delimiter, ".");
+    }
+
+    private bool MatchDot()
+    {
+        if (Check(TokenType.Punctuation, "."))
+        {
+            Advance();
+            return true;
+        }
+
+        if (Check(TokenType.Delimiter, "."))
+        {
+            Advance();
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool CheckColon()
+    {
+        return Check(TokenType.Punctuation, ":") || Check(TokenType.Operator, ":");
+    }
+
+    private bool MatchColon()
+    {
+        if (Check(TokenType.Punctuation, ":"))
+        {
+            Advance();
+            return true;
+        }
+
+        if (Check(TokenType.Operator, ":"))
+        {
+            Advance();
+            return true;
+        }
+
+        return false;
+    }
+
+    private Token ConsumeColon(string errorCode, string message)
+    {
+        if (Check(TokenType.Punctuation, ":"))
+        {
+            return Advance();
+        }
+
+        if (Check(TokenType.Operator, ":"))
+        {
+            return Advance();
+        }
+
+        var token = Peek();
+        _diagnostics?.AddError(
+            _filePath,
+            SourceSpan.FromToken(token),
+            errorCode,
+            message);
+
+        throw new ParseException(message);
+    }
+
+    private bool CheckDoubleColon()
+    {
+        if (!Check(TokenType.Operator, "::") && !Check(TokenType.Punctuation, "::"))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool MatchDoubleColon()
+    {
+        if (Check(TokenType.Operator, "::"))
+        {
+            Advance();
+            return true;
+        }
+
+        if (Check(TokenType.Punctuation, "::"))
+        {
+            Advance();
+            return true;
+        }
+
+        return false;
+    }
+
     private void Synchronize()
     {
         Advance();
@@ -174,15 +274,11 @@ public class GgScriptParser : IParser
             {
                 switch (Peek().Value)
                 {
-                    case "component":
-                    case "system":
-                    case "widget":
-                    case "scene":
-                    case "plugin":
                     case "micro":
+                    case "struct":
                     case "let":
                     case "import":
-                    case "export":
+                    case "using":
                         return;
                 }
             }
@@ -199,39 +295,29 @@ public class GgScriptParser : IParser
     {
         try
         {
-            if (Check(TokenType.Keyword, "component"))
-            {
-                return ParseComponentDecl();
-            }
-
-            if (Check(TokenType.Keyword, "system"))
-            {
-                return ParseSystemDecl();
-            }
-
-            if (Check(TokenType.Keyword, "widget"))
-            {
-                return ParseWidgetDecl();
-            }
-
-            if (Check(TokenType.Keyword, "scene"))
-            {
-                return ParseSceneDecl();
-            }
-
-            if (Check(TokenType.Keyword, "plugin"))
-            {
-                return ParsePluginDecl();
-            }
-
             if (Check(TokenType.Keyword, "micro"))
             {
                 return ParseFunctionDecl();
             }
 
+            if (Check(TokenType.Keyword, "struct"))
+            {
+                return ParseStructDecl();
+            }
+
             if (Check(TokenType.Keyword, "import"))
             {
                 return ParseImportDecl();
+            }
+
+            if (Check(TokenType.Keyword, "using"))
+            {
+                return ParseUsingDecl();
+            }
+
+            if (Check(TokenType.Identifier, "cbuffer"))
+            {
+                return ParseCbufferDecl();
             }
 
             if (Check(TokenType.Keyword, "let"))
@@ -243,25 +329,25 @@ public class GgScriptParser : IParser
             {
                 var attrs = ParseAttributes();
 
-                if (Check(TokenType.Keyword, "component"))
-                {
-                    return ParseComponentDecl(attrs);
-                }
-
-                if (Check(TokenType.Keyword, "system"))
-                {
-                    return ParseSystemDecl(attrs);
-                }
-
                 if (Check(TokenType.Keyword, "micro"))
                 {
                     return ParseFunctionDecl(attrs);
                 }
 
+                if (Check(TokenType.Keyword, "struct"))
+                {
+                    return ParseStructDecl(attrs);
+                }
+
+                if (Check(TokenType.Identifier, "cbuffer"))
+                {
+                    return ParseCbufferDecl(attrs);
+                }
+
                 _diagnostics?.AddError(
                     _filePath,
                     SourceSpan.FromToken(Peek()),
-                    "GG0101",
+                    "GG3001",
                     $"属性标注后应为声明，但遇到 '{Peek().Value}'");
 
                 return null;
@@ -278,19 +364,19 @@ public class GgScriptParser : IParser
 
     private ImportDecl ParseImportDecl()
     {
-        var startToken = ConsumeKeyword("import", "GG0102", "期望 'import' 关键字");
+        var startToken = ConsumeKeyword("import", "GG3002", "期望 'import' 关键字");
 
-        var modulePath = Consume(TokenType.Identifier, "GG0103", "期望模块路径").Value;
+        var modulePath = Consume(TokenType.Identifier, "GG3003", "期望模块路径").Value;
 
-        while (Match(TokenType.Delimiter, "."))
+        while (MatchDot())
         {
-            modulePath += "." + Consume(TokenType.Identifier, "GG0104", "期望标识符").Value;
+            modulePath += "." + Consume(TokenType.Identifier, "GG3004", "期望标识符").Value;
         }
 
         string? alias = null;
         if (Match(TokenType.Keyword, "as"))
         {
-            alias = Consume(TokenType.Identifier, "GG0105", "期望别名标识符").Value;
+            alias = Consume(TokenType.Identifier, "GG3005", "期望别名标识符").Value;
         }
 
         Match(TokenType.Delimiter, ";");
@@ -298,16 +384,43 @@ public class GgScriptParser : IParser
         return new ImportDecl(SourceSpan.FromToken(startToken), modulePath, alias);
     }
 
+    private UsingDecl ParseUsingDecl()
+    {
+        var startToken = ConsumeKeyword("using", "GG3006", "期望 'using' 关键字");
+
+        var namespacePath = Consume(TokenType.Identifier, "GG3007", "期望命名空间路径").Value;
+
+        while (MatchDoubleColon() || MatchDot())
+        {
+            namespacePath += "::" + Consume(TokenType.Identifier, "GG3008", "期望标识符").Value;
+        }
+
+        var selections = new List<string>();
+        if (Match(TokenType.Operator, "=>"))
+        {
+            selections.Add(Consume(TokenType.Identifier, "GG3009", "期望选择标识符").Value);
+
+            while (Match(TokenType.Delimiter, ","))
+            {
+                selections.Add(Consume(TokenType.Identifier, "GG3010", "期望选择标识符").Value);
+            }
+        }
+
+        Match(TokenType.Delimiter, ";");
+
+        return new UsingDecl(SourceSpan.FromToken(startToken), namespacePath, selections);
+    }
+
     private VariableDecl ParseVariableDecl()
     {
-        var startToken = ConsumeKeyword("let", "GG0106", "期望 'let' 关键字");
+        var startToken = ConsumeKeyword("let", "GG3011", "期望 'let' 关键字");
 
         var isMutable = Match(TokenType.Keyword, "mut");
 
-        var name = Consume(TokenType.Identifier, "GG0107", "期望变量名").Value;
+        var name = Consume(TokenType.Identifier, "GG3012", "期望变量名").Value;
 
         TypeAnnotation? varType = null;
-        if (Match(TokenType.Punctuation, ":"))
+        if (MatchColon())
         {
             varType = ParseTypeAnnotation();
         }
@@ -323,13 +436,13 @@ public class GgScriptParser : IParser
         return new VariableDecl(SourceSpan.FromToken(startToken), name, varType, initializer, isMutable);
     }
 
-    private ComponentDecl ParseComponentDecl(IReadOnlyList<AttributeDecl>? attrs = null)
+    private StructDecl ParseStructDecl(IReadOnlyList<AttributeDecl>? attrs = null)
     {
-        var startToken = ConsumeKeyword("component", "GG0108", "期望 'component' 关键字");
+        var startToken = ConsumeKeyword("struct", "GG3013", "期望 'struct' 关键字");
 
-        var name = Consume(TokenType.Identifier, "GG0109", "期望组件名").Value;
+        var name = Consume(TokenType.Identifier, "GG3014", "期望结构体名").Value;
 
-        Consume(TokenType.Delimiter, "{", "GG0110", "期望 '{'");
+        Consume(TokenType.Delimiter, "{", "GG3015", "期望 '{'");
 
         var fields = new List<FieldDecl>();
 
@@ -340,18 +453,25 @@ public class GgScriptParser : IParser
             fields.Add(field);
         }
 
-        Consume(TokenType.Delimiter, "}", "GG0111", "期望 '}'");
+        Consume(TokenType.Delimiter, "}", "GG3016", "期望 '}'");
 
-        return new ComponentDecl(SourceSpan.FromToken(startToken), name, attrs ?? Array.Empty<AttributeDecl>(), fields);
+        var allAttrs = new List<AttributeDecl>();
+        allAttrs.Add(new AttributeDecl(SourceSpan.FromToken(startToken), "Struct", Array.Empty<KeyValuePair<string, string>>()));
+        if (attrs is not null)
+        {
+            allAttrs.AddRange(attrs);
+        }
+
+        return new StructDecl(SourceSpan.FromToken(startToken), name, fields, allAttrs);
     }
 
     private FieldDecl ParseFieldDecl(IReadOnlyList<AttributeDecl> attrs)
     {
         var startToken = Peek();
 
-        var name = Consume(TokenType.Identifier, "GG0112", "期望字段名").Value;
+        var name = Consume(TokenType.Identifier, "GG3017", "期望字段名").Value;
 
-        Consume(TokenType.Punctuation, ":", "GG0113", "期望 ':'");
+        ConsumeColon("GG3018", "期望 ':'");
 
         var fieldType = ParseTypeAnnotation();
 
@@ -366,153 +486,43 @@ public class GgScriptParser : IParser
         return new FieldDecl(SourceSpan.FromToken(startToken), name, fieldType, defaultValue, attrs);
     }
 
-    private SystemDecl ParseSystemDecl(IReadOnlyList<AttributeDecl>? attrs = null)
+    private ComponentDecl ParseCbufferDecl(IReadOnlyList<AttributeDecl>? attrs = null)
     {
-        var startToken = ConsumeKeyword("system", "GG0114", "期望 'system' 关键字");
+        var startToken = Peek();
+        Advance();
 
-        var name = Consume(TokenType.Identifier, "GG0115", "期望系统名").Value;
+        var name = Consume(TokenType.Identifier, "GG3019", "期望缓冲区名").Value;
 
-        Consume(TokenType.Delimiter, "{", "GG0116", "期望 '{'");
+        Consume(TokenType.Delimiter, "{", "GG3020", "期望 '{'");
 
-        var queries = new List<QueryExpr>();
-        var methods = new List<FunctionDecl>();
+        var fields = new List<FieldDecl>();
 
         while (!Check(TokenType.Delimiter, "}") && !IsAtEnd())
         {
-            if (Check(TokenType.Keyword, "query") ||
-                (Check(TokenType.Identifier) && (Peek().Value == "query" || Peek().Value.StartsWith("query_"))))
-            {
-                queries.Add(ParseQueryDecl());
-            }
-            else
-            {
-                var methodAttrs = ParseAttributes();
-                methods.Add(ParseLifecycleMethod(methodAttrs));
-            }
+            var fieldAttrs = ParseAttributes();
+            var field = ParseFieldDecl(fieldAttrs);
+            fields.Add(field);
         }
 
-        Consume(TokenType.Delimiter, "}", "GG0117", "期望 '}'");
+        Consume(TokenType.Delimiter, "}", "GG3021", "期望 '}'");
 
-        return new SystemDecl(SourceSpan.FromToken(startToken), name, attrs ?? Array.Empty<AttributeDecl>(), queries, methods);
-    }
-
-    private QueryExpr ParseQueryDecl()
-    {
-        var startToken = Advance();
-
-        string queryName;
-        if (startToken.Value.StartsWith("query_") && startToken.Value.Length > 6)
+        var allAttrs = new List<AttributeDecl>();
+        allAttrs.Add(new AttributeDecl(SourceSpan.FromToken(startToken), "Binding", Array.Empty<KeyValuePair<string, string>>()));
+        if (attrs is not null)
         {
-            queryName = startToken.Value["query_".Length..];
-        }
-        else if (Check(TokenType.Identifier))
-        {
-            queryName = Advance().Value;
-        }
-        else
-        {
-            queryName = "query";
+            allAttrs.AddRange(attrs);
         }
 
-        Consume(TokenType.Operator, "=", "GG0119", "期望 '='");
-
-        var query = ParseQueryExpr();
-
-        Match(TokenType.Delimiter, ";");
-
-        return query;
-    }
-
-    private QueryExpr ParseQueryExpr()
-    {
-        var startToken = Peek();
-
-        Consume(TokenType.Identifier, "GG0120", "期望 'Query'");
-        Consume(TokenType.Delimiter, ".", "GG0121", "期望 '.'");
-
-        var kindStr = Consume(TokenType.Identifier, "GG0122", "期望 'all'、'any' 或 'none'").Value;
-        var kind = kindStr switch
-        {
-            "all" => QueryKind.All,
-            "any" => QueryKind.Any,
-            "none" => QueryKind.None,
-            _ => QueryKind.All
-        };
-
-        Consume(TokenType.Delimiter, "(", "GG0123", "期望 '('");
-
-        var componentTypes = new List<TypeAnnotation>();
-
-        if (!Check(TokenType.Delimiter, ")"))
-        {
-            componentTypes.Add(ParseTypeAnnotation());
-
-            while (Match(TokenType.Delimiter, ","))
-            {
-                componentTypes.Add(ParseTypeAnnotation());
-            }
-        }
-
-        Consume(TokenType.Delimiter, ")", "GG0124", "期望 ')'");
-
-        IReadOnlyList<QueryExpr>? filters = null;
-
-        if (Match(TokenType.Delimiter, "."))
-        {
-            var filterList = new List<QueryExpr>();
-            filterList.Add(ParseQueryExpr());
-
-            while (Match(TokenType.Delimiter, "."))
-            {
-                filterList.Add(ParseQueryExpr());
-            }
-
-            filters = filterList;
-        }
-
-        return new QueryExpr(SourceSpan.FromToken(startToken), kind, componentTypes, filters);
-    }
-
-    private FunctionDecl ParseLifecycleMethod(IReadOnlyList<AttributeDecl> attrs)
-    {
-        var startToken = Peek();
-
-        var name = Consume(TokenType.Identifier, "GG0125", "期望生命周期方法名").Value;
-
-        Consume(TokenType.Delimiter, "(", "GG0126", "期望 '('");
-
-        var parameters = new List<ParameterDecl>();
-
-        if (!Check(TokenType.Delimiter, ")"))
-        {
-            parameters.Add(ParseParameterDecl());
-
-            while (Match(TokenType.Delimiter, ","))
-            {
-                parameters.Add(ParseParameterDecl());
-            }
-        }
-
-        Consume(TokenType.Delimiter, ")", "GG0127", "期望 ')'");
-
-        TypeAnnotation? returnType = null;
-        if (Match(TokenType.Punctuation, ":"))
-        {
-            returnType = ParseTypeAnnotation();
-        }
-
-        var body = ParseBlockStmt();
-
-        return new FunctionDecl(SourceSpan.FromToken(startToken), name, parameters, returnType, body, attrs);
+        return new ComponentDecl(SourceSpan.FromToken(startToken), name, allAttrs, fields);
     }
 
     private FunctionDecl ParseFunctionDecl(IReadOnlyList<AttributeDecl>? attrs = null)
     {
-        var startToken = ConsumeKeyword("micro", "GG0128", "期望 'micro' 关键字");
+        var startToken = ConsumeKeyword("micro", "GG3027", "期望 'micro' 关键字");
 
-        var name = Consume(TokenType.Identifier, "GG0129", "期望函数名").Value;
+        var name = Consume(TokenType.Identifier, "GG3028", "期望函数名").Value;
 
-        Consume(TokenType.Delimiter, "(", "GG0130", "期望 '('");
+        Consume(TokenType.Delimiter, "(", "GG3029", "期望 '('");
 
         var parameters = new List<ParameterDecl>();
 
@@ -526,15 +536,23 @@ public class GgScriptParser : IParser
             }
         }
 
-        Consume(TokenType.Delimiter, ")", "GG0131", "期望 ')'");
+        Consume(TokenType.Delimiter, ")", "GG3030", "期望 ')'");
 
         TypeAnnotation? returnType = null;
-        if (Match(TokenType.Punctuation, ":"))
+        if (MatchColon())
         {
             returnType = ParseTypeAnnotation();
         }
 
-        var body = ParseBlockStmt();
+        BlockStmt? body = null;
+        if (Check(TokenType.Delimiter, "{"))
+        {
+            body = ParseBlockStmt();
+        }
+        else
+        {
+            Match(TokenType.Delimiter, ";");
+        }
 
         return new FunctionDecl(SourceSpan.FromToken(startToken), name, parameters, returnType, body, attrs ?? Array.Empty<AttributeDecl>());
     }
@@ -543,169 +561,13 @@ public class GgScriptParser : IParser
     {
         var startToken = Peek();
 
-        var name = Consume(TokenType.Identifier, "GG0132", "期望参数名").Value;
+        var name = Consume(TokenType.Identifier, "GG3031", "期望参数名").Value;
 
-        Consume(TokenType.Punctuation, ":", "GG0133", "期望 ':'");
+        ConsumeColon("GG3032", "期望 ':'");
 
         var paramType = ParseTypeAnnotation();
 
         return new ParameterDecl(SourceSpan.FromToken(startToken), name, paramType, Array.Empty<AttributeDecl>());
-    }
-
-    private WidgetDecl ParseWidgetDecl()
-    {
-        var startToken = ConsumeKeyword("widget", "GG0134", "期望 'widget' 关键字");
-
-        var name = Consume(TokenType.Identifier, "GG0135", "期望 Widget 名").Value;
-
-        Consume(TokenType.Delimiter, "{", "GG0136", "期望 '{'");
-
-        var properties = new List<FieldDecl>();
-        FunctionDecl? renderMethod = null;
-
-        while (!Check(TokenType.Delimiter, "}") && !IsAtEnd())
-        {
-            if (Check(TokenType.Identifier, "render"))
-            {
-                renderMethod = ParseLifecycleMethod(Array.Empty<AttributeDecl>());
-            }
-            else
-            {
-                var propAttrs = ParseAttributes();
-                properties.Add(ParseFieldDecl(propAttrs));
-            }
-        }
-
-        Consume(TokenType.Delimiter, "}", "GG0137", "期望 '}'");
-
-        return new WidgetDecl(SourceSpan.FromToken(startToken), name, properties, renderMethod);
-    }
-
-    private SceneDecl ParseSceneDecl()
-    {
-        var startToken = ConsumeKeyword("scene", "GG0138", "期望 'scene' 关键字");
-
-        var name = Consume(TokenType.Identifier, "GG0139", "期望场景名").Value;
-
-        Consume(TokenType.Delimiter, "{", "GG0140", "期望 '{'");
-
-        var variables = new List<VariableDecl>();
-        var methods = new List<FunctionDecl>();
-
-        while (!Check(TokenType.Delimiter, "}") && !IsAtEnd())
-        {
-            if (Check(TokenType.Keyword, "let"))
-            {
-                variables.Add(ParseVariableDecl());
-            }
-            else
-            {
-                var methodAttrs = ParseAttributes();
-                methods.Add(ParseLifecycleMethod(methodAttrs));
-            }
-        }
-
-        Consume(TokenType.Delimiter, "}", "GG0141", "期望 '}'");
-
-        return new SceneDecl(SourceSpan.FromToken(startToken), name, variables, methods);
-    }
-
-    private PluginDecl ParsePluginDecl()
-    {
-        var startToken = ConsumeKeyword("plugin", "GG0142", "期望 'plugin' 关键字");
-
-        var name = Consume(TokenType.Identifier, "GG0143", "期望插件名").Value;
-
-        Consume(TokenType.Delimiter, "{", "GG0144", "期望 '{'");
-
-        var requiresArch = new List<string>();
-        var providesMacros = new List<string>();
-        var providesCapabilities = new List<string>();
-        var functions = new List<FunctionDecl>();
-
-        while (!Check(TokenType.Delimiter, "}") && !IsAtEnd())
-        {
-            var fieldName = Consume(TokenType.Identifier, "GG0145", "期望字段名").Value;
-
-            Consume(TokenType.Operator, "=", "GG0146", "期望 '='");
-
-            switch (fieldName)
-            {
-                case "requires_arch":
-                    requiresArch = ParseStringArrayLiteral();
-                    break;
-                case "provides_macros":
-                    providesMacros = ParseStringArrayLiteral();
-                    break;
-                case "provides_capabilities":
-                    providesCapabilities = ParseStringArrayLiteral();
-                    break;
-                default:
-                    _diagnostics?.AddWarning(
-                        _filePath,
-                        SourceSpan.FromToken(Previous()),
-                        "GG0147",
-                        $"未知的插件字段 '{fieldName}'");
-                    SkipToSemicolonOrBrace();
-                    break;
-            }
-
-            Match(TokenType.Delimiter, ";");
-        }
-
-        Consume(TokenType.Delimiter, "}", "GG0148", "期望 '}'");
-
-        return new PluginDecl(SourceSpan.FromToken(startToken), name, requiresArch, providesMacros, providesCapabilities, functions);
-    }
-
-    private List<string> ParseStringArrayLiteral()
-    {
-        var result = new List<string>();
-
-        Consume(TokenType.Delimiter, "[", "GG0149", "期望 '['");
-
-        if (!Check(TokenType.Delimiter, "]"))
-        {
-            result.Add(Consume(TokenType.String, "GG0150", "期望字符串").Value);
-
-            while (Match(TokenType.Delimiter, ","))
-            {
-                result.Add(Consume(TokenType.String, "GG0151", "期望字符串").Value);
-            }
-        }
-
-        Consume(TokenType.Delimiter, "]", "GG0152", "期望 ']'");
-
-        return result;
-    }
-
-    private void SkipToSemicolonOrBrace()
-    {
-        var depth = 0;
-
-        while (!IsAtEnd())
-        {
-            if (Peek().TokenType == TokenType.Delimiter && Peek().Value == "{")
-            {
-                depth++;
-            }
-            else if (Peek().TokenType == TokenType.Delimiter && Peek().Value == "}")
-            {
-                if (depth == 0)
-                {
-                    return;
-                }
-
-                depth--;
-            }
-            else if (Peek().TokenType == TokenType.Delimiter && Peek().Value == ";" && depth == 0)
-            {
-                Advance();
-                return;
-            }
-
-            Advance();
-        }
     }
 
     #endregion
@@ -791,7 +653,7 @@ public class GgScriptParser : IParser
                 genericArgs.Add(ParseTypeAnnotation());
             }
 
-            Consume(TokenType.Operator, ">", "GG0160", "期望 '>'");
+            Consume(TokenType.Operator, ">", "GG3040", "期望 '>'");
         }
 
         return new TypeAnnotation(SourceSpan.FromToken(startToken), name, genericArgs);
@@ -804,7 +666,7 @@ public class GgScriptParser : IParser
             return Advance().Value;
         }
 
-        return Consume(TokenType.Identifier, "GG0161", "期望类型名").Value;
+        return Consume(TokenType.Identifier, "GG3041", "期望类型名").Value;
     }
 
     #endregion
@@ -818,9 +680,9 @@ public class GgScriptParser : IParser
             return ParseIfStmt();
         }
 
-        if (Check(TokenType.Keyword, "loop"))
+        if (Check(TokenType.Keyword, "for"))
         {
-            return ParseLoopStmt();
+            return ParseForStmt();
         }
 
         if (Check(TokenType.Keyword, "while"))
@@ -828,9 +690,19 @@ public class GgScriptParser : IParser
             return ParseWhileStmt();
         }
 
+        if (Check(TokenType.Keyword, "loop"))
+        {
+            return ParseLoopStmt();
+        }
+
         if (Check(TokenType.Keyword, "return"))
         {
             return ParseReturnStmt();
+        }
+
+        if (Check(TokenType.Keyword, "discard"))
+        {
+            return ParseDiscardStmt();
         }
 
         if (Check(TokenType.Delimiter, "{"))
@@ -843,7 +715,7 @@ public class GgScriptParser : IParser
 
     private BlockStmt ParseBlockStmt()
     {
-        var startToken = Consume(TokenType.Delimiter, "{", "GG0170", "期望 '{'");
+        var startToken = Consume(TokenType.Delimiter, "{", "GG3050", "期望 '{'");
 
         var statements = new List<AstNode>();
 
@@ -857,14 +729,14 @@ public class GgScriptParser : IParser
             }
         }
 
-        Consume(TokenType.Delimiter, "}", "GG0171", "期望 '}'");
+        Consume(TokenType.Delimiter, "}", "GG3051", "期望 '}'");
 
         return new BlockStmt(SourceSpan.FromToken(startToken), statements);
     }
 
     private IfStmt ParseIfStmt()
     {
-        var startToken = ConsumeKeyword("if", "GG0172", "期望 'if' 关键字");
+        var startToken = ConsumeKeyword("if", "GG3052", "期望 'if' 关键字");
 
         var condition = ParseExpression();
 
@@ -886,9 +758,65 @@ public class GgScriptParser : IParser
         return new IfStmt(SourceSpan.FromToken(startToken), condition, thenBlock, elseBlock);
     }
 
+    private ForStmt ParseForStmt()
+    {
+        var startToken = ConsumeKeyword("for", "GG3053", "期望 'for' 关键字");
+
+        Consume(TokenType.Delimiter, "(", "GG3054", "期望 '('");
+
+        AstNode? initializer = null;
+        if (!Check(TokenType.Delimiter, ";"))
+        {
+            if (Check(TokenType.Keyword, "let"))
+            {
+                initializer = ParseVariableDecl();
+            }
+            else
+            {
+                initializer = ParseExpression();
+                Match(TokenType.Delimiter, ";");
+            }
+        }
+        else
+        {
+            Match(TokenType.Delimiter, ";");
+        }
+
+        AstNode? condition = null;
+        if (!Check(TokenType.Delimiter, ";"))
+        {
+            condition = ParseExpression();
+        }
+
+        Match(TokenType.Delimiter, ";");
+
+        AstNode? update = null;
+        if (!Check(TokenType.Delimiter, ")"))
+        {
+            update = ParseExpression();
+        }
+
+        Consume(TokenType.Delimiter, ")", "GG3055", "期望 ')'");
+
+        var body = ParseBlockStmt();
+
+        return new ForStmt(SourceSpan.FromToken(startToken), initializer, condition, update, body);
+    }
+
+    private WhileStmt ParseWhileStmt()
+    {
+        var startToken = ConsumeKeyword("while", "GG3056", "期望 'while' 关键字");
+
+        var condition = ParseExpression();
+
+        var body = ParseBlockStmt();
+
+        return new WhileStmt(SourceSpan.FromToken(startToken), condition, body);
+    }
+
     private LoopStmt ParseLoopStmt()
     {
-        var startToken = ConsumeKeyword("loop", "GG0173", "期望 'loop' 关键字");
+        var startToken = ConsumeKeyword("loop", "GG3057", "期望 'loop' 关键字");
 
         string? iteratorName = null;
         AstNode? iterable = null;
@@ -908,20 +836,9 @@ public class GgScriptParser : IParser
         return new LoopStmt(SourceSpan.FromToken(startToken), iteratorName, iterable, body);
     }
 
-    private WhileStmt ParseWhileStmt()
-    {
-        var startToken = ConsumeKeyword("while", "GG0174", "期望 'while' 关键字");
-
-        var condition = ParseExpression();
-
-        var body = ParseBlockStmt();
-
-        return new WhileStmt(SourceSpan.FromToken(startToken), condition, body);
-    }
-
     private ReturnStmt ParseReturnStmt()
     {
-        var startToken = ConsumeKeyword("return", "GG0175", "期望 'return' 关键字");
+        var startToken = ConsumeKeyword("return", "GG3058", "期望 'return' 关键字");
 
         AstNode? value = null;
 
@@ -933,6 +850,15 @@ public class GgScriptParser : IParser
         Match(TokenType.Delimiter, ";");
 
         return new ReturnStmt(SourceSpan.FromToken(startToken), value);
+    }
+
+    private DiscardStmt ParseDiscardStmt()
+    {
+        var startToken = ConsumeKeyword("discard", "GG3059", "期望 'discard' 关键字");
+
+        Match(TokenType.Delimiter, ";");
+
+        return new DiscardStmt(SourceSpan.FromToken(startToken));
     }
 
     private ExprStmt ParseExprStmt()
@@ -1071,10 +997,26 @@ public class GgScriptParser : IParser
 
         while (true)
         {
-            if (Match(TokenType.Delimiter, "."))
+            if (MatchDot())
             {
-                var memberName = Consume(TokenType.Identifier, "GG0180", "期望成员名").Value;
-                expr = new MemberAccessExpr(null, expr, memberName);
+                if (Check(TokenType.Identifier))
+                {
+                    var memberName = Advance().Value;
+
+                    if (IsSwizzlePattern(memberName))
+                    {
+                        expr = new SwizzleExpr(null, expr, memberName);
+                    }
+                    else
+                    {
+                        expr = new MemberAccessExpr(null, expr, memberName);
+                    }
+                }
+                else
+                {
+                    var memberName = Consume(TokenType.Identifier, "GG3060", "期望成员名").Value;
+                    expr = new MemberAccessExpr(null, expr, memberName);
+                }
             }
             else if (Check(TokenType.Delimiter, "("))
             {
@@ -1091,14 +1033,14 @@ public class GgScriptParser : IParser
                     }
                 }
 
-                Consume(TokenType.Delimiter, ")", "GG0181", "期望 ')'");
+                Consume(TokenType.Delimiter, ")", "GG3061", "期望 ')'");
                 expr = new CallExpr(null, expr, args);
             }
             else if (Check(TokenType.Delimiter, "["))
             {
                 Advance();
                 var index = ParseExpression();
-                Consume(TokenType.Delimiter, "]", "GG0182", "期望 ']'");
+                Consume(TokenType.Delimiter, "]", "GG3062", "期望 ']'");
                 expr = new IndexExpr(null, expr, index);
             }
             else
@@ -1108,6 +1050,26 @@ public class GgScriptParser : IParser
         }
 
         return expr;
+    }
+
+    private static bool IsSwizzlePattern(string name)
+    {
+        if (name.Length < 1 || name.Length > 4)
+        {
+            return false;
+        }
+
+        foreach (var c in name)
+        {
+            if (c != 'x' && c != 'y' && c != 'z' && c != 'w' &&
+                c != 'r' && c != 'g' && c != 'b' && c != 'a' &&
+                c != 's' && c != 't' && c != 'p' && c != 'q')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private AstNode ParsePrimary()
@@ -1136,45 +1098,6 @@ public class GgScriptParser : IParser
             return new LiteralExpr(SourceSpan.FromToken(token), kind, token.Value);
         }
 
-        if (Check(TokenType.Keyword, "create_entity"))
-        {
-            Advance();
-            return new CallExpr(null, new IdentifierExpr(null, "create_entity"), Array.Empty<AstNode>());
-        }
-
-        if (Check(TokenType.Keyword, "destroy_entity"))
-        {
-            Advance();
-            var arg = ParseExpression();
-            return new CallExpr(null, new IdentifierExpr(null, "destroy_entity"), new[] { arg });
-        }
-
-        if (Check(TokenType.Keyword, "new"))
-        {
-            Advance();
-            var typeName = ParseTypeAnnotation();
-            var args = new List<AstNode>();
-
-            if (Check(TokenType.Delimiter, "("))
-            {
-                Advance();
-
-                if (!Check(TokenType.Delimiter, ")"))
-                {
-                    args.Add(ParseExpression());
-
-                    while (Match(TokenType.Delimiter, ","))
-                    {
-                        args.Add(ParseExpression());
-                    }
-                }
-
-                Consume(TokenType.Delimiter, ")", "GG0183", "期望 ')'");
-            }
-
-            return new CallExpr(null, new IdentifierExpr(null, $"new_{typeName.Name}"), args);
-        }
-
         if (Check(TokenType.Identifier) || Check(TokenType.TypeKeyword))
         {
             var token = Advance();
@@ -1185,7 +1108,7 @@ public class GgScriptParser : IParser
         {
             Advance();
             var expr = ParseExpression();
-            Consume(TokenType.Delimiter, ")", "GG0184", "期望 ')'");
+            Consume(TokenType.Delimiter, ")", "GG3063", "期望 ')'");
 
             if (Check(TokenType.Operator, "=>"))
             {
@@ -1205,7 +1128,7 @@ public class GgScriptParser : IParser
         _diagnostics?.AddError(
             _filePath,
             SourceSpan.FromToken(errorToken),
-            "GG0185",
+            "GG3064",
             $"意外的标记 '{errorToken.Value}'");
 
         throw new ParseException($"意外的标记 '{errorToken.Value}'");
@@ -1213,7 +1136,7 @@ public class GgScriptParser : IParser
 
     private LambdaExpr ParseLambdaAfterParams(IReadOnlyList<ParameterDecl> parameters)
     {
-        Consume(TokenType.Operator, "=>", "GG0186", "期望 '=>'");
+        Consume(TokenType.Operator, "=>", "GG3065", "期望 '=>'");
 
         AstNode body;
 
@@ -1231,12 +1154,4 @@ public class GgScriptParser : IParser
 
     #endregion
 
-    #region Nested Types
-
-    private sealed class ParseException : Exception
-    {
-        public ParseException(string message) : base(message) { }
-    }
-
-    #endregion
-}
+    #region Nest

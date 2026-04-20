@@ -56,6 +56,12 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             NodeType.IfStmt => EvaluateIfStmt((IfStmt)node),
             NodeType.LoopStmt => EvaluateLoopStmt((LoopStmt)node),
             NodeType.MetaBlock => EvaluateMetaBlock((MetaBlock)node),
+            NodeType.StructDecl => node,
+            NodeType.ForStmt => EvaluateForStmt((ForStmt)node),
+            NodeType.DiscardStmt => node,
+            NodeType.SwizzleExpr => EvaluateSwizzleExpr((SwizzleExpr)node),
+            NodeType.UsingDecl => node,
+            NodeType.UniformBindingDecl => node,
             _ => node
         };
     }
@@ -145,6 +151,22 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
     {
         var body = EvaluateBlockStmt(node.Body);
         return node with { Body = body };
+    }
+
+    private AstNode EvaluateForStmt(ForStmt stmt)
+    {
+        var initializer = stmt.Initializer is not null ? EvaluateNode(stmt.Initializer) : null;
+        var condition = stmt.Condition is not null ? EvaluateNode(stmt.Condition) : null;
+        var update = stmt.Update is not null ? EvaluateNode(stmt.Update) : null;
+        var body = (BlockStmt)EvaluateNode(stmt.Body);
+
+        return new ForStmt(stmt.Span, initializer, condition, update, body);
+    }
+
+    private AstNode EvaluateSwizzleExpr(SwizzleExpr expr)
+    {
+        var obj = EvaluateNode(expr.Object);
+        return new SwizzleExpr(expr.Span, obj, expr.Components);
     }
 
     private AstNode EvaluateMetaBlock(MetaBlock node)

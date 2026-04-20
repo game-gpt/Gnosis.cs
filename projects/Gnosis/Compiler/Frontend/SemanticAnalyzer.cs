@@ -1,48 +1,34 @@
+using System.Linq;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.ValueObjects;
 using Gnosis.Compiler.ValueObjects.AST;
 
 namespace Gnosis.Compiler.Frontend;
 
-public class SemanticAnalyzer
+public class SemanticAnalyzer : BaseSemanticAnalyzer
 {
     #region Fields
 
-    private readonly DiagnosticSink _diagnostics;
     private readonly Dictionary<string, ComponentDecl> _components = new(StringComparer.Ordinal);
     private readonly Dictionary<string, SystemDecl> _systems = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, FunctionDecl> _functions = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, VariableDecl> _variables = new(StringComparer.Ordinal);
     private readonly Dictionary<string, WidgetDecl> _widgets = new(StringComparer.Ordinal);
     private readonly Dictionary<string, SceneDecl> _scenes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PluginDecl> _plugins = new(StringComparer.Ordinal);
-    private readonly Stack<Dictionary<string, TypeAnnotation?>> _scopes = new();
+    private readonly Dictionary<string, StructDecl> _structs = new(StringComparer.Ordinal);
 
     #endregion
 
     #region Constructors
 
-    public SemanticAnalyzer(DiagnosticSink diagnostics)
+    public SemanticAnalyzer(DiagnosticSink diagnostics) : base(diagnostics)
     {
-        _diagnostics = diagnostics;
     }
 
     #endregion
 
-    #region Public Methods
+    #region Protected Methods
 
-    public CompilationUnit Analyze(CompilationUnit unit)
-    {
-        BuildSymbolTable(unit);
-        ValidateDeclarations(unit);
-        return unit;
-    }
-
-    #endregion
-
-    #region Private Methods - Symbol Table
-
-    private void BuildSymbolTable(CompilationUnit unit)
+    protected override void BuildSymbolTable(CompilationUnit unit)
     {
         foreach (var decl in unit.Declarations)
         {
@@ -111,21 +97,50 @@ public class SemanticAnalyzer
                     var plugin = (PluginDecl)decl;
                     _plugins[plugin.Name] = plugin;
                     break;
+
+                case NodeType.StructDecl:
+                    var structDecl = (StructDecl)decl;
+                    if (_structs.ContainsKey(structDecl.Name))
+                    {
+                        _diagnostics.AddError(
+                            string.Empty,
+                            structDecl.Span,
+                            "GG0450",
+                            $"重复的结构体定义: {structDecl.Name}");
+                    }
+                    else
+                    {
+                        _structs[structDecl.Name] = structDecl;
+                    }
+                    break;
+
+                case NodeType.UsingDecl:
+                case NodeType.UniformBindingDecl:
+                    break;
             }
         }
     }
 
-    #endregion
-
-    #region Private Methods - Validation
-
-    private void ValidateDeclarations(CompilationUnit unit)
+    protected override void ValidateDeclarations(CompilationUnit unit)
     {
         foreach (var decl in unit.Declarations)
         {
             ValidateDeclaration(decl);
         }
     }
+
+    protected override bool IsKnownIdentifier(string name)
+    {
+        return base.IsKnownIdentifier(name) ||
+               _components.ContainsKey(name) ||
+               name == "create_entity" ||
+               name == "destroy_entity" ||
+               name == "Query";
+    }
+
+    #endregion
+
+    #region Private Methods
 
     private void ValidateDeclaration(AstNode decl)
     {
@@ -145,6 +160,12 @@ public class SemanticAnalyzer
                 break;
             case NodeType.PluginDecl:
                 ValidatePluginDecl((PluginDecl)decl);
+                break;
+            case NodeType.StructDecl:
+                ValidateStructDecl((StructDecl)decl);
+                break;
+            case NodeType.UniformBindingDecl:
+                ValidateUniformBindingDecl((UniformBindingDecl)decl);
                 break;
         }
     }
@@ -288,180 +309,54 @@ public class SemanticAnalyzer
         }
     }
 
-    private void ValidateBlockStmt(BlockStmt block)
+    private void ValidateStructDecl(StructDecl decl)
     {
-        PushScope();
-
-        foreach (var stmt in block.Statements)
+        foreach (var field in decl.Fields)
         {
-            ValidateStatement(stmt);
-        }
-
-        PopScope();
-    }
-
-    private void ValidateStatement(AstNode stmt)
-    {
-        switch (stmt.Type)
-        {
-            case NodeType.VariableDecl:
-                var varDecl = (VariableDecl)stmt;
-                AddVariable(varDecl.Name, varDecl.VarType);
-                if (varDecl.Initializer is not null)
-                {
-                    ValidateExpression(varDecl.Initializer);
-                }
-                break;
-
-            case NodeType.IfStmt:
-                var ifStmt = (IfStmt)stmt;
-                ValidateExpression(ifStmt.Condition);
-                ValidateStatement(ifStmt.ThenBlock);
-                if (ifStmt.ElseBlock is not null)
-                {
-                    ValidateStatement(ifStmt.ElseBlock);
-                }
-                break;
-
-            case NodeType.LoopStmt:
-                var loopStmt = (LoopStmt)stmt;
-                if (loopStmt.Iterable is not null)
-                {
-                    ValidateExpression(loopStmt.Iterable);
-                }
-                ValidateBlockStmt(loopStmt.Body);
-                break;
-
-            case NodeType.WhileStmt:
-                var whileStmt = (WhileStmt)stmt;
-                ValidateExpression(whileStmt.Condition);
-                ValidateBlockStmt(whileStmt.Body);
-                break;
-
-            case NodeType.ReturnStmt:
-                var returnStmt = (ReturnStmt)stmt;
-                if (returnStmt.Value is not null)
-                {
-                    ValidateExpression(returnStmt.Value);
-                }
-                break;
-
-            case NodeType.ExprStmt:
-                ValidateExpression(((ExprStmt)stmt).Expression);
-                break;
-
-            case NodeType.BlockStmt:
-                ValidateBlockStmt((BlockStmt)stmt);
-                break;
-        }
-    }
-
-    private void ValidateExpression(AstNode expr)
-    {
-        switch (expr.Type)
-        {
-            case NodeType.IdentifierExpr:
-                var idExpr = (IdentifierExpr)expr;
-                if (!IsVariableInScope(idExpr.Name) &&
-                    !_functions.ContainsKey(idExpr.Name) &&
-                    !_components.ContainsKey(idExpr.Name) &&
-                    idExpr.Name != "create_entity" &&
-                    idExpr.Name != "destroy_entity" &&
-                    idExpr.Name != "Query")
-                {
-                    _diagnostics.AddWarning(
-                        string.Empty,
-                        idExpr.Span,
-                        "GG0430",
-                        $"未定义的标识符: {idExpr.Name}");
-                }
-                break;
-
-            case NodeType.BinaryExpr:
-                var binExpr = (BinaryExpr)expr;
-                ValidateExpression(binExpr.Left);
-                ValidateExpression(binExpr.Right);
-                break;
-
-            case NodeType.UnaryExpr:
-                ValidateExpression(((UnaryExpr)expr).Operand);
-                break;
-
-            case NodeType.CallExpr:
-                var callExpr = (CallExpr)expr;
-                ValidateExpression(callExpr.Callee);
-                foreach (var arg in callExpr.Arguments)
-                {
-                    ValidateExpression(arg);
-                }
-                break;
-
-            case NodeType.MemberAccessExpr:
-                var memberExpr = (MemberAccessExpr)expr;
-                ValidateExpression(memberExpr.Object);
-                break;
-
-            case NodeType.IndexExpr:
-                var indexExpr = (IndexExpr)expr;
-                ValidateExpression(indexExpr.Object);
-                ValidateExpression(indexExpr.Index);
-                break;
-
-            case NodeType.AssignmentExpr:
-                var assignExpr = (AssignmentExpr)expr;
-                ValidateExpression(assignExpr.Target);
-                ValidateExpression(assignExpr.Value);
-                break;
-
-            case NodeType.LambdaExpr:
-                var lambdaExpr = (LambdaExpr)expr;
-                PushScope();
-                foreach (var param in lambdaExpr.Parameters)
-                {
-                    AddVariable(param.Name, param.ParamType);
-                }
-                ValidateExpression(lambdaExpr.Body);
-                PopScope();
-                break;
-        }
-    }
-
-    #endregion
-
-    #region Private Methods - Scope Management
-
-    private void PushScope()
-    {
-        _scopes.Push(new Dictionary<string, TypeAnnotation?>(StringComparer.Ordinal));
-    }
-
-    private void PopScope()
-    {
-        if (_scopes.Count > 0)
-        {
-            _scopes.Pop();
-        }
-    }
-
-    private void AddVariable(string name, TypeAnnotation? type)
-    {
-        if (_scopes.Count > 0)
-        {
-            _scopes.Peek()[name] = type;
-        }
-    }
-
-    private bool IsVariableInScope(string name)
-    {
-        foreach (var scope in _scopes)
-        {
-            if (scope.ContainsKey(name))
+            if (field.FieldType.Name == decl.Name)
             {
-                return true;
+                _diagnostics.AddError(
+                    string.Empty,
+                    field.Span,
+                    "GG0451",
+                    $"结构体字段类型不能与结构体名相同: {field.Name}");
             }
         }
+    }
 
-        return false;
+    private void ValidateUniformBindingDecl(UniformBindingDecl decl)
+    {
+        if (decl.Group.HasValue && decl.Group.Value < 0)
+        {
+            _diagnostics.AddError(
+                string.Empty,
+                decl.Span,
+                "GG0452",
+                $"Group 值不能为负数: {decl.Group.Value}");
+        }
+
+        if (decl.Binding.HasValue && decl.Binding.Value < 0)
+        {
+            _diagnostics.AddError(
+                string.Empty,
+                decl.Span,
+                "GG0453",
+                $"Binding 值不能为负数: {decl.Binding.Value}");
+        }
+    }
+
+    private static bool IsValidSwizzle(string components)
+    {
+        if (components.Length is < 1 or > 4)
+        {
+            return false;
+        }
+
+        var isXyzw = components.All(c => c is 'x' or 'y' or 'z' or 'w');
+        var isRgba = components.All(c => c is 'r' or 'g' or 'b' or 'a');
+        var isStpq = components.All(c => c is 's' or 't' or 'p' or 'q');
+
+        return isXyzw || isRgba || isStpq;
     }
 
     #endregion

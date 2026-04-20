@@ -15,6 +15,8 @@ public class DiagnosticSink
 
     public IReadOnlyList<Diagnostic> Diagnostics => _diagnostics.AsReadOnly();
 
+    public IEnumerable<Diagnostic> Errors => _diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error);
+
     public bool HasErrors => _diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
 
     #endregion

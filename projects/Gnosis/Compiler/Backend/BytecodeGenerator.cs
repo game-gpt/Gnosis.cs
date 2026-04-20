@@ -142,6 +142,14 @@ public class BytecodeGenerator : IBytecodeGenerator
             case NodeType.BlockStmt:
                 GenerateBlockStmt((BlockStmt)decl);
                 break;
+            case NodeType.StructDecl:
+            case NodeType.UsingDecl:
+            case NodeType.UniformBindingDecl:
+            case NodeType.DiscardStmt:
+                break;
+            case NodeType.ForStmt:
+                GenerateForStmt((ForStmt)decl);
+                break;
         }
     }
 
@@ -356,6 +364,14 @@ public class BytecodeGenerator : IBytecodeGenerator
             case NodeType.BlockStmt:
                 GenerateBlockStmt((BlockStmt)stmt);
                 break;
+            case NodeType.ForStmt:
+                GenerateForStmt((ForStmt)stmt);
+                break;
+            case NodeType.DiscardStmt:
+            case NodeType.UsingDecl:
+            case NodeType.UniformBindingDecl:
+            case NodeType.StructDecl:
+                break;
         }
     }
 
@@ -454,6 +470,48 @@ public class BytecodeGenerator : IBytecodeGenerator
         PatchJump(exitJump, _instructions.Count);
     }
 
+    private void GenerateForStmt(ForStmt stmt)
+    {
+        if (stmt.Initializer is not null)
+        {
+            GenerateStatement(stmt.Initializer);
+        }
+
+        var loopStart = _instructions.Count;
+
+        if (stmt.Condition is not null)
+        {
+            GenerateExpression(stmt.Condition);
+            Emit(OpCode.JumpIfFalse);
+            var jumpToEnd = _instructions.Count;
+            EmitInt(0);
+
+            GenerateBlockStmt(stmt.Body);
+
+            if (stmt.Update is not null)
+            {
+                GenerateExpression(stmt.Update);
+            }
+
+            Emit(OpCode.Jump);
+            EmitInt(loopStart);
+
+            PatchJump(jumpToEnd, _instructions.Count);
+        }
+        else
+        {
+            GenerateBlockStmt(stmt.Body);
+
+            if (stmt.Update is not null)
+            {
+                GenerateExpression(stmt.Update);
+            }
+
+            Emit(OpCode.Jump);
+            EmitInt(loopStart);
+        }
+    }
+
     #endregion
 
     #region Private Methods - Expressions
@@ -494,6 +552,9 @@ public class BytecodeGenerator : IBytecodeGenerator
                 break;
             case NodeType.MetaBlock:
                 GenerateMetaBlock((MetaBlock)expr);
+                break;
+            case NodeType.SwizzleExpr:
+                GenerateExpression(((SwizzleExpr)expr).Object);
                 break;
         }
     }
@@ -929,7 +990,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private static string ExtractModuleName(CompilationUnit unit)
     {
-        if (unit.FilePath is not null)
+        if (!string.IsNullOrEmpty(unit.FilePath))
         {
             return Path.GetFileNameWithoutExtension(unit.FilePath);
         }
