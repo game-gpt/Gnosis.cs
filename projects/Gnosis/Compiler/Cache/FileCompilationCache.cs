@@ -8,7 +8,7 @@ public class FileCompilationCache : ICompilationCache
     #region Fields
 
     private readonly string _cacheDirectory;
-    private readonly object _lock = new();
+    private readonly ReaderWriterLockSlim _lock = new();
 
     #endregion
 
@@ -30,7 +30,8 @@ public class FileCompilationCache : ICompilationCache
 
     public bool TryGet(string key, out byte[]? data)
     {
-        lock (_lock)
+        _lock.EnterReadLock();
+        try
         {
             var filePath = GetCacheFilePath(key);
 
@@ -43,20 +44,30 @@ public class FileCompilationCache : ICompilationCache
             data = File.ReadAllBytes(filePath);
             return true;
         }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
     }
 
     public void Set(string key, byte[] data)
     {
-        lock (_lock)
+        _lock.EnterWriteLock();
+        try
         {
             var filePath = GetCacheFilePath(key);
             File.WriteAllBytes(filePath, data);
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
         }
     }
 
     public void Invalidate(string key)
     {
-        lock (_lock)
+        _lock.EnterWriteLock();
+        try
         {
             var filePath = GetCacheFilePath(key);
 
@@ -65,11 +76,16 @@ public class FileCompilationCache : ICompilationCache
                 File.Delete(filePath);
             }
         }
+        finally
+        {
+            _lock.ExitWriteLock();
+        }
     }
 
     public void InvalidateAll()
     {
-        lock (_lock)
+        _lock.EnterWriteLock();
+        try
         {
             var files = Directory.GetFiles(_cacheDirectory, "*.cache");
 
@@ -77,6 +93,10 @@ public class FileCompilationCache : ICompilationCache
             {
                 File.Delete(file);
             }
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
         }
     }
 
