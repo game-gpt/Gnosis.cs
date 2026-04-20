@@ -1,17 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Gnosis</RootNamespace>
     <PackageId>Gnosis</PackageId>
     <Version>0.0.0</Version>
     <Authors>Gnosis Engine Team</Authors>
-    <Description>Gnosis Engine Core Library - A multi-stage programming game engine with bytecode VM, ECS runtime, and pluggable rendering backends</Description>
-    <PackageTags>game-engine;gnosis;bytecode-vm;ecs;multi-stage-programming;hot-reload;cross-platform</PackageTags>
+    <Description>Gnosis Engine Core Library - A multi-stage programming game engine with bytecode VM, ECS runtime, and compiler infrastructure</Description>
+    <PackageTags>game-engine;gnosis;bytecode-vm;ecs;multi-stage-programming;hot-reload;cross-platform;compiler</PackageTags>
     <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Editor\**" />
+    <Compile Remove="UI\**" />
+    <Compile Remove="Widget\**" />
+    <Compile Remove="Renderer\**" />
+    <Compile Remove="Shader\**" />
+    <Compile Remove="Pipeline\**" />
+    <Compile Remove="RHI\**" />
+    <Compile Remove="GameUI\**" />
+  </ItemGroup>
 
 </Project>
