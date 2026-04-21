@@ -1,5 +1,4 @@
 using Gnosis.Core;
-using Gnosis.Core.ValueObjects;
 using Gnosis.ECS;
 
 namespace Gnosis.Testing.Mocks

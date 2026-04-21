@@ -1,6 +1,6 @@
+using Gnosis.Compiler;
+using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Frontend;
-using Gnosis.Compiler.ValueObjects;
-using Gnosis.Compiler.ValueObjects.AST;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Compiler;

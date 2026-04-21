@@ -1,5 +1,5 @@
+using Gnosis.Compiler;
 using Gnosis.Compiler.Frontend;
-using Gnosis.Compiler.ValueObjects;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Compiler;

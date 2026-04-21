@@ -1,9 +1,10 @@
+using Gnosis.Assets.Formats;
+using Gnosis.Compiler;
+using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Backend;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Formats;
 using Gnosis.Compiler.Frontend;
-using Gnosis.Compiler.ValueObjects;
-using Gnosis.Compiler.ValueObjects.AST;
+using Gnosis.Editor.WidgetCompiler;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Compiler;
