@@ -1,5 +1,6 @@
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
+using Gnosis.Compiler.Meta;
 using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
 
 namespace Gnosis.Rendering.ShaderCompiler.Backend;
