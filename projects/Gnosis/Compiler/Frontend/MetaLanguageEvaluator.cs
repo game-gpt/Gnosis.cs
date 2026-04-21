@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Gnosis.Compiler.AST;
+using Gnosis.Compiler.Lexer;
+using Gnosis.Compiler.Parser;
 
 namespace Gnosis.Compiler.Frontend;
 
@@ -217,10 +219,10 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             return new BlockStmt(null, Array.Empty<AstNode>());
         }
 
-        var lexer = new GgScriptLexer();
+        var lexer = new GameScriptLexer();
         var tokens = lexer.Tokenize(expanded);
 
-        var parser = new GgScriptParser();
+        var parser = new GameScriptParser();
         var ast = parser.Parse(tokens);
 
         if (ast is CompilationUnit unit)

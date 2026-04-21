@@ -1,4 +1,6 @@
-namespace Gnosis.Compiler;
+using Gnosis.Compiler.Lexer;
+
+namespace Gnosis.Compiler.Parser;
 
 public interface IParser
 {

@@ -1,9 +1,9 @@
 using System.Text;
 using Gnosis.Compiler.Diagnostics;
 
-namespace Gnosis.Compiler.Frontend;
+namespace Gnosis.Compiler.Lexer;
 
-public class GgScriptLexer : ILexer
+public class GameScriptLexer : ILexer
 {
     #region Fields
 
@@ -51,7 +51,7 @@ public class GgScriptLexer : ILexer
 
     #region Constructors
 
-    public GgScriptLexer(DiagnosticSink? diagnostics = null)
+    public GameScriptLexer(DiagnosticSink? diagnostics = null)
     {
         _diagnostics = diagnostics;
     }

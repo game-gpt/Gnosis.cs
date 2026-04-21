@@ -1,3 +1,5 @@
+using Gnosis.Compiler.Lexer;
+
 namespace Gnosis.Compiler;
 
 public sealed record SourceSpan(string FilePath, int StartLine, int StartColumn, int EndLine, int EndColumn)

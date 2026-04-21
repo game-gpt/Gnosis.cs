@@ -1,9 +1,10 @@
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
+using Gnosis.Compiler.Lexer;
 
-namespace Gnosis.Compiler.Frontend;
+namespace Gnosis.Compiler.Parser;
 
-public class GgScriptParser : IParser
+public class GameScriptParser : IParser
 {
     #region Fields
 
@@ -16,7 +17,7 @@ public class GgScriptParser : IParser
 
     #region Constructors
 
-    public GgScriptParser(DiagnosticSink? diagnostics = null)
+    public GameScriptParser(DiagnosticSink? diagnostics = null)
     {
         _diagnostics = diagnostics;
     }

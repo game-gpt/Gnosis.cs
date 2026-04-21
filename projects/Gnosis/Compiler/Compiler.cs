@@ -3,10 +3,12 @@ using Gnosis.Compiler.Backend;
 using Gnosis.Compiler.Cache;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Frontend;
+using Gnosis.Compiler.Lexer;
+using Gnosis.Compiler.Parser;
 
 namespace Gnosis.Compiler;
 
-public class GGCompiler : IGGCompiler
+public class Compiler : ICompiler
 {
     #region Fields
 
@@ -18,7 +20,7 @@ public class GGCompiler : IGGCompiler
 
     #region Constructors
 
-    public GGCompiler(DiagnosticSink? diagnostics = null, ICompilationCache? cache = null, IMacroTable? macroTable = null)
+    public Compiler(DiagnosticSink? diagnostics = null, ICompilationCache? cache = null, IMacroTable? macroTable = null)
     {
         _diagnostics = diagnostics ?? new DiagnosticSink();
         _cache = cache ?? new InMemoryCompilationCache();
@@ -95,10 +97,10 @@ public class GGCompiler : IGGCompiler
         ChannelMacros macros,
         bool isEditorBuild)
     {
-        var lexer = new GgScriptLexer(_diagnostics);
+        var lexer = new GameScriptLexer(_diagnostics);
         var tokens = lexer.Tokenize(source);
 
-        var parser = new GgScriptParser(_diagnostics);
+        var parser = new GameScriptParser(_diagnostics);
         return parser.Parse(tokens);
     }
 

@@ -1,10 +1,11 @@
 namespace Gnosis.Compiler;
 
-public interface IGGCompiler
+public interface ICompiler
 {
     CompilationResult Compile(
         IReadOnlyList<string> sourceFiles,
         ArchTarget arch,
         ChannelMacros macros,
-        bool isEditorBuild = false);
+        bool isEditorBuild = false
+    );
 }

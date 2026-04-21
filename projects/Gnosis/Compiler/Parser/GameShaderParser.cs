@@ -1,10 +1,10 @@
-using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
+using Gnosis.Compiler.Lexer;
 
-namespace Gnosis.Rendering.ShaderCompiler.Frontend;
+namespace Gnosis.Compiler.Parser;
 
-public class GgShaderParser : IParser
+public class GameShaderParser : IParser
 {
     #region Fields
 
@@ -17,7 +17,7 @@ public class GgShaderParser : IParser
 
     #region Constructors
 
-    public GgShaderParser(DiagnosticSink? diagnostics = null)
+    public GameShaderParser(DiagnosticSink? diagnostics = null)
     {
         _diagnostics = diagnostics;
     }

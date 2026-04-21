@@ -1,4 +1,4 @@
-namespace Gnosis.Compiler;
+namespace Gnosis.Compiler.Lexer;
 
 public enum TokenType
 {

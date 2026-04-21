@@ -2,6 +2,8 @@ using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Frontend;
+using Gnosis.Compiler.Lexer;
+using Gnosis.Compiler.Parser;
 using Gnosis.Rendering.Shader;
 using Gnosis.Rendering.ShaderCompiler.Backend;
 using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
@@ -450,7 +452,7 @@ public class GgShaderCompiler : IShaderCompiler
         var lexer = new GgShaderLexer(_diagnostics);
         var tokens = lexer.Tokenize(source);
 
-        var parser = new GgShaderParser(_diagnostics);
+        var parser = new GameShaderParser(_diagnostics);
         var ast = parser.Parse(tokens);
 
         var macroTable = new MacroTable();
@@ -490,7 +492,7 @@ public class GgShaderCompiler : IShaderCompiler
         var irGenerator = new IrGenerator(_diagnostics);
         var lexer = new GgShaderLexer(_diagnostics);
         var tokens = lexer.Tokenize(sourceCode);
-        var parser = new GgShaderParser(_diagnostics);
+        var parser = new GameShaderParser(_diagnostics);
         var ast = parser.Parse(tokens);
         var ir = irGenerator.Generate((CompilationUnit)ast);
 
@@ -516,7 +518,7 @@ public class GgShaderCompiler : IShaderCompiler
             var lexer = new GgShaderLexer(_diagnostics);
             var tokens = lexer.Tokenize(sourceCode);
 
-            var parser = new GgShaderParser(_diagnostics);
+            var parser = new GameShaderParser(_diagnostics);
             var ast = parser.Parse(tokens);
 
             if (_diagnostics.Errors.Any())
