@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Gnosis.Assets.Formats;
-using Gnosis.Rendering.ShaderCompiler.Frontend;
+using Gnosis.Compiler.ShaderFrontend;
 
 namespace Gnosis.Rendering.Shader;
 
@@ -43,7 +43,7 @@ public class ShaderFormatHandler : FormatHandlerBase, IShaderFormat
     {
         if (target == ShaderTarget.SPIRV && shader.Language == ShaderLanguage.GGShader)
         {
-            var compiler = new GgShaderCompiler();
+            var compiler = new Compiler.ShaderFrontend.ShaderCompiler();
 
             try
             {

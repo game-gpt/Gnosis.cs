@@ -5,6 +5,7 @@ using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Frontend;
 using Gnosis.Compiler.Lexer;
 using Gnosis.Compiler.Parser;
+using MetaLanguageEvaluator = Gnosis.Compiler.ScriptFrontend.MetaLanguageEvaluator;
 
 namespace Gnosis.Compiler;
 

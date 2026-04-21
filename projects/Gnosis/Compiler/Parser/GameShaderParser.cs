@@ -304,6 +304,11 @@ public class GameShaderParser : IParser
                 return ParseStructDecl();
             }
 
+            if (Check(TokenType.Keyword, "neural"))
+            {
+                return ParseNeuralDecl();
+            }
+
             if (Check(TokenType.Keyword, "import"))
             {
                 return ParseImportDecl();
@@ -341,6 +346,11 @@ public class GameShaderParser : IParser
                 if (Check(TokenType.Keyword, "struct"))
                 {
                     return ParseStructDecl(attrs);
+                }
+
+                if (Check(TokenType.Keyword, "neural"))
+                {
+                    return ParseNeuralDecl(attrs);
                 }
 
                 if (Check(TokenType.Identifier, "cbuffer"))
@@ -1227,6 +1237,158 @@ public class GameShaderParser : IParser
         }
 
         return new LambdaExpr(null, parameters, body);
+    }
+
+    #endregion
+
+    #region Neural Parsing
+
+    private NeuralDecl ParseNeuralDecl(IReadOnlyList<AttributeDecl>? attrs = null)
+    {
+        var startToken = Peek();
+        Consume(TokenType.Keyword, "neural", "GG3070", "期望 'neural'");
+
+        var name = Consume(TokenType.Identifier, "GG3071", "期望神经层名称").Value;
+
+        var genericParams = new List<ParameterDecl>();
+        if (Check(TokenType.Delimiter, "<"))
+        {
+            Advance();
+            while (!Check(TokenType.Delimiter, ">") && !IsAtEnd())
+            {
+                var paramName = Consume(TokenType.Identifier, "GG3072", "期望泛型参数名称").Value;
+                Consume(TokenType.Punctuation, ":", "GG3073", "期望 ':'");
+                var paramType = ParseTypeAnnotation();
+                genericParams.Add(new ParameterDecl(null, paramName, paramType, Array.Empty<AttributeDecl>()));
+
+                if (Check(TokenType.Punctuation, ","))
+                {
+                    Advance();
+                }
+            }
+            Consume(TokenType.Delimiter, ">", "GG3074", "期望 '>'");
+        }
+
+        var parsedAttrs = attrs ?? new List<AttributeDecl>();
+        if (Check(TokenType.Attribute))
+        {
+            parsedAttrs = parsedAttrs.Concat(ParseAttributes()).ToList();
+        }
+
+        Consume(TokenType.Delimiter, "{", "GG3075", "期望 '{'");
+
+        var weights = new List<FieldDecl>();
+        FunctionDecl? forwardFunc = null;
+
+        while (!Check(TokenType.Delimiter, "}") && !IsAtEnd())
+        {
+            if (Check(TokenType.Keyword, "micro") || Check(TokenType.Identifier, "forward"))
+            {
+                if (Check(TokenType.Identifier, "forward"))
+                {
+                    Advance();
+                    forwardFunc = ParseForwardFunction(name);
+                }
+                else
+                {
+                    var func = ParseFunctionDecl();
+                    if (func is FunctionDecl fd && fd.Name == "forward")
+                    {
+                        forwardFunc = fd;
+                    }
+                }
+            }
+            else
+            {
+                var weightDecl = ParseWeightField();
+                if (weightDecl is not null)
+                {
+                    weights.Add(weightDecl);
+                }
+            }
+        }
+
+        Consume(TokenType.Delimiter, "}", "GG3076", "期望 '}'");
+
+        if (forwardFunc is null)
+        {
+            _diagnostics?.AddError(
+                _filePath,
+                SourceSpan.FromToken(startToken),
+                "GG3077",
+                $"神经层 '{name}' 缺少 forward 函数");
+            forwardFunc = new FunctionDecl(null, "forward", Array.Empty<ParameterDecl>(), null, null, Array.Empty<AttributeDecl>());
+        }
+
+        return new NeuralDecl(
+            SourceSpan.FromToken(startToken),
+            name,
+            genericParams,
+            weights,
+            forwardFunc,
+            parsedAttrs);
+    }
+
+    private FunctionDecl ParseForwardFunction(string neuralName)
+    {
+        var startToken = Peek();
+        Consume(TokenType.Delimiter, "(", "GG3078", "期望 '('");
+
+        var parameters = new List<ParameterDecl>();
+        while (!Check(TokenType.Delimiter, ")") && !IsAtEnd())
+        {
+            var paramName = Consume(TokenType.Identifier, "GG3079", "期望参数名称").Value;
+            Consume(TokenType.Punctuation, ":", "GG3080", "期望 ':'");
+            var paramType = ParseTypeAnnotation();
+            parameters.Add(new ParameterDecl(null, paramName, paramType, Array.Empty<AttributeDecl>()));
+
+            if (Check(TokenType.Punctuation, ","))
+            {
+                Advance();
+            }
+        }
+        Consume(TokenType.Delimiter, ")", "GG3081", "期望 ')'");
+
+        TypeAnnotation? returnType = null;
+        if (Check(TokenType.Operator, "->"))
+        {
+            Advance();
+            returnType = ParseTypeAnnotation();
+        }
+
+        BlockStmt? body = null;
+        if (Check(TokenType.Delimiter, "{"))
+        {
+            body = ParseBlockStmt();
+        }
+
+        return new FunctionDecl(
+            SourceSpan.FromToken(startToken),
+            "forward",
+            parameters,
+            returnType,
+            body,
+            Array.Empty<AttributeDecl>());
+    }
+
+    private FieldDecl? ParseWeightField()
+    {
+        var fieldAttrs = new List<AttributeDecl>();
+        while (Check(TokenType.Attribute))
+        {
+            fieldAttrs.AddRange(ParseAttributes());
+        }
+
+        var nameToken = Consume(TokenType.Identifier, "GG3082", "期望权重字段名称");
+        Consume(TokenType.Punctuation, ":", "GG3083", "期望 ':'");
+
+        var type = ParseTypeAnnotation();
+
+        return new FieldDecl(
+            SourceSpan.FromToken(nameToken),
+            nameToken.Value,
+            type,
+            fieldAttrs);
     }
 
     #endregion

@@ -1,9 +1,8 @@
-using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Frontend;
+using Gnosis.Compiler.ScriptFrontend;
 
-namespace Gnosis.Rendering.ShaderCompiler.Frontend;
+namespace Gnosis.Compiler.ShaderFrontend;
 
 public sealed record ShaderTypeInfo(
     string Name,

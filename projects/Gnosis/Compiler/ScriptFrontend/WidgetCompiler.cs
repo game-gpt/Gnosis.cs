@@ -2,9 +2,9 @@ using System.Text.RegularExpressions;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 
-namespace Gnosis.Compiler.Frontend;
+namespace Gnosis.Compiler.ScriptFrontend;
 
-public partial class GgWidgetCompiler
+public partial class WidgetCompiler
 {
     #region Fields
 
@@ -14,7 +14,7 @@ public partial class GgWidgetCompiler
 
     #region Constructors
 
-    public GgWidgetCompiler(DiagnosticSink? diagnostics = null)
+    public WidgetCompiler(DiagnosticSink? diagnostics = null)
     {
         _diagnostics = diagnostics ?? new DiagnosticSink();
     }

@@ -4,7 +4,7 @@ using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Lexer;
 using Gnosis.Compiler.Parser;
 
-namespace Gnosis.Compiler.Frontend;
+namespace Gnosis.Compiler.ScriptFrontend;
 
 public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 {
