@@ -4,7 +4,7 @@ public sealed class Canvas : ICanvas
 {
     #region Fields
 
-    private readonly List<IUIElement> _elements = new();
+    private readonly List<IUIElement> _elements = [];
 
     #endregion
 

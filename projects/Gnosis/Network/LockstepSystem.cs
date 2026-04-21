@@ -16,7 +16,7 @@ public sealed class LockstepSystem : ILockstepSystem
     private readonly Dictionary<int, byte[]> _currentInputs = new();
     private readonly Dictionary<int, byte[]> _pendingInputs = new();
     private readonly Dictionary<int, HashSet<int>> _confirmedPlayers = new();
-    private readonly List<int> _connectedPlayers = new();
+    private readonly List<int> _connectedPlayers = [];
     private readonly Dictionary<int, int> _stateHashes = new();
     private int _tickRate;
     private int _currentFrame;
@@ -175,7 +175,7 @@ public sealed class LockstepSystem : ILockstepSystem
 
         if (!_confirmedPlayers.TryGetValue(_currentFrame, out var confirmed))
         {
-            confirmed = new HashSet<int>();
+            confirmed = [];
             _confirmedPlayers[_currentFrame] = confirmed;
         }
 

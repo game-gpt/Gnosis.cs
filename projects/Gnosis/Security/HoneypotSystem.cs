@@ -10,7 +10,7 @@ public sealed class HoneypotSystem
     #region 字段
 
     private readonly Dictionary<string, HoneypotField> _fields = new();
-    private readonly List<HoneypotEntity> _entities = new();
+    private readonly List<HoneypotEntity> _entities = [];
 
     #endregion
 

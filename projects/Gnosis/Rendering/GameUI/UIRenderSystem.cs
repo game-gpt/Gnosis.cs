@@ -5,7 +5,7 @@ public sealed class UIRenderSystem : IUIRenderSystem
     #region Fields
 
     private ICanvasRenderer? _renderer;
-    private readonly List<ICanvas> _canvases = new();
+    private readonly List<ICanvas> _canvases = [];
 
     #endregion
 

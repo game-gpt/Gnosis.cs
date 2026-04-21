@@ -101,7 +101,7 @@ public sealed class RateLimiterImpl : IRateLimiter
 
     private sealed class RateLimitState
     {
-        private readonly List<double> _callTimes = new();
+        private readonly List<double> _callTimes = [];
 
         public int CallCount => _callTimes.Count;
 

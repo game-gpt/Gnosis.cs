@@ -27,8 +27,8 @@ public record AnimationKeyframe
 {
     public float Time { get; init; }
     public object Value { get; init; } = new object();
-    public float[] InTangent { get; init; } = Array.Empty<float>();
-    public float[] OutTangent { get; init; } = Array.Empty<float>();
+    public float[] InTangent { get; init; } = [];
+    public float[] OutTangent { get; init; } = [];
     public AnimationInterpolation Interpolation { get; init; }
 }
 

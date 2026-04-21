@@ -60,7 +60,7 @@ public static class EdgeCollapser
         for (int i = 0; i < vertices.Count; i++)
         {
             positions[i] = vertices[i].Position is { Length: >= 3 }
-                ? new float[] { vertices[i].Position[0], vertices[i].Position[1], vertices[i].Position[2] }
+                ? [vertices[i].Position[0], vertices[i].Position[1], vertices[i].Position[2]]
                 : new float[3];
         }
 
@@ -73,12 +73,12 @@ public static class EdgeCollapser
         var triangleVertices = new int[originalTriangleCount][];
         for (int i = 0; i < originalTriangleCount; i++)
         {
-            triangleVertices[i] = new int[]
-            {
+            triangleVertices[i] =
+            [
                 indices[i * 3],
                 indices[i * 3 + 1],
                 indices[i * 3 + 2]
-            };
+            ];
         }
 
         var vertexAlive = new bool[vertices.Count];
@@ -87,7 +87,7 @@ public static class EdgeCollapser
         var vertexTriangles = new HashSet<int>[vertices.Count];
         for (int i = 0; i < vertices.Count; i++)
         {
-            vertexTriangles[i] = new HashSet<int>();
+            vertexTriangles[i] = [];
         }
 
         for (int i = 0; i < originalTriangleCount; i++)
@@ -322,7 +322,7 @@ public static class EdgeCollapser
                     var original = originalVertices[oldIdx];
                     var newVertex = original with
                     {
-                        Position = new float[] { positions[oldIdx][0], positions[oldIdx][1], positions[oldIdx][2] }
+                        Position = [positions[oldIdx][0], positions[oldIdx][1], positions[oldIdx][2]]
                     };
                     newVertices.Add(newVertex);
                 }

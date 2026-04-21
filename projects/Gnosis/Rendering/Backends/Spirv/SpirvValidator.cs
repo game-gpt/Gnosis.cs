@@ -1,19 +1,19 @@
 using System.Text;
 
-namespace Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+namespace Gnosis.Rendering.Backends.Spirv;
 
 public sealed class SpirvValidator
 {
     #region Fields
 
-    private readonly List<string> _errors = new();
-    private readonly List<string> _warnings = new();
-    private readonly HashSet<uint> _declaredIds = new();
-    private readonly HashSet<uint> _usedIds = new();
-    private readonly HashSet<uint> _typeIds = new();
-    private readonly HashSet<uint> _functionIds = new();
-    private readonly HashSet<uint> _labelIds = new();
-    private readonly HashSet<uint> _variableIds = new();
+    private readonly List<string> _errors = [];
+    private readonly List<string> _warnings = [];
+    private readonly HashSet<uint> _declaredIds = [];
+    private readonly HashSet<uint> _usedIds = [];
+    private readonly HashSet<uint> _typeIds = [];
+    private readonly HashSet<uint> _functionIds = [];
+    private readonly HashSet<uint> _labelIds = [];
+    private readonly HashSet<uint> _variableIds = [];
     private readonly Dictionary<uint, uint> _idToType = new();
 
     #endregion

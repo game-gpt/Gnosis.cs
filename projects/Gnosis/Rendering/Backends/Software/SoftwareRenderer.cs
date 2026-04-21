@@ -218,7 +218,7 @@ public sealed class SoftwareRenderer
             return _fragmentFunction.Execute(interpolated, 0);
         }
 
-        return new float[] { 1, 1, 1, 1 };
+        return [1, 1, 1, 1];
     }
 
     private static (float, float, float) Barycentric(

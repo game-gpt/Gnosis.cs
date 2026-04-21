@@ -1,4 +1,4 @@
-namespace Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+namespace Gnosis.Rendering.Backends.Spirv;
 
 public sealed class SpirvTypeCache
 {

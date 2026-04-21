@@ -1,6 +1,6 @@
 using Gnosis.Compiler.AST;
 
-namespace Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
+namespace Gnosis.Rendering.Backends.ShaderIR;
 
 public enum ShaderExecutionModel
 {

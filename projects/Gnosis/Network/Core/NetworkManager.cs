@@ -16,7 +16,7 @@ public sealed class NetworkManager : INetworkManager
     private int _playerCount;
     private string? _lobbyId;
     private int _maxPlayers;
-    private readonly List<INetworkMessage> _pendingMessages = new();
+    private readonly List<INetworkMessage> _pendingMessages = [];
 
     #endregion
 
@@ -215,7 +215,7 @@ public sealed class NetworkManager : INetworkManager
     {
         if (_backend is null)
         {
-            return Enumerable.Empty<INetworkMessage>();
+            return [];
         }
 
         var received = _backend.Receive();

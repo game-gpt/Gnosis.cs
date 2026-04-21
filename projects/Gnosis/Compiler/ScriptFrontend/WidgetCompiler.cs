@@ -110,8 +110,8 @@ public partial class WidgetCompiler
         var defaultStr = match.Groups[4].Success ? match.Groups[4].Value.Trim() : null;
 
         var type = typeStr is not null
-            ? new TypeAnnotation(null, MapJsTypeToGgType(typeStr), Array.Empty<TypeAnnotation>())
-            : new TypeAnnotation(null, InferTypeFromDefault(defaultStr), Array.Empty<TypeAnnotation>());
+            ? new TypeAnnotation(null, MapJsTypeToGgType(typeStr), [])
+            : new TypeAnnotation(null, InferTypeFromDefault(defaultStr), []);
 
         AstNode? defaultValue = null;
         if (defaultStr is not null)
@@ -122,7 +122,7 @@ public partial class WidgetCompiler
         var attrs = new List<AttributeDecl>();
         if (!isMutable)
         {
-            attrs.Add(new AttributeDecl(null, "Readonly", Array.Empty<KeyValuePair<string, string>>()));
+            attrs.Add(new AttributeDecl(null, "Readonly", []));
         }
 
         return new FieldDecl(null, name, type, defaultValue, attrs);
@@ -233,7 +233,7 @@ public partial class WidgetCompiler
 
         var body = new BlockStmt(null, statements);
 
-        return new FunctionDecl(null, "render", Array.Empty<ParameterDecl>(), null, body, Array.Empty<AttributeDecl>());
+        return new FunctionDecl(null, "render", [], null, body, []);
     }
 
     private void ParseTemplateNodes(string template, List<AstNode> statements)
@@ -475,7 +475,7 @@ public partial class WidgetCompiler
             pos = nextClose + 1;
         }
 
-        return (new BlockStmt(null, Array.Empty<AstNode>()), pos);
+        return (new BlockStmt(null, []), pos);
     }
 
     private (BlockStmt children, int endPos) ParseChildContent(string template, int startPos, string parentTag)

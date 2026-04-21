@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+namespace Gnosis.Rendering.Backends.Spirv;
 
 public sealed class SpirvDisassembler
 {
@@ -97,7 +97,7 @@ public sealed class SpirvDisassembler
                 break;
 
             case SpirvConstants.Op.OpEntryPoint:
-                var ifIds = operands.Length > 3 ? operands[3..] : Array.Empty<uint>();
+                var ifIds = operands.Length > 3 ? operands[3..] : [];
                 _sb.AppendLine($"{name} {GetExecutionModelName(operands[0])} %{operands[1]} \"{ExtractString(operands, 2)}\" {FormatIds(ifIds)}");
                 break;
 
@@ -158,7 +158,7 @@ public sealed class SpirvDisassembler
 
             case SpirvConstants.Op.OpTypeStruct:
                 RegisterId(operands[0], $"struct_{operands[0]}");
-                var memberIds = operands.Length > 2 ? operands[2..] : Array.Empty<uint>();
+                var memberIds = operands.Length > 2 ? operands[2..] : [];
                 _sb.AppendLine($"{name} %{_idNames[operands[0]]} {FormatIds(memberIds)}");
                 break;
 
@@ -169,7 +169,7 @@ public sealed class SpirvDisassembler
 
             case SpirvConstants.Op.OpTypeFunction:
                 RegisterId(operands[0], $"fn_{operands[0]}");
-                var paramIds = operands.Length > 2 ? operands[2..] : Array.Empty<uint>();
+                var paramIds = operands.Length > 2 ? operands[2..] : [];
                 _sb.AppendLine($"{name} %{_idNames[operands[0]]} %{operands[1]} {FormatIds(paramIds)}");
                 break;
 
@@ -209,25 +209,25 @@ public sealed class SpirvDisassembler
 
             case SpirvConstants.Op.OpAccessChain:
                 RegisterId(operands[1], $"access_{operands[1]}");
-                var idxIds = operands.Length > 3 ? operands[3..] : Array.Empty<uint>();
+                var idxIds = operands.Length > 3 ? operands[3..] : [];
                 _sb.AppendLine($"%{_idNames[operands[1]]} = {name} %{operands[0]} %{operands[2]} {FormatIds(idxIds)}");
                 break;
 
             case SpirvConstants.Op.OpCompositeConstruct:
                 RegisterId(operands[1], $"comp_{operands[1]}");
-                var constituentIds = operands.Length > 2 ? operands[2..] : Array.Empty<uint>();
+                var constituentIds = operands.Length > 2 ? operands[2..] : [];
                 _sb.AppendLine($"%{_idNames[operands[1]]} = {name} %{operands[0]} {FormatIds(constituentIds)}");
                 break;
 
             case SpirvConstants.Op.OpCompositeExtract:
                 RegisterId(operands[1], $"extract_{operands[1]}");
-                var extractIndices = operands.Length > 3 ? operands[3..] : Array.Empty<uint>();
+                var extractIndices = operands.Length > 3 ? operands[3..] : [];
                 _sb.AppendLine($"%{_idNames[operands[1]]} = {name} %{operands[0]} %{operands[2]} {FormatIds(extractIndices)}");
                 break;
 
             case SpirvConstants.Op.OpVectorShuffle:
                 RegisterId(operands[1], $"shuffle_{operands[1]}");
-                var compIds = operands.Length > 4 ? operands[4..] : Array.Empty<uint>();
+                var compIds = operands.Length > 4 ? operands[4..] : [];
                 _sb.AppendLine($"%{_idNames[operands[1]]} = {name} %{operands[0]} %{operands[2]} %{operands[3]} {FormatIds(compIds)}");
                 break;
 

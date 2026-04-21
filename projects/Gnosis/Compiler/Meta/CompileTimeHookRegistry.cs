@@ -46,7 +46,7 @@ public sealed class CompileTimeHookRegistry
     public void Register(ICompileTimeHook hook)
     {
         var kindDict = _hooks.GetOrAdd(hook.Kind, _ => new());
-        var typeHooks = kindDict.GetOrAdd(hook.TargetTypeName, _ => new());
+        var typeHooks = kindDict.GetOrAdd(hook.TargetTypeName, _ => []);
         lock (typeHooks)
         {
             typeHooks.Add(hook);
@@ -78,7 +78,7 @@ public sealed class CompileTimeHookRegistry
             return result;
         }
 
-        return Array.Empty<ICompileTimeHook>();
+        return [];
     }
 
     /// <summary>

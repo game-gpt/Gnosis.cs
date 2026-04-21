@@ -23,7 +23,7 @@ public class VMState : IVMState
     public VMState()
     {
         _stack = new VMStack();
-        _modules = new List<IModule>();
+        _modules = [];
         _memoryManager = new MemoryManager();
         _ip = 0;
         _currentModule = null;

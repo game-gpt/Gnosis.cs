@@ -13,7 +13,7 @@ public sealed class DeterministicExecutor
     private readonly Dictionary<string, IDeterministicFunction> _functions = new();
     private readonly Stack<DeterministicRandom> _randomStack = new();
     private DeterministicRandom? _currentRandom;
-    private readonly List<ExecutionRecord> _executionLog = new();
+    private readonly List<ExecutionRecord> _executionLog = [];
     private bool _loggingEnabled;
     private int _maxLogSize = 1024;
 

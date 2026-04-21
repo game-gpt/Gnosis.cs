@@ -1,6 +1,4 @@
-using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
-
-namespace Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
+namespace Gnosis.Rendering.Backends.ShaderIR;
 
 /// <summary>
 /// 张量操作指令，用于 Tensor Core / Cooperative Matrix 执行路径

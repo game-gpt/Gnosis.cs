@@ -95,7 +95,7 @@ public sealed class BehaviorLogger
     {
         private readonly PlayerId _playerId;
         private readonly int _maxActions;
-        private readonly List<ActionRecord> _actions = new();
+        private readonly List<ActionRecord> _actions = [];
 
         public PlayerBehaviorLog(PlayerId playerId, int maxActions)
         {

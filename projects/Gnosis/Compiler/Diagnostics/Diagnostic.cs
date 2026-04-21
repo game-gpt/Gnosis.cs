@@ -22,7 +22,7 @@ public sealed record Diagnostic
         Span = span;
         ErrorCode = errorCode;
         Message = message;
-        Suggestions = suggestions ?? Array.Empty<string>();
+        Suggestions = suggestions ?? [];
     }
 
     public static Diagnostic Create(

@@ -13,7 +13,7 @@ public class GameLoop : IGameLoop
 
     private readonly ITimeManager _timeManager;
     private readonly ILogger _logger;
-    private readonly List<ISystem> _systems = new();
+    private readonly List<ISystem> _systems = [];
     private readonly Dictionary<SystemPhase, List<ISystem>> _systemsByPhase = new();
     private volatile bool _isRunning;
     private int _targetFrameRate;
@@ -60,7 +60,7 @@ public class GameLoop : IGameLoop
 
         foreach (SystemPhase phase in Enum.GetValues(typeof(SystemPhase)))
         {
-            _systemsByPhase[phase] = new List<ISystem>();
+            _systemsByPhase[phase] = [];
         }
     }
 
@@ -130,7 +130,7 @@ public class GameLoop : IGameLoop
 
         if (!_systemsByPhase.ContainsKey(system.Phase))
         {
-            _systemsByPhase[system.Phase] = new List<ISystem>();
+            _systemsByPhase[system.Phase] = [];
         }
 
         _systemsByPhase[system.Phase].Add(system);
@@ -210,8 +210,8 @@ public class GameLoop : IGameLoop
 
     private static IEnumerable<SystemPhase> GetOrderedPhases()
     {
-        return new[]
-        {
+        return
+        [
             SystemPhase.Initialization,
             SystemPhase.PreUpdate,
             SystemPhase.Update,
@@ -220,7 +220,7 @@ public class GameLoop : IGameLoop
             SystemPhase.Render,
             SystemPhase.PostRender,
             SystemPhase.Cleanup
-        };
+        ];
     }
 
     #endregion

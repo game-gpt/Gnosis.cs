@@ -18,7 +18,7 @@ public record TextureData
     public int ArrayLayers { get; init; } = 1;
     public TextureFormat Format { get; init; }
     public TextureDimension Dimension { get; init; }
-    public byte[] RawData { get; init; } = Array.Empty<byte>();
+    public byte[] RawData { get; init; } = [];
     public IReadOnlyList<byte[]> MipData { get; init; } = new List<byte[]>();
 }
 

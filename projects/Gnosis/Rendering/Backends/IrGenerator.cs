@@ -2,26 +2,26 @@ using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Meta;
-using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
+using Gnosis.Rendering.Backends.ShaderIR;
 
-namespace Gnosis.Rendering.ShaderCompiler.Backend;
+namespace Gnosis.Rendering.Backends;
 
 public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
 {
     #region Fields
 
     private readonly DiagnosticSink _diagnostics;
-    private readonly List<ShaderFunctionIr> _functions = new();
-    private readonly List<ShaderStructIr> _structs = new();
-    private readonly List<ShaderGlobalVariableIr> _globals = new();
-    private readonly List<ShaderEntryPointIr> _entryPoints = new();
-    private readonly List<ExternalFunctionRef> _externalFunctions = new();
+    private readonly List<ShaderFunctionIr> _functions = [];
+    private readonly List<ShaderStructIr> _structs = [];
+    private readonly List<ShaderGlobalVariableIr> _globals = [];
+    private readonly List<ShaderEntryPointIr> _entryPoints = [];
+    private readonly List<ExternalFunctionRef> _externalFunctions = [];
     private readonly Dictionary<string, ShaderIrType> _typeMap = new();
     private readonly Dictionary<string, ShaderIrType> _variableTypeMap = new();
     private readonly Dictionary<string, uint> _variableMap = new();
-    private readonly List<ShaderIrInstruction> _currentInstructions = new();
-    private readonly List<LocalVariableInstruction> _currentLocals = new();
-    private readonly List<string> _currentInterfaceVars = new();
+    private readonly List<ShaderIrInstruction> _currentInstructions = [];
+    private readonly List<LocalVariableInstruction> _currentLocals = [];
+    private readonly List<string> _currentInterfaceVars = [];
     private string _currentFilePath = "unknown";
     private uint _nextId = 1;
 
@@ -525,7 +525,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
                 if (structType.Fields[i].Name == node.MemberName)
                 {
                     var fieldType = structType.Fields[i].Type;
-                    var instruction = new AccessChainInstruction(fieldType, obj.ResultId, new[] { (uint)i })
+                    var instruction = new AccessChainInstruction(fieldType, obj.ResultId, [(uint)i])
                     {
                         ResultId = AllocateId(),
                         ResultType = fieldType
@@ -592,7 +592,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             _ => obj.ResultType ?? new ShaderIrType.VoidType()
         };
 
-        var instruction = new AccessChainInstruction(resultType, obj.ResultId, new[] { index.ResultId })
+        var instruction = new AccessChainInstruction(resultType, obj.ResultId, [index.ResultId])
         {
             ResultId = AllocateId(),
             ResultType = resultType

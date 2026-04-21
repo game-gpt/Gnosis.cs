@@ -57,7 +57,7 @@ public static class ForsythVertexCacheOptimizer
         for (var i = 0; i < vertexCount; i++)
         {
             cachePosition[i] = -1;
-            vertexTriangleList[i] = new List<int>();
+            vertexTriangleList[i] = [];
         }
 
         for (var i = 0; i < triangleCount; i++)

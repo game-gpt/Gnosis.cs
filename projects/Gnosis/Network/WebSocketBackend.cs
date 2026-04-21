@@ -20,7 +20,7 @@ public sealed class WebSocketBackend : NetworkBackendBase
 
     private ClientWebSocket? _clientWebSocket;
     private HttpListener? _serverListener;
-    private readonly List<WebSocket> _serverConnections = new();
+    private readonly List<WebSocket> _serverConnections = [];
     private CancellationTokenSource? _serverCts;
     private readonly ConcurrentQueue<INetworkMessage> _receiveBuffer = new();
     private TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(30);
@@ -449,11 +449,11 @@ public sealed class WebSocketBackend : NetworkBackendBase
 
         if (_isServerMode)
         {
-            BroadcastToClients(Array.Empty<byte>(), WebSocketMessageType.Binary);
+            BroadcastToClients([], WebSocketMessageType.Binary);
         }
         else
         {
-            SendToServer(Array.Empty<byte>(), WebSocketMessageType.Binary);
+            SendToServer([], WebSocketMessageType.Binary);
         }
     }
 

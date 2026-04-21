@@ -1,10 +1,10 @@
-namespace Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+namespace Gnosis.Rendering.Backends.Spirv;
 
 public sealed class SpirvBuilder
 {
     #region Fields
 
-    private readonly List<uint> _instructions = new();
+    private readonly List<uint> _instructions = [];
     private uint _nextId = 1;
     private uint _bound = 1;
 

@@ -54,7 +54,7 @@ public class VMStack
     {
         _operandStack = new object?[size];
         _sp = 0;
-        _callFrames = new List<CallFrame>();
+        _callFrames = [];
     }
 
     #endregion

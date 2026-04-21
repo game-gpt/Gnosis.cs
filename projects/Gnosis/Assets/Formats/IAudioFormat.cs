@@ -16,7 +16,7 @@ public record AudioData
     public float Duration { get; init; }
     public AudioEncoding Encoding { get; init; }
     public AudioCompression Compression { get; init; }
-    public byte[] RawData { get; init; } = Array.Empty<byte>();
+    public byte[] RawData { get; init; } = [];
     public IReadOnlyList<AudioMarker> Markers { get; init; } = new List<AudioMarker>();
 }
 

@@ -36,10 +36,7 @@ public class GameScriptLexer : ILexer
         "=>", "->", "::", "??"
     };
 
-    private static readonly HashSet<char> Delimiters = new()
-    {
-        '(', ')', '{', '}', ',', ';', '.'
-    };
+    private static readonly HashSet<char> Delimiters = ['(', ')', '{', '}', ',', ';', '.'];
 
     private string _source = string.Empty;
     private int _position;

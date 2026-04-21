@@ -3,10 +3,10 @@ using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Lexer;
 using Gnosis.Compiler.Parser;
 using Gnosis.Compiler.ScriptFrontend;
+using Gnosis.Rendering.Backends;
+using Gnosis.Rendering.Backends.ShaderIR;
+using Gnosis.Rendering.Backends.Spirv;
 using Gnosis.Rendering.Shader;
-using Gnosis.Rendering.ShaderCompiler.Backend;
-using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
-using Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
 
 namespace Gnosis.Compiler.ShaderFrontend;
 

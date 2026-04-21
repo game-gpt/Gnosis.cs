@@ -47,6 +47,6 @@ public sealed class NullNetworkBackend : NetworkBackendBase
     /// <returns>空的消息集合。</returns>
     protected override IEnumerable<INetworkMessage> ReceiveCore()
     {
-        return Enumerable.Empty<INetworkMessage>();
+        return [];
     }
 }

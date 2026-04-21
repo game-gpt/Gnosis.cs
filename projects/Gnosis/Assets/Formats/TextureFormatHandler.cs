@@ -35,11 +35,11 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
 {
     #region 常量
 
-    private static readonly byte[] PngMagic = { 0x89, 0x50, 0x4E, 0x47 };
-    private static readonly byte[] JpegMagic = { 0xFF, 0xD8, 0xFF };
-    private static readonly byte[] BmpMagic = { 0x42, 0x4D };
-    private static readonly byte[] DdsMagic = { 0x44, 0x44, 0x53, 0x20 };
-    private static readonly byte[] KtxMagic = { 0xAB, 0x4B, 0x54, 0x58 };
+    private static readonly byte[] PngMagic = [0x89, 0x50, 0x4E, 0x47];
+    private static readonly byte[] JpegMagic = [0xFF, 0xD8, 0xFF];
+    private static readonly byte[] BmpMagic = [0x42, 0x4D];
+    private static readonly byte[] DdsMagic = [0x44, 0x44, 0x53, 0x20];
+    private static readonly byte[] KtxMagic = [0xAB, 0x4B, 0x54, 0x58];
 
     private const string EngineExtension = ".gnosis-texture";
 

@@ -90,7 +90,7 @@ public sealed class ResponseStrategy
     {
         if (!_violationHistory.TryGetValue(playerId, out var history))
         {
-            history = new List<ViolationRecord>();
+            history = [];
             _violationHistory[playerId] = history;
         }
 

@@ -8,7 +8,7 @@ public class GameShaderParser : IParser
 {
     #region Fields
 
-    private IReadOnlyList<Token> _tokens = Array.Empty<Token>();
+    private IReadOnlyList<Token> _tokens = [];
     private int _current;
     private DiagnosticSink? _diagnostics;
     private string _filePath = string.Empty;
@@ -520,7 +520,7 @@ public class GameShaderParser : IParser
             }
         }
 
-        return new UniformBindingDecl(SourceSpan.FromToken(startToken), name, bindingType, typeAnnotation, group, binding, attrs ?? Array.Empty<AttributeDecl>());
+        return new UniformBindingDecl(SourceSpan.FromToken(startToken), name, bindingType, typeAnnotation, group, binding, attrs ?? []);
     }
 
     private StructDecl ParseStructDecl(IReadOnlyList<AttributeDecl>? attrs = null)
@@ -543,7 +543,7 @@ public class GameShaderParser : IParser
         Consume(TokenType.Delimiter, "}", "GG3016", "期望 '}'");
 
         var allAttrs = new List<AttributeDecl>();
-        allAttrs.Add(new AttributeDecl(SourceSpan.FromToken(startToken), "Struct", Array.Empty<KeyValuePair<string, string>>()));
+        allAttrs.Add(new AttributeDecl(SourceSpan.FromToken(startToken), "Struct", []));
         if (attrs is not null)
         {
             allAttrs.AddRange(attrs);
@@ -594,7 +594,7 @@ public class GameShaderParser : IParser
         Consume(TokenType.Delimiter, "}", "GG3021", "期望 '}'");
 
         var allAttrs = new List<AttributeDecl>();
-        allAttrs.Add(new AttributeDecl(SourceSpan.FromToken(startToken), "Binding", Array.Empty<KeyValuePair<string, string>>()));
+        allAttrs.Add(new AttributeDecl(SourceSpan.FromToken(startToken), "Binding", []));
         if (attrs is not null)
         {
             allAttrs.AddRange(attrs);
@@ -641,7 +641,7 @@ public class GameShaderParser : IParser
             Match(TokenType.Delimiter, ";");
         }
 
-        return new FunctionDecl(SourceSpan.FromToken(startToken), name, parameters, returnType, body, attrs ?? Array.Empty<AttributeDecl>());
+        return new FunctionDecl(SourceSpan.FromToken(startToken), name, parameters, returnType, body, attrs ?? []);
     }
 
     private ParameterDecl ParseParameterDecl()
@@ -654,7 +654,7 @@ public class GameShaderParser : IParser
 
         var paramType = ParseTypeAnnotation();
 
-        return new ParameterDecl(SourceSpan.FromToken(startToken), name, paramType, Array.Empty<AttributeDecl>());
+        return new ParameterDecl(SourceSpan.FromToken(startToken), name, paramType, []);
     }
 
     #endregion
@@ -1199,7 +1199,8 @@ public class GameShaderParser : IParser
 
             if (Check(TokenType.Operator, "=>"))
             {
-                return ParseLambdaAfterParams(new[] { new ParameterDecl(null, "it", new TypeAnnotation(null, "auto", Array.Empty<TypeAnnotation>()), Array.Empty<AttributeDecl>()) });
+                return ParseLambdaAfterParams([new ParameterDecl(null, "it", new TypeAnnotation(null, "auto", []), [])
+                ]);
             }
 
             return expr;
@@ -1259,7 +1260,7 @@ public class GameShaderParser : IParser
                 var paramName = Consume(TokenType.Identifier, "GG3072", "期望泛型参数名称").Value;
                 Consume(TokenType.Punctuation, ":", "GG3073", "期望 ':'");
                 var paramType = ParseTypeAnnotation();
-                genericParams.Add(new ParameterDecl(null, paramName, paramType, Array.Empty<AttributeDecl>()));
+                genericParams.Add(new ParameterDecl(null, paramName, paramType, []));
 
                 if (Check(TokenType.Punctuation, ","))
                 {
@@ -1317,7 +1318,7 @@ public class GameShaderParser : IParser
                 SourceSpan.FromToken(startToken),
                 "GG3077",
                 $"神经层 '{name}' 缺少 forward 函数");
-            forwardFunc = new FunctionDecl(null, "forward", Array.Empty<ParameterDecl>(), null, null, Array.Empty<AttributeDecl>());
+            forwardFunc = new FunctionDecl(null, "forward", [], null, null, []);
         }
 
         return new NeuralDecl(
@@ -1340,7 +1341,7 @@ public class GameShaderParser : IParser
             var paramName = Consume(TokenType.Identifier, "GG3079", "期望参数名称").Value;
             Consume(TokenType.Punctuation, ":", "GG3080", "期望 ':'");
             var paramType = ParseTypeAnnotation();
-            parameters.Add(new ParameterDecl(null, paramName, paramType, Array.Empty<AttributeDecl>()));
+            parameters.Add(new ParameterDecl(null, paramName, paramType, []));
 
             if (Check(TokenType.Punctuation, ","))
             {
@@ -1368,7 +1369,7 @@ public class GameShaderParser : IParser
             parameters,
             returnType,
             body,
-            Array.Empty<AttributeDecl>());
+            []);
     }
 
     private FieldDecl? ParseWeightField()

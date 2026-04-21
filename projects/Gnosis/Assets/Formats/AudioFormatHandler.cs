@@ -10,10 +10,10 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
 {
     #region 常量
 
-    private static readonly byte[] WavMagic = { 0x52, 0x49, 0x46, 0x46 };
-    private static readonly byte[] Mp3Id3Magic = { 0x49, 0x44, 0x33 };
-    private static readonly byte[] OggMagic = { 0x4F, 0x67, 0x67, 0x53 };
-    private static readonly byte[] FlacMagic = { 0x66, 0x4C, 0x61, 0x43 };
+    private static readonly byte[] WavMagic = [0x52, 0x49, 0x46, 0x46];
+    private static readonly byte[] Mp3Id3Magic = [0x49, 0x44, 0x33];
+    private static readonly byte[] OggMagic = [0x4F, 0x67, 0x67, 0x53];
+    private static readonly byte[] FlacMagic = [0x66, 0x4C, 0x61, 0x43];
 
     private const int MagicHeaderSize = 4;
 

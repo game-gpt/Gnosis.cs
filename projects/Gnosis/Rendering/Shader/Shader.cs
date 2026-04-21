@@ -53,7 +53,7 @@ public sealed class DelegateShaderModule : IShaderModule
     {
         Name = name;
         Functions = functions;
-        Bytecode = Array.Empty<byte>();
+        Bytecode = [];
         Language = language;
         Target = target;
     }
@@ -86,8 +86,8 @@ public static class BuiltinShaderModules
             MicroFunctionKind.Vertex,
             execute: (input, index) =>
             {
-                return new float[]
-                {
+                return
+                [
                     input[0],
                     input[1],
                     input[2],
@@ -96,7 +96,7 @@ public static class BuiltinShaderModules
                     input.Length > 4 ? input[4] : 1.0f,
                     input.Length > 5 ? input[5] : 1.0f,
                     input.Length > 6 ? input[6] : 1.0f
-                };
+                ];
             }
         );
 
@@ -105,17 +105,17 @@ public static class BuiltinShaderModules
             MicroFunctionKind.Fragment,
             execute: (interpolated, index) =>
             {
-                return new float[]
-                {
+                return
+                [
                     interpolated.Length > 4 ? interpolated[4] : 1.0f,
                     interpolated.Length > 5 ? interpolated[5] : 1.0f,
                     interpolated.Length > 6 ? interpolated[6] : 1.0f,
                     1.0f
-                };
+                ];
             }
         );
 
-        return new DelegateShaderModule("ui_uber", new IMicroFunction[] { vertexFunc, fragmentFunc });
+        return new DelegateShaderModule("ui_uber", [vertexFunc, fragmentFunc]);
     }
 
     public static IShaderModule CreateMeshShader()
@@ -133,7 +133,7 @@ public static class BuiltinShaderModules
                 var g = input.Length > 4 ? input[4] : 1.0f;
                 var b = input.Length > 5 ? input[5] : 1.0f;
 
-                return new float[] { x, y, z, 1.0f, r, g, b };
+                return [x, y, z, 1.0f, r, g, b];
             }
         );
 
@@ -146,10 +146,10 @@ public static class BuiltinShaderModules
                 var g = interpolated.Length > 5 ? interpolated[5] : 1.0f;
                 var b = interpolated.Length > 6 ? interpolated[6] : 1.0f;
 
-                return new float[] { r, g, b, 1.0f };
+                return [r, g, b, 1.0f];
             }
         );
 
-        return new DelegateShaderModule("mesh_default", new IMicroFunction[] { vertexFunc, fragmentFunc });
+        return new DelegateShaderModule("mesh_default", [vertexFunc, fragmentFunc]);
     }
 }

@@ -1,10 +1,10 @@
-namespace Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+namespace Gnosis.Rendering.Backends.Spirv;
 
 public sealed class SpirvOptimizer
 {
     #region Fields
 
-    private readonly List<IOptimizationPass> _passes = new();
+    private readonly List<IOptimizationPass> _passes = [];
 
     #endregion
 
@@ -40,7 +40,7 @@ public sealed class SpirvOptimizer
         {
             SpirvOptimizationLevel.Minimal => _passes.Take(1),
             SpirvOptimizationLevel.Default => _passes,
-            SpirvOptimizationLevel.Aggressive => _passes.Concat(new[] { new LoopInvariantCodeMotionPass() }),
+            SpirvOptimizationLevel.Aggressive => _passes.Concat([new LoopInvariantCodeMotionPass()]),
             _ => _passes
         };
 
@@ -821,11 +821,11 @@ public sealed class SpirvOptContext
 {
     #region Fields
 
-    private readonly HashSet<int> _deadInstructions = new();
+    private readonly HashSet<int> _deadInstructions = [];
     private readonly Dictionary<uint, uint> _idAliases = new();
     private readonly Dictionary<uint, (uint TypeId, ulong Value)> _constants = new();
-    private readonly HashSet<uint> _loopInvariantIds = new();
-    private readonly List<uint[]> _pendingInstructions = new();
+    private readonly HashSet<uint> _loopInvariantIds = [];
+    private readonly List<uint[]> _pendingInstructions = [];
     private readonly Dictionary<int, List<uint[]>> _hoistedInstructions = new();
     private uint _nextId;
 
@@ -944,7 +944,7 @@ public sealed class SpirvOptContext
     {
         if (!_hoistedInstructions.TryGetValue(insertBeforeIndex, out var list))
         {
-            list = new List<uint[]>();
+            list = [];
             _hoistedInstructions[insertBeforeIndex] = list;
         }
 

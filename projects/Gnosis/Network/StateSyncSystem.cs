@@ -17,8 +17,8 @@ public sealed class StateSyncSystem : IStateSyncSystem
     private readonly IMessageSerializer _serializer;
     private readonly Dictionary<EntityId, byte[]> _serverStates = new();
     private readonly Dictionary<EntityId, PredictedState> _predictedStates = new();
-    private readonly List<StateSnapshot> _pendingSnapshots = new();
-    private readonly List<StateSnapshot> _predictionHistory = new();
+    private readonly List<StateSnapshot> _pendingSnapshots = [];
+    private readonly List<StateSnapshot> _predictionHistory = [];
     private float _reconciliationThreshold = 0.1f;
     private int _maxPredictionHistory = 60;
 
@@ -310,7 +310,7 @@ public sealed class StateSyncSystem : IStateSyncSystem
     {
         if (data.Length <= 16)
         {
-            return Array.Empty<byte>();
+            return [];
         }
 
         var payload = new byte[data.Length - 16];

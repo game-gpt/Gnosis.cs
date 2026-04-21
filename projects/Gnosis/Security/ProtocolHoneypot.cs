@@ -10,8 +10,8 @@ public sealed class ProtocolHoneypot
     #region 字段
 
     private readonly Dictionary<EntityId, TrapEntity> _trapEntities = new();
-    private readonly List<ProtocolTrapField> _trapFields = new();
-    private readonly HashSet<PlayerId> _flaggedPlayers = new();
+    private readonly List<ProtocolTrapField> _trapFields = [];
+    private readonly HashSet<PlayerId> _flaggedPlayers = [];
 
     #endregion
 
@@ -111,7 +111,7 @@ public sealed class ProtocolHoneypot
     /// <returns>被标记的玩家 ID 集合</returns>
     public HashSet<PlayerId> GetFlaggedPlayers()
     {
-        return new HashSet<PlayerId>(_flaggedPlayers);
+        return [.._flaggedPlayers];
     }
 
     #endregion

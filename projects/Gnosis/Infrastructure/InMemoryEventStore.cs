@@ -11,7 +11,7 @@ public class InMemoryEventStore : IEventStore
     {
         if (!_events.ContainsKey(aggregateId))
         {
-            _events[aggregateId] = new List<IDomainEvent>();
+            _events[aggregateId] = [];
         }
         _events[aggregateId].Add(@event);
         return Task.CompletedTask;

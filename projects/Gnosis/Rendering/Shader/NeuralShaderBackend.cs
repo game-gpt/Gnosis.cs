@@ -1,6 +1,6 @@
 using Gnosis.Compiler.AST;
-using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
-using Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+using Gnosis.Rendering.Backends.ShaderIR;
+using Gnosis.Rendering.Backends.Spirv;
 
 namespace Gnosis.Rendering.Shader;
 

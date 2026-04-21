@@ -6,7 +6,7 @@ public class DiagnosticSink
 {
     #region Fields
 
-    private readonly List<Diagnostic> _diagnostics = new();
+    private readonly List<Diagnostic> _diagnostics = [];
 
     #endregion
 

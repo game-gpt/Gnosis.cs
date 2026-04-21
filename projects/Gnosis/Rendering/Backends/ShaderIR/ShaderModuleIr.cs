@@ -1,4 +1,4 @@
-namespace Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
+namespace Gnosis.Rendering.Backends.ShaderIR;
 
 public sealed record ShaderModuleIr(
     string Name,

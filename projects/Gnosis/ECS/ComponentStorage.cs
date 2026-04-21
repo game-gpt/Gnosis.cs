@@ -38,13 +38,13 @@ public class ComponentStorage : IComponentStorage
     {
         if (!_pools.TryGetValue(componentTypes[0], out var firstPool))
         {
-            return Array.Empty<EntityId>();
+            return [];
         }
 
         var firstEntityIds = firstPool.GetAllEntityIds();
         if (firstEntityIds.Count == 0)
         {
-            return Array.Empty<EntityId>();
+            return [];
         }
 
         var candidates = new HashSet<EntityId>(firstEntityIds);
@@ -53,20 +53,20 @@ public class ComponentStorage : IComponentStorage
         {
             if (!_pools.TryGetValue(componentTypes[i], out var pool))
             {
-                return Array.Empty<EntityId>();
+                return [];
             }
 
             var entityIds = pool.GetAllEntityIds();
             if (entityIds.Count == 0)
             {
-                return Array.Empty<EntityId>();
+                return [];
             }
 
             candidates.IntersectWith(entityIds);
 
             if (candidates.Count == 0)
             {
-                return Array.Empty<EntityId>();
+                return [];
             }
         }
 

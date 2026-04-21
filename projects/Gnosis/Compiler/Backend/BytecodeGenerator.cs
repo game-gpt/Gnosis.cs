@@ -32,15 +32,15 @@ public class BytecodeGenerator : IBytecodeGenerator
     public BytecodeGenerator(DiagnosticSink diagnostics)
     {
         _diagnostics = diagnostics;
-        _instructions = new List<byte>();
+        _instructions = [];
         _constants = new Dictionary<string, int>();
-        _constantPool = new List<object>();
+        _constantPool = [];
         _exportedSymbols = new Dictionary<string, int>();
-        _importedSymbols = new List<string>();
-        _dependencies = new List<string>();
+        _importedSymbols = [];
+        _dependencies = [];
         _localVariables = new Dictionary<string, int>();
         _nativeBindings = new Dictionary<string, int>();
-        _sourceMap = new List<(int Offset, SourceSpan? Span)>();
+        _sourceMap = [];
         _localCount = 0;
     }
 

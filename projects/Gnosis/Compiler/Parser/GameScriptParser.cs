@@ -8,7 +8,7 @@ public class GameScriptParser : IParser
 {
     #region Fields
 
-    private IReadOnlyList<Token> _tokens = Array.Empty<Token>();
+    private IReadOnlyList<Token> _tokens = [];
     private int _current;
     private DiagnosticSink? _diagnostics;
     private string _filePath = string.Empty;
@@ -342,7 +342,7 @@ public class GameScriptParser : IParser
 
         Consume(TokenType.Delimiter, "}", "GG0111", "期望 '}'");
 
-        return new ComponentDecl(SourceSpan.FromToken(startToken), name, attrs ?? Array.Empty<AttributeDecl>(), fields);
+        return new ComponentDecl(SourceSpan.FromToken(startToken), name, attrs ?? [], fields);
     }
 
     private FieldDecl ParseFieldDecl(IReadOnlyList<AttributeDecl> attrs)
@@ -393,7 +393,7 @@ public class GameScriptParser : IParser
 
         Consume(TokenType.Delimiter, "}", "GG0117", "期望 '}'");
 
-        return new SystemDecl(SourceSpan.FromToken(startToken), name, attrs ?? Array.Empty<AttributeDecl>(), queries, methods);
+        return new SystemDecl(SourceSpan.FromToken(startToken), name, attrs ?? [], queries, methods);
     }
 
     private QueryExpr ParseQueryDecl()
@@ -536,7 +536,7 @@ public class GameScriptParser : IParser
 
         var body = ParseBlockStmt();
 
-        return new FunctionDecl(SourceSpan.FromToken(startToken), name, parameters, returnType, body, attrs ?? Array.Empty<AttributeDecl>());
+        return new FunctionDecl(SourceSpan.FromToken(startToken), name, parameters, returnType, body, attrs ?? []);
     }
 
     private ParameterDecl ParseParameterDecl()
@@ -549,7 +549,7 @@ public class GameScriptParser : IParser
 
         var paramType = ParseTypeAnnotation();
 
-        return new ParameterDecl(SourceSpan.FromToken(startToken), name, paramType, Array.Empty<AttributeDecl>());
+        return new ParameterDecl(SourceSpan.FromToken(startToken), name, paramType, []);
     }
 
     private WidgetDecl ParseWidgetDecl()
@@ -567,7 +567,7 @@ public class GameScriptParser : IParser
         {
             if (Check(TokenType.Identifier, "render"))
             {
-                renderMethod = ParseLifecycleMethod(Array.Empty<AttributeDecl>());
+                renderMethod = ParseLifecycleMethod([]);
             }
             else
             {
@@ -1139,14 +1139,14 @@ public class GameScriptParser : IParser
         if (Check(TokenType.Keyword, "create_entity"))
         {
             Advance();
-            return new TermCallExpression(null, new IdentifierNode(null, "create_entity"), Array.Empty<AstNode>());
+            return new TermCallExpression(null, new IdentifierNode(null, "create_entity"), []);
         }
 
         if (Check(TokenType.Keyword, "destroy_entity"))
         {
             Advance();
             var arg = ParseExpression();
-            return new TermCallExpression(null, new IdentifierNode(null, "destroy_entity"), new[] { arg });
+            return new TermCallExpression(null, new IdentifierNode(null, "destroy_entity"), [arg]);
         }
 
         if (Check(TokenType.Keyword, "new"))
@@ -1189,7 +1189,8 @@ public class GameScriptParser : IParser
 
             if (Check(TokenType.Operator, "=>"))
             {
-                return ParseLambdaAfterParams(new[] { new ParameterDecl(null, "it", new TypeAnnotation(null, "auto", Array.Empty<TypeAnnotation>()), Array.Empty<AttributeDecl>()) });
+                return ParseLambdaAfterParams([new ParameterDecl(null, "it", new TypeAnnotation(null, "auto", []), [])
+                ]);
             }
 
             return expr;

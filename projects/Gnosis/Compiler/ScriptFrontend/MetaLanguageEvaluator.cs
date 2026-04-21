@@ -216,7 +216,7 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 
         if (string.IsNullOrWhiteSpace(expanded))
         {
-            return new BlockStmt(null, Array.Empty<AstNode>());
+            return new BlockStmt(null, []);
         }
 
         var lexer = new GameScriptLexer();

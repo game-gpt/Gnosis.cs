@@ -19,14 +19,14 @@ public record MeshData
 
 public record MeshVertex
 {
-    public float[] Position { get; init; } = Array.Empty<float>();
-    public float[] Normal { get; init; } = Array.Empty<float>();
-    public float[] Tangent { get; init; } = Array.Empty<float>();
-    public float[] Uv { get; init; } = Array.Empty<float>();
-    public float[] Uv2 { get; init; } = Array.Empty<float>();
-    public float[] Color { get; init; } = Array.Empty<float>();
-    public byte[] BoneIndices { get; init; } = Array.Empty<byte>();
-    public float[] BoneWeights { get; init; } = Array.Empty<float>();
+    public float[] Position { get; init; } = [];
+    public float[] Normal { get; init; } = [];
+    public float[] Tangent { get; init; } = [];
+    public float[] Uv { get; init; } = [];
+    public float[] Uv2 { get; init; } = [];
+    public float[] Color { get; init; } = [];
+    public byte[] BoneIndices { get; init; } = [];
+    public float[] BoneWeights { get; init; } = [];
 }
 
 public record MeshSubMesh
@@ -40,14 +40,14 @@ public record MeshBone
 {
     public string Name { get; init; } = string.Empty;
     public int ParentIndex { get; init; } = -1;
-    public float[] BindPose { get; init; } = Array.Empty<float>();
-    public float[] InverseBindPose { get; init; } = Array.Empty<float>();
+    public float[] BindPose { get; init; } = [];
+    public float[] InverseBindPose { get; init; } = [];
 }
 
 public record MeshBounds
 {
-    public float[] Center { get; init; } = Array.Empty<float>();
-    public float[] Extents { get; init; } = Array.Empty<float>();
+    public float[] Center { get; init; } = [];
+    public float[] Extents { get; init; } = [];
 }
 
 public record MeshOptimizationOptions

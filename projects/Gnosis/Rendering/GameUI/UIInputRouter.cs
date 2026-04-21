@@ -38,7 +38,7 @@ public sealed class UIInputRouter : IUIInputRouter
     {
         if (!_handlers.TryGetValue(layer, out var handlers))
         {
-            handlers = new List<Func<object, bool>>();
+            handlers = [];
             _handlers[layer] = handlers;
         }
 

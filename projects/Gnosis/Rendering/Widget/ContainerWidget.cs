@@ -2,7 +2,7 @@ namespace Gnosis.Rendering.Widget;
 
 public abstract class ContainerWidget : Widget, IContainerWidget
 {
-    private readonly List<Widget> _children = new();
+    private readonly List<Widget> _children = [];
 
     public IReadOnlyList<Widget> Children => _children;
 

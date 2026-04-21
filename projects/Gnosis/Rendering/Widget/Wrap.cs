@@ -26,7 +26,7 @@ public sealed class Wrap : ContainerWidget
     #region Fields
 
     // 存储每一行的子组件列表
-    private readonly List<List<Widget>> _runs = new();
+    private readonly List<List<Widget>> _runs = [];
 
     #endregion
 
@@ -60,7 +60,7 @@ public sealed class Wrap : ContainerWidget
                 totalCross += crossAxisMax + RunSpacing;
                 totalMain = Math.Max(totalMain, mainAxisUsed);
                 _runs.Add(currentRun);
-                currentRun = new List<Widget>();
+                currentRun = [];
                 mainAxisUsed = 0;
                 crossAxisMax = 0;
                 firstInRun = true;

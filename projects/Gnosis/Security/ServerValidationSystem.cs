@@ -10,7 +10,7 @@ public sealed class ServerValidationSystem : IServerValidator
     #region 字段
 
     private readonly Dictionary<PlayerId, PlayerValidationState> _playerStates = new();
-    private readonly List<SuspiciousActivityRecord> _suspiciousActivities = new();
+    private readonly List<SuspiciousActivityRecord> _suspiciousActivities = [];
 
     #endregion
 

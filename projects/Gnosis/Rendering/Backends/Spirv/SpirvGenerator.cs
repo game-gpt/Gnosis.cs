@@ -1,6 +1,6 @@
-using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
+using Gnosis.Rendering.Backends.ShaderIR;
 
-namespace Gnosis.Rendering.ShaderCompiler.Backend.Spirv;
+namespace Gnosis.Rendering.Backends.Spirv;
 
 public sealed class SpirvGenerator
 {
@@ -212,7 +212,7 @@ public sealed class SpirvGenerator
                     var structTypeId = _typeCache.GetStructType(
                         global.Resource.Type is ShaderIrType.StructType s
                             ? s.Fields.Select(f => MapType(f.Type)).ToArray()
-                            : Array.Empty<uint>(),
+                            : [],
                         global.Resource.Type is ShaderIrType.StructType s2 ? s2.Name : "unknown");
                     _builder.AddDecorate(structTypeId, SpirvConstants.Decoration.Block);
                 }
@@ -471,7 +471,7 @@ public sealed class SpirvGenerator
 
         if (mat.OpCode == ShaderIrOpCode.MatrixInverse)
         {
-            var resultId = _builder.AddExtInst(resultType, _glslStd450Id, glslInstruction, new[] { mat.LeftId });
+            var resultId = _builder.AddExtInst(resultType, _glslStd450Id, glslInstruction, [mat.LeftId]);
             _variableIds[mat.ResultId] = resultId;
         }
     }
