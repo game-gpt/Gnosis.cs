@@ -3,13 +3,13 @@ using Gnosis.Core;
 using Gnosis.Infrastructure;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.Engine;
+namespace Gnosis.Engine.Testing;
 
 /// <summary>
 /// Gnosis 引擎入口测试
 /// </summary>
 [TestFixture]
-public class GnosisEngineTests
+public class GnosisEngineTester
 {
     #region 字段
 
@@ -164,8 +164,8 @@ public class GnosisEngineTests
         public bool DirectoryExists(string path) => false;
         public void CreateDirectory(string path) { }
         public void DeleteFile(string path) { }
-        public IEnumerable<string> GetFiles(string path, string searchPattern = "*") => Array.Empty<string>();
-        public IEnumerable<string> GetDirectories(string path) => Array.Empty<string>();
+        public IEnumerable<string> GetFiles(string path, string searchPattern = "*") => [];
+        public IEnumerable<string> GetDirectories(string path) => [];
     }
 
     #endregion

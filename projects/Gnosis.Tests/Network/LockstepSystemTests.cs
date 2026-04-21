@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class LockstepSystemTests : TestBase
+    public class LockstepSystemTests : GnosisTester
     {
         private LockstepSystem _system = null!;
         private NetworkManager _networkManager = null!;
@@ -66,7 +67,7 @@ namespace Gnosis.Tests.Network
         public void SubmitInput_收集玩家输入()
         {
             _system.RegisterPlayer(1);
-            _system.SubmitInput(1, new byte[] { 42 });
+            _system.SubmitInput(1, [42]);
 
             var input = _system.GetPlayerInput(1);
 
@@ -78,8 +79,8 @@ namespace Gnosis.Tests.Network
         {
             _system.RegisterPlayer(1);
             _system.RegisterPlayer(2);
-            _system.SubmitInput(1, new byte[] { 1 });
-            _system.SubmitInput(2, new byte[] { 2 });
+            _system.SubmitInput(1, [1]);
+            _system.SubmitInput(2, [2]);
 
             Assert.That(_system.ReadyToAdvance, Is.True);
         }
@@ -89,7 +90,7 @@ namespace Gnosis.Tests.Network
         {
             _system.RegisterPlayer(1);
             _system.RegisterPlayer(2);
-            _system.SubmitInput(1, new byte[] { 1 });
+            _system.SubmitInput(1, [1]);
 
             Assert.That(_system.ReadyToAdvance, Is.False);
         }
@@ -106,7 +107,7 @@ namespace Gnosis.Tests.Network
         public void TryAdvance_准备好后推进帧号()
         {
             _system.RegisterPlayer(1);
-            _system.SubmitInput(1, new byte[] { 1 });
+            _system.SubmitInput(1, [1]);
 
             _system.TryAdvance();
 
@@ -143,7 +144,7 @@ namespace Gnosis.Tests.Network
             int? advancedFrame = null;
             _system.OnFrameAdvanced += (frame, _) => advancedFrame = frame;
 
-            var inputs = new Dictionary<int, byte[]> { { 1, new byte[] { 1 } } };
+            var inputs = new Dictionary<int, byte[]> { { 1, [1] } };
             _system.OnLockstepUpdate(5, inputs);
 
             Assert.That(advancedFrame, Is.EqualTo(5));
@@ -153,7 +154,7 @@ namespace Gnosis.Tests.Network
         public void Clear_重置所有状态()
         {
             _system.RegisterPlayer(1);
-            _system.SubmitInput(1, new byte[] { 1 });
+            _system.SubmitInput(1, [1]);
             _system.OnLockstepUpdate(10, new Dictionary<int, byte[]>());
 
             _system.Clear();

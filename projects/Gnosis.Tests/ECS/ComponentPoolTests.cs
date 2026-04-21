@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace Gnosis.Tests.ECS;
 
 [TestFixture]
-public class ComponentPoolTests : TestBase
+public class ComponentPoolTests : GnosisTester
 {
     private ComponentPool<Position> _pool;
 

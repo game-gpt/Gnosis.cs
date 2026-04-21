@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 namespace Gnosis.Testing
 {
-    public abstract class TestBase
+    public abstract class GnosisTester
     {
         protected Dictionary<string, object>? TestContext { get; private set; }
 

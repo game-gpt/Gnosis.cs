@@ -1,6 +1,6 @@
 using Gnosis.ECS.Core;
 
-namespace Gnosis.Testing.Mocks
+namespace Gnosis.Testing.Mocker
 {
     public class MockEntity : IEntity
     {

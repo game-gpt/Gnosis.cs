@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class DeterministicExecutorTests : TestBase
+    public class DeterministicExecutorTests : GnosisTester
     {
         private DeterministicExecutor _executor = null!;
 
@@ -74,7 +75,7 @@ namespace Gnosis.Tests.Network
         {
             _executor.RegisterFunction("test", new TestDeterministicFunction());
 
-            var result = _executor.Execute("test", 1, new byte[] { 42 });
+            var result = _executor.Execute("test", 1, [42]);
 
             Assert.That(result, Is.Not.Null);
         }
@@ -85,8 +86,8 @@ namespace Gnosis.Tests.Network
             _executor.RegisterFunction("test", new TestDeterministicFunction());
             _executor.LoggingEnabled = true;
 
-            _executor.Execute("test", 1, Array.Empty<byte>());
-            _executor.Execute("test", 2, Array.Empty<byte>());
+            _executor.Execute("test", 1, []);
+            _executor.Execute("test", 2, []);
 
             Assert.That(_executor.LogCount, Is.EqualTo(2));
         }
@@ -96,7 +97,7 @@ namespace Gnosis.Tests.Network
         {
             _executor.RegisterFunction("test", new TestDeterministicFunction());
             _executor.LoggingEnabled = true;
-            _executor.Execute("test", 1, Array.Empty<byte>());
+            _executor.Execute("test", 1, []);
 
             _executor.ClearLog();
 
@@ -117,7 +118,7 @@ namespace Gnosis.Tests.Network
         {
             public byte[] Execute(int frame, byte[] input, DeterministicRandom random)
             {
-                return new byte[] { (byte)frame };
+                return [(byte)frame];
             }
 
             public int GetStateHash()

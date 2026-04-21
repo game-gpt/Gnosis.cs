@@ -1,23 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <PackageId>Gnosis.Testing</PackageId>
+        <RootNamespace>Gnosis</RootNamespace>
+        <Description>Gnosis 引擎测试基础设施，提供测试基类、Mock 工厂和测试工具</Description>
+        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>true</IsPackable>
-    <IsTestProject>false</IsTestProject>
-    <PackageId>Gnosis.Testing</PackageId>
-    <Description>Gnosis 引擎测试基础设施，提供测试基类、Mock 工厂和测试工具</Description>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0"/>
+        <PackageReference Include="NUnit" Version="4.0.0"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="4.0.1"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NUnit" Version="4.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Gnosis\Gnosis.csproj" />
-  </ItemGroup>
-
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis\Gnosis.csproj"/>
+    </ItemGroup>
 </Project>

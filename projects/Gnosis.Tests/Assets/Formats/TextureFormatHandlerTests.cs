@@ -95,7 +95,7 @@ public class TextureFormatHandlerTests
             Width = 4,
             Height = 4,
             Format = TextureFormat.R8G8B8A8_UNorm,
-            RawData = Array.Empty<byte>()
+            RawData = []
         };
 
         Assert.ThrowsAsync<ArgumentException>(() =>
@@ -263,7 +263,7 @@ public class TextureFormatHandlerTests
     public async Task ValidateAsync_InvalidPngMagic_ReturnsFalse()
     {
         var pngPath = Path.Combine(_tempDir, "invalid.png");
-        await File.WriteAllBytesAsync(pngPath, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        await File.WriteAllBytesAsync(pngPath, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
         var result = await _handler.ValidateAsync(pngPath);
 

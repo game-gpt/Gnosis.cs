@@ -1,10 +1,11 @@
 using Gnosis.Core;
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class NullNetworkBackendTests : TestBase
+    public class NullNetworkBackendTests : GnosisTester
     {
         private NullNetworkBackend _backend = null!;
 

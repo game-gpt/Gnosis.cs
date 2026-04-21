@@ -1,8 +1,6 @@
-using Gnosis.ECS;
 using Gnosis.ECS.Core;
-using Gnosis.ECS.Interface;
 
-namespace Gnosis.Testing.Mocks
+namespace Gnosis.Testing.Mocker
 {
     public class MockWorld : ECS.Interface.IWorld
     {

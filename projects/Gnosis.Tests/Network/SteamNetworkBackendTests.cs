@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class SteamNetworkBackendTests : TestBase
+    public class SteamNetworkBackendTests : GnosisTester
     {
         [Test]
         public void SteamNetworkBackend_继承NetworkBackendBase()

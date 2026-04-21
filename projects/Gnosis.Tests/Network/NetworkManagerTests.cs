@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class NetworkManagerTests : TestBase
+    public class NetworkManagerTests : GnosisTester
     {
         private NetworkManager _manager = null!;
 

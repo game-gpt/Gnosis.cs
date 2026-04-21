@@ -3,13 +3,13 @@ using Gnosis.ECS;
 using Gnosis.Infrastructure;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.Engine;
+namespace Gnosis.Engine.Testing;
 
 /// <summary>
 /// 游戏主循环测试
 /// </summary>
 [TestFixture]
-public class GameLoopTests
+public class GameLoopTester
 {
     #region 字段
 

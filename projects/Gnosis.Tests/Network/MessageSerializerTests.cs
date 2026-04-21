@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class MessageSerializerTests : TestBase
+    public class MessageSerializerTests : GnosisTester
     {
         private MessageSerializer _serializer = null!;
 

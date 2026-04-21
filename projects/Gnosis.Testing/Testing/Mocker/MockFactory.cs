@@ -1,7 +1,6 @@
-using Gnosis.ECS;
 using Gnosis.ECS.Core;
 
-namespace Gnosis.Testing.Mocks
+namespace Gnosis.Testing.Mocker
 {
     public static class MockFactory
     {

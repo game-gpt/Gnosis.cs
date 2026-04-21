@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace Gnosis.Tests.ECS;
 
 [TestFixture]
-public class ComponentSerializerTests : TestBase
+public class ComponentSerializerTests : GnosisTester
 {
     private ComponentSerializer _serializer;
 

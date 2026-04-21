@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class NetworkModeSwitcherTests : TestBase
+    public class NetworkModeSwitcherTests : GnosisTester
     {
         private NetworkModeSwitcher _switcher = null!;
         private NetworkManager _networkManager = null!;

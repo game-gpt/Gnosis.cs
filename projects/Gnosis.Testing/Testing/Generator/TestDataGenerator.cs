@@ -1,7 +1,7 @@
 using Gnosis.ECS.Core;
 using Gnosis.Infrastructure;
 
-namespace Gnosis.Testing.Generators
+namespace Gnosis.Testing.Generator
 {
     public static class TestDataGenerator
     {

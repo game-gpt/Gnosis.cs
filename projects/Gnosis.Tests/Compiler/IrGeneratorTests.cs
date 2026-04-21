@@ -1,8 +1,8 @@
 using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Rendering.ShaderCompiler.Backend;
-using Gnosis.Rendering.ShaderCompiler.Backend.ShaderIR;
+using Gnosis.Rendering.Backends;
+using Gnosis.Rendering.Backends.ShaderIR;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Compiler;
@@ -27,19 +27,19 @@ public class IrGeneratorTests
         return new CompilationUnit(null, declarations.ToList(), "test.ggs");
     }
 
-    private static TypeAnnotation F32Type() => new(null, "f32", Array.Empty<TypeAnnotation>());
+    private static TypeAnnotation F32Type() => new(null, "f32", []);
 
-    private static TypeAnnotation I32Type() => new(null, "i32", Array.Empty<TypeAnnotation>());
+    private static TypeAnnotation I32Type() => new(null, "i32", []);
 
-    private static TypeAnnotation Vec3Type() => new(null, "vec3", new[] { F32Type() });
+    private static TypeAnnotation Vec3Type() => new(null, "vec3", [F32Type()]);
 
-    private static TypeAnnotation Vec4Type() => new(null, "vec4", new[] { F32Type() });
+    private static TypeAnnotation Vec4Type() => new(null, "vec4", [F32Type()]);
 
-    private static TypeAnnotation VoidType() => new(null, "void", Array.Empty<TypeAnnotation>());
+    private static TypeAnnotation VoidType() => new(null, "void", []);
 
-    private static TypeAnnotation BoolType() => new(null, "bool", Array.Empty<TypeAnnotation>());
+    private static TypeAnnotation BoolType() => new(null, "bool", []);
 
-    private static AttributeDecl FragmentAttr() => new(null, "Fragment", Array.Empty<KeyValuePair<string, string>>());
+    private static AttributeDecl FragmentAttr() => new(null, "Fragment", []);
 
     #endregion
 
@@ -49,13 +49,12 @@ public class IrGeneratorTests
     public void VisitLiteralExpr_IntLiteral_ContainsValue()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new ReturnStatement(null, new LiteralExpr(null, LiteralType.Number, 42))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -70,13 +69,12 @@ public class IrGeneratorTests
     public void VisitLiteralExpr_FloatLiteral_ContainsValue()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new ReturnStatement(null, new LiteralExpr(null, LiteralType.Number, 3.14f))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -90,13 +88,12 @@ public class IrGeneratorTests
     public void VisitLiteralExpr_BoolLiteral_ContainsValue()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new ReturnStatement(null, new LiteralExpr(null, LiteralType.Boolean, true))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -114,14 +111,13 @@ public class IrGeneratorTests
     public void VisitIdentifierExpr_ResolvesActualType()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 I32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "count", I32Type(), new LiteralExpr(null, LiteralType.Number, 0), false),
                     new ReturnStatement(null, new IdentifierNode(null, "count"))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -138,15 +134,14 @@ public class IrGeneratorTests
     public void VisitBinaryExpr_Comparison_GeneratesCompareInstruction()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "x", F32Type(), new LiteralExpr(null, LiteralType.Number, 1.0f), false),
                     new VariableDecl(null, "y", F32Type(), new LiteralExpr(null, LiteralType.Number, 2.0f), false),
                     new ReturnStatement(null, new BinaryExpr(null, new IdentifierNode(null, "x"), "<", new IdentifierNode(null, "y")))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -160,15 +155,14 @@ public class IrGeneratorTests
     public void VisitBinaryExpr_LogicalAnd_GeneratesLogicalInstruction()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "a", BoolType(), new LiteralExpr(null, LiteralType.Boolean, true), false),
                     new VariableDecl(null, "b", BoolType(), new LiteralExpr(null, LiteralType.Boolean, false), false),
                     new ReturnStatement(null, new BinaryExpr(null, new IdentifierNode(null, "a"), "&&", new IdentifierNode(null, "b")))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -188,10 +182,10 @@ public class IrGeneratorTests
             new StructDecl(null, "VertexOutput",
                 new List<FieldDecl>
                 {
-                    new(null, "position", Vec4Type(), null, Array.Empty<AttributeDecl>()),
-                    new(null, "uv", new TypeAnnotation(null, "vec2", new[] { F32Type() }), null, Array.Empty<AttributeDecl>())
+                    new(null, "position", Vec4Type(), null, []),
+                    new(null, "uv", new TypeAnnotation(null, "vec2", [F32Type()]), null, [])
                 },
-                Array.Empty<AttributeDecl>()));
+                []));
 
         var ir = _generator.Generate(ast);
 
@@ -212,17 +206,16 @@ public class IrGeneratorTests
     public void VisitForStmt_GeneratesLoopMergeAndBranches()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 VoidType(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new ForStmt(null,
                         new VariableDecl(null, "i", I32Type(), new LiteralExpr(null, LiteralType.Number, 0), false),
                         new BinaryExpr(null, new IdentifierNode(null, "i"), "<", new LiteralExpr(null, LiteralType.Number, 10)),
                         new AssignmentExpr(null, new IdentifierNode(null, "i"), "=", new BinaryExpr(null, new IdentifierNode(null, "i"), "+", new LiteralExpr(null, LiteralType.Number, 1))),
-                        new BlockStmt(null, Array.Empty<AstNode>()))
-                }),
-                new[] { FragmentAttr() }));
+                        new BlockStmt(null, []))
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -244,15 +237,14 @@ public class IrGeneratorTests
     public void VisitWhileStmt_GeneratesLoopMergeAndBranches()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 VoidType(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new WhileStmt(null,
                         new BinaryExpr(null, new IdentifierNode(null, "x"), ">", new LiteralExpr(null, LiteralType.Number, 0)),
-                        new BlockStmt(null, Array.Empty<AstNode>()))
-                }),
-                new[] { FragmentAttr() }));
+                        new BlockStmt(null, []))
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -271,13 +263,12 @@ public class IrGeneratorTests
     public void VisitDiscardStmt_GeneratesDiscardInstruction()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 VoidType(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new DiscardStmt(null)
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -293,14 +284,13 @@ public class IrGeneratorTests
     public void VisitSwizzleExpr_Xyzw_GeneratesVectorSwizzle()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 Vec3Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "v", Vec4Type(), null, false),
                     new ReturnStatement(null, new SwizzleExpr(null, new IdentifierNode(null, "v"), "xyz"))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -313,14 +303,13 @@ public class IrGeneratorTests
     public void VisitSwizzleExpr_Rgba_GeneratesVectorSwizzle()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 Vec3Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "color", Vec4Type(), null, false),
                     new ReturnStatement(null, new SwizzleExpr(null, new IdentifierNode(null, "color"), "rgb"))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -333,14 +322,13 @@ public class IrGeneratorTests
     public void VisitSwizzleExpr_SingleComponent_GeneratesCompositeExtract()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "v", Vec4Type(), null, false),
                     new ReturnStatement(null, new SwizzleExpr(null, new IdentifierNode(null, "v"), "x"))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -357,15 +345,14 @@ public class IrGeneratorTests
     public void VisitIndexExpr_GeneratesAccessChainInstruction()
     {
         var ast = CreateCompilationUnit(
-            new FunctionDecl(null, "main", Array.Empty<ParameterDecl>(),
+            new FunctionDecl(null, "main", [],
                 F32Type(),
-                new BlockStmt(null, new AstNode[]
-                {
+                new BlockStmt(null, [
                     new VariableDecl(null, "arr", Vec4Type(), null, false),
                     new VariableDecl(null, "i", I32Type(), new LiteralExpr(null, LiteralType.Number, 0), false),
                     new ReturnStatement(null, new TermIndexExpression(null, new IdentifierNode(null, "arr"), new IdentifierNode(null, "i")))
-                }),
-                new[] { FragmentAttr() }));
+                ]),
+                [FragmentAttr()]));
 
         var ir = _generator.Generate(ast);
 
@@ -382,8 +369,8 @@ public class IrGeneratorTests
     {
         var ast = CreateCompilationUnit(
             new UniformBindingDecl(null, "uniforms", "uniform",
-                new TypeAnnotation(null, "UniformBuffer", Array.Empty<TypeAnnotation>()),
-                0, 0, Array.Empty<AttributeDecl>()));
+                new TypeAnnotation(null, "UniformBuffer", []),
+                0, 0, []));
 
         var ir = _generator.Generate(ast);
 
@@ -401,8 +388,8 @@ public class IrGeneratorTests
     {
         var ast = CreateCompilationUnit(
             new UniformBindingDecl(null, "diffuse_texture", "texture_2d",
-                new TypeAnnotation(null, "texture_2d", new[] { F32Type() }),
-                0, 1, Array.Empty<AttributeDecl>()));
+                new TypeAnnotation(null, "texture_2d", [F32Type()]),
+                0, 1, []));
 
         var ir = _generator.Generate(ast);
 
@@ -419,9 +406,9 @@ public class IrGeneratorTests
     {
         var ast = CreateCompilationUnit(
             new SystemDecl(null, "MoveSystem",
-                Array.Empty<AttributeDecl>(),
-                Array.Empty<QueryExpr>(),
-                Array.Empty<FunctionDecl>()));
+                [],
+                [],
+                []));
 
         _generator.Generate(ast);
 
@@ -433,7 +420,7 @@ public class IrGeneratorTests
     {
         var ast = CreateCompilationUnit(
             new LoopStmt(null, "item", new IdentifierNode(null, "items"),
-                new BlockStmt(null, Array.Empty<AstNode>())));
+                new BlockStmt(null, [])));
 
         _generator.Generate(ast);
 

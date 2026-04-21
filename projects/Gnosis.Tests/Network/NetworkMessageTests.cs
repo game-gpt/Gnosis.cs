@@ -1,10 +1,11 @@
 using Gnosis.Core;
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class NetworkMessageTests : TestBase
+    public class NetworkMessageTests : GnosisTester
     {
         [Test]
         public void Create_设置所有字段()

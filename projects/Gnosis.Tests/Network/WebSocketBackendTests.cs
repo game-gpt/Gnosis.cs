@@ -1,9 +1,10 @@
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class WebSocketBackendTests : TestBase
+    public class WebSocketBackendTests : GnosisTester
     {
         [Test]
         public void WebSocketBackend_继承NetworkBackendBase()

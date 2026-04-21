@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace Gnosis.Tests.ECS;
 
 [TestFixture]
-public class ComponentStorageTests : TestBase
+public class ComponentStorageTests : GnosisTester
 {
     private ComponentStorage _storage;
 

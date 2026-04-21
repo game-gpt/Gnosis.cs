@@ -1,10 +1,11 @@
 using Gnosis.Core;
 using Gnosis.Network;
+using Gnosis.Testing;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Network
 {
-    public class StateSyncSystemTests : TestBase
+    public class StateSyncSystemTests : GnosisTester
     {
         private StateSyncSystem _system = null!;
         private NetworkManager _networkManager = null!;
@@ -47,7 +48,7 @@ namespace Gnosis.Tests.Network
         public void RegisterEntity_增加状态数量()
         {
             var entityId = EntityId.New();
-            _system.RegisterEntity(entityId, new byte[] { 1, 2, 3 });
+            _system.RegisterEntity(entityId, [1, 2, 3]);
 
             Assert.That(_system.ServerStateCount, Is.EqualTo(1));
             Assert.That(_system.PredictedStateCount, Is.EqualTo(1));
@@ -57,7 +58,7 @@ namespace Gnosis.Tests.Network
         public void UnregisterEntity_减少状态数量()
         {
             var entityId = EntityId.New();
-            _system.RegisterEntity(entityId, new byte[] { 1, 2, 3 });
+            _system.RegisterEntity(entityId, [1, 2, 3]);
             _system.UnregisterEntity(entityId);
 
             Assert.That(_system.ServerStateCount, Is.EqualTo(0));
@@ -92,7 +93,7 @@ namespace Gnosis.Tests.Network
         public void UpdatePredictedState_更新预测状态()
         {
             var entityId = EntityId.New();
-            _system.RegisterEntity(entityId, new byte[] { 1 });
+            _system.RegisterEntity(entityId, [1]);
             var newState = new byte[] { 2, 3, 4 };
 
             _system.UpdatePredictedState(entityId, newState);
@@ -104,12 +105,12 @@ namespace Gnosis.Tests.Network
         public void OnReceiveServerState_触发OnServerStateReceived事件()
         {
             var entityId = EntityId.New();
-            _system.RegisterEntity(entityId, new byte[] { 1 });
+            _system.RegisterEntity(entityId, [1]);
 
             EntityId? receivedEntityId = null;
             _system.OnServerStateReceived += (id, _) => receivedEntityId = id;
 
-            var stateData = BuildStateData(entityId, new byte[] { 5, 6 });
+            var stateData = BuildStateData(entityId, [5, 6]);
             _system.OnReceiveServerState(stateData);
 
             Assert.That(receivedEntityId, Is.EqualTo(entityId));
@@ -119,13 +120,13 @@ namespace Gnosis.Tests.Network
         public void OnReceiveServerState_预测误差大时触发OnReconciliation()
         {
             var entityId = EntityId.New();
-            _system.RegisterEntity(entityId, new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 });
+            _system.RegisterEntity(entityId, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
             _system.ReconciliationThreshold = 0.01f;
 
             bool reconciled = false;
             _system.OnReconciliation += (_, _) => reconciled = true;
 
-            var stateData = BuildStateData(entityId, new byte[] { 200, 200, 200, 200, 200, 200, 200, 200, 200, 200 });
+            var stateData = BuildStateData(entityId, [200, 200, 200, 200, 200, 200, 200, 200, 200, 200]);
             _system.OnReceiveServerState(stateData);
 
             Assert.That(reconciled, Is.True);
@@ -137,7 +138,7 @@ namespace Gnosis.Tests.Network
             bool eventFired = false;
             _system.OnServerStateReceived += (_, _) => eventFired = true;
 
-            _system.OnReceiveServerState(new byte[] { 1, 2, 3 });
+            _system.OnReceiveServerState([1, 2, 3]);
 
             Assert.That(eventFired, Is.False);
         }
@@ -145,8 +146,8 @@ namespace Gnosis.Tests.Network
         [Test]
         public void Clear_清除所有状态()
         {
-            _system.RegisterEntity(EntityId.New(), new byte[] { 1 });
-            _system.RegisterEntity(EntityId.New(), new byte[] { 2 });
+            _system.RegisterEntity(EntityId.New(), [1]);
+            _system.RegisterEntity(EntityId.New(), [2]);
 
             _system.Clear();
 

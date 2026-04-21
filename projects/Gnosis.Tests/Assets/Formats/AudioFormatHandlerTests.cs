@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace Gnosis.Tests.Assets.Formats;
 
 [TestFixture]
-public class AudioFormatHandlerTests : TestBase
+public class AudioFormatHandlerTests : GnosisTester
 {
     #region 测试数据构建
 
