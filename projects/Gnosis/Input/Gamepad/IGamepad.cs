@@ -1,4 +1,4 @@
-namespace Gnosis.Input.Interface;
+namespace Gnosis.Input.Gamepad;
 
 public interface IGamepad : IInputDevice
 {

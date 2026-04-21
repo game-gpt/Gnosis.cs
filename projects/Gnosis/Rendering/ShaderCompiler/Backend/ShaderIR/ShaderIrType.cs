@@ -16,6 +16,7 @@ public abstract record ShaderIrType(string Name)
     public sealed record FunctionType(ShaderIrType ReturnType, IReadOnlyList<ShaderIrType> ParameterTypes) : ShaderIrType("function");
     public sealed record AccelerationStructureType() : ShaderIrType("acceleration_structure");
     public sealed record ExternalType(string SymbolName) : ShaderIrType($"external<{SymbolName}>");
+    public sealed record TensorType(ShaderIrType ElementType, IReadOnlyList<TensorDimensionIr> Dimensions) : ShaderIrType($"tensor<{ElementType.Name},[{string.Join(",", Dimensions.Select(d => d.IsDynamic ? "?" : d.StaticSize.ToString()))}]>");
 }
 
 public enum StorageClass
@@ -40,3 +41,5 @@ public enum StorageClass
 }
 
 public record ShaderStructFieldIr(string Name, ShaderIrType Type, uint Offset);
+
+public sealed record TensorDimensionIr(bool IsDynamic, int StaticSize, string? DynamicName);

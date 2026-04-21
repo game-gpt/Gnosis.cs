@@ -1,4 +1,9 @@
-namespace Gnosis.Input.Interface;
+using Gnosis.Input.Gamepad;
+using Gnosis.Input.Keyboard;
+using Gnosis.Input.Mouse;
+using Gnosis.Input.Touch;
+
+namespace Gnosis.Input;
 
 public interface IInputSystem
 {

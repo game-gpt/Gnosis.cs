@@ -18,21 +18,22 @@ public class GgShaderLexer
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
     {
         "micro", "struct", "let", "import", "using", "return", "if", "else",
-        "for", "while", "true", "false", "null", "new", "discard"
+        "for", "while", "true", "false", "null", "new", "discard", "neural"
     };
 
     private static readonly HashSet<string> TypeKeywords = new(StringComparer.Ordinal)
     {
         "void", "bool", "i32", "u32", "f32", "f64",
         "vec2", "vec3", "vec4", "mat2", "mat3", "mat4",
-        "texture_2d", "sampler", "image_2d"
+        "texture_2d", "sampler", "image_2d", "tensor"
     };
 
     private static readonly HashSet<string> AttributeNames = new(StringComparer.Ordinal)
     {
         "Vertex", "Fragment", "Compute", "WorkgroupSize",
         "Group", "Binding", "Builtin", "Location", "PushConstant",
-        "SpecializationConstant", "InputAttachment"
+        "SpecializationConstant", "InputAttachment",
+        "precision", "weights", "layout", "NeuralModel"
     };
 
     private string _source = string.Empty;

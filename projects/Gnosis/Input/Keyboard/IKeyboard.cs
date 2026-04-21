@@ -1,4 +1,4 @@
-namespace Gnosis.Input.Interface;
+namespace Gnosis.Input.Keyboard;
 
 public interface IKeyboard : IInputDevice
 {
