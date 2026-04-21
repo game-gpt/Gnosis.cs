@@ -1,9 +1,33 @@
 namespace Gnosis.Compiler.AST;
 
+/// <summary>
+/// 表示特性声明节点（用于添加元数据）
+/// </summary>
+/// <remarks>
+/// 语法示例：
+/// <code>
+/// [inline]                           // 无参数特性
+/// fn fastFunc() { }
+/// 
+/// [range(min = 0, max = 100)]        // 带命名参数的特性
+/// let value: int;
+/// 
+/// [deprecated("use newFunc instead")] // 带字符串参数的特性
+/// fn oldFunc() { }
+/// 
+/// [serialize, json]                  // 多个特性
+/// struct Data {
+///     name: string;
+/// }
+/// </code>
+/// </remarks>
 public sealed record AttributeDecl(
     SourceSpan? Span,
     string Name,
     IReadOnlyList<KeyValuePair<string, string>> Arguments) : AstNode(NodeType.AttributeDecl, Span)
 {
+    /// <summary>
+    /// 接受访问者访问
+    /// </summary>
     public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitAttributeDecl(this);
 }

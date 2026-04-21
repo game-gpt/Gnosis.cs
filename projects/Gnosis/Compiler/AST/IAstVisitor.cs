@@ -1,5 +1,24 @@
 namespace Gnosis.Compiler.AST;
 
+/// <summary>
+/// AST 访问者接口，用于实现访问者模式
+/// </summary>
+/// <typeparam name="T">访问操作的返回类型</typeparam>
+/// <remarks>
+/// 使用示例：
+/// <code>
+/// class Printer : IAstVisitor&lt;string&gt;
+/// {
+///     public string VisitBinaryExpr(BinaryExpr node) =&gt;
+///         $"({Visit(node.Left)} {node.Operator} {Visit(node.Right)})";
+///     
+///     public string VisitLiteralExpr(LiteralExpr node) =&gt;
+///         node.Value?.ToString() ?? "null";
+///     
+///     // ... 其他 Visit 方法
+/// }
+/// </code>
+/// </remarks>
 public interface IAstVisitor<out T>
 {
     T VisitCompilationUnit(CompilationUnit node);

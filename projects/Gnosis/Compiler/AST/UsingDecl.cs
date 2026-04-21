@@ -1,9 +1,23 @@
 namespace Gnosis.Compiler.AST;
 
+/// <summary>
+/// 表示命名空间使用声明节点
+/// </summary>
+/// <remarks>
+/// 语法示例：
+/// <code>
+/// using std::io;                     // 导入整个命名空间
+/// using std::math::{sin, cos};       // 选择性导入
+/// using engine::render::*;           // 导入所有内容
+/// </code>
+/// </remarks>
 public sealed record UsingDecl(
     SourceSpan? Span,
     string NamespacePath,
     IReadOnlyList<string> Selections) : AstNode(NodeType.UsingDecl, Span)
 {
+    /// <summary>
+    /// 接受访问者访问
+    /// </summary>
     public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitUsingDecl(this);
 }
