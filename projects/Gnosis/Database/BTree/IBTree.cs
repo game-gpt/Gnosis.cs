@@ -1,3 +1,5 @@
+using Gnosis.Database.Core;
+
 namespace Gnosis.Database.BTree;
 
 public interface IBTree : IDisposable

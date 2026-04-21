@@ -1,4 +1,5 @@
 using Gnosis.Editor.Widget;
+using Gnosis.Rendering.Widget;
 using UiColor = Gnosis.Editor.Widget.Color;
 using UiDock = Gnosis.Editor.Widget.Dock;
 

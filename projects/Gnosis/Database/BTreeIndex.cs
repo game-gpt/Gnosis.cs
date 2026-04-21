@@ -1,4 +1,5 @@
 using Gnosis.Database.BTree;
+using Gnosis.Database.Core;
 
 namespace Gnosis.Database;
 

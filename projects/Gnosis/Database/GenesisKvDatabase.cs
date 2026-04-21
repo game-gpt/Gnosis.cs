@@ -1,3 +1,4 @@
+using Gnosis.Database.BTree;
 using Gnosis.Database.Core;
 using Gnosis.Database.SHM;
 using Gnosis.Database.WAL;

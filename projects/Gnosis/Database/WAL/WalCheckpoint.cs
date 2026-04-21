@@ -4,7 +4,7 @@ namespace Gnosis.Database.WAL;
 
 public readonly record struct WalCheckpoint(
     SequenceNumber Sequence,
-    Timestamp Timestamp,
+    Infrastructure.Timestamp Timestamp,
     long DataFileOffset,
     int DirtyPageCount)
 {

@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Text.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -113,7 +114,7 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
     {
         return await Task.Run(() =>
         {
-            using var image = Image.Load<Rgba32>(path);
+            using var image = MediaTypeNames.Image.Load<Rgba32>(path);
             var rawData = ImageToRgbaBytes(image);
 
             return new TextureData
@@ -404,7 +405,7 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
     /// </summary>
     private static Image<Rgba32> RgbaBytesToImage(byte[] rgbaData, int width, int height)
     {
-        return Image.LoadPixelData<Rgba32>(rgbaData, width, height);
+        return MediaTypeNames.Image.LoadPixelData<Rgba32>(rgbaData, width, height);
     }
 
     /// <summary>

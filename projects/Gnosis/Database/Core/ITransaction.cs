@@ -1,3 +1,5 @@
+using Gnosis.Infrastructure;
+
 namespace Gnosis.Database.Core;
 
 public interface ITransaction : IDisposable

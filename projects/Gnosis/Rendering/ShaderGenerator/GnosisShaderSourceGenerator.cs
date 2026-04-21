@@ -1,5 +1,6 @@
 using System.Text;
 using Gnosis.Compiler.Diagnostics;
+using Gnosis.Compiler.ShaderFrontend;
 using Gnosis.Rendering.ShaderCompiler.Frontend;
 
 namespace Gnosis.Rendering.ShaderGenerator;
@@ -162,7 +163,7 @@ public sealed class GnosisShaderSourceGenerator : ISourceGenerator
             return "Shader";
         }
 
-        var parts = name.Split(new[] { '_', '-', '.' }, StringSplitOptions.RemoveEmptyEntries);
+        var parts = name.Split(['_', '-', '.'], StringSplitOptions.RemoveEmptyEntries);
         var sb = new StringBuilder();
         foreach (var part in parts)
         {

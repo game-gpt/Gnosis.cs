@@ -16,8 +16,8 @@ public class ComponentPool<T> : IComponentPool where T : struct
     public ComponentPool()
     {
         _sparse = new Dictionary<EntityId, int>();
-        _dense = new List<T>();
-        _entities = new List<EntityId>();
+        _dense = [];
+        _entities = [];
     }
 
     public void Add<TComponent>(EntityId entityId, TComponent component) where TComponent : struct

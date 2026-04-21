@@ -1,3 +1,5 @@
+using Gnosis.Infrastructure;
+
 namespace Gnosis.Database.SHM;
 
 public readonly record struct ShmSegmentHeader(

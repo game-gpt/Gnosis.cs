@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net11.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
         <PackageId>Gnosis</PackageId>
         <RootNamespace>Gnosis</RootNamespace>
         <Version>0.0.0</Version>
@@ -20,5 +20,14 @@
         <PackageReference Include="NAudio" Version="2.2.1"/>
         <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8"/>
         <PackageReference Include="ZstdNet" Version="1.4.5"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="Editor\**\*.cs"/>
+        <Compile Remove="Rendering\ShaderGenerator\**\*.cs"/>
+        <Compile Remove="Database\**\*.cs"/>
+        <Compile Remove="ECS\Core\**\*.cs"/>
+        <Compile Remove="ECS\Interface\**\*.cs"/>
+        <Compile Remove="ECS\Implementation\**\*.cs"/>
     </ItemGroup>
 </Project>
