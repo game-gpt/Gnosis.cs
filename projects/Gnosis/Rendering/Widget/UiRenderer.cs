@@ -41,6 +41,10 @@ public sealed class UiRenderer : IWidgetRenderer
     {
     }
 
+    public void DrawLine(float x1, float y1, float x2, float y2, float r, float g, float b, float a = 1.0f, float thickness = 1.0f)
+    {
+    }
+
     public void PushClip(float x, float y, float width, float height)
     {
     }
