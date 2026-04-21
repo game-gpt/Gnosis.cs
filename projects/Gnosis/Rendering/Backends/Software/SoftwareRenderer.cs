@@ -1,3 +1,5 @@
+using Gnosis.Rendering.Shader;
+
 namespace Gnosis.Rendering.Backends.Software;
 
 public sealed class SoftwareRenderer

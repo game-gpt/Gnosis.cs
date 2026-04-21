@@ -735,25 +735,9 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return null;
     }
 
-    /// <summary>
-    /// 访问 for-each 循环语句，生成无限循环 IR 结构
-    /// </summary>
     public ShaderIrInstruction? VisitLoopStmt(LoopStmt node)
     {
-        var bodyLabelId = AllocateId();
-        var continueLabelId = AllocateId();
-        var mergeLabelId = AllocateId();
-
-        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(bodyLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
-        node.Body.Accept(this);
-
-        _currentInstructions.Add(new LabelInstruction(continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(bodyLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 for-each 循环");
         return null;
     }
 
