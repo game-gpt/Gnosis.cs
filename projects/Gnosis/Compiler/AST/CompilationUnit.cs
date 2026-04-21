@@ -6,15 +6,15 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// // 文件: game.gnosis
+/// # 文件: game.gnosis
 /// 
-/// import "std/io";
+/// import "std/io"
 /// 
-/// component Position { x: float; y: float; }
-/// component Velocity { dx: float; dy: float; }
+/// component Position { x: float, y: float }
+/// component Velocity { dx: float, dy: float }
 /// 
 /// system MovementSystem {
-///     query all(Position, Velocity);
+///     query all(Position, Velocity)
 ///     fn onUpdate(dt: float) { }
 /// }
 /// 

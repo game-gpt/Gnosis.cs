@@ -7,20 +7,26 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// system MovementSystem {
-///     query all(Position, Velocity);     // 查询声明
+///     # 查询声明
+///     query all(Position, Velocity)
 ///     
-///     fn onInit() { }                    // 生命周期方法
+///     # 生命周期方法
+///     fn onInit() { }
+///     
 ///     fn onUpdate(dt: float) {
 ///         for (entity in query) {
-///             entity.position.x += entity.velocity.dx * dt;
+///             entity.position.x += entity.velocity.dx * dt
 ///         }
 ///     }
+///     
 ///     fn onDestroy() { }
 /// }
 /// 
-/// [priority(100)]                        // 带属性的系统
+/// # 带属性的系统
+/// [priority(100)]
 /// system RenderSystem {
-///     query all(Position, Sprite);
+///     query all(Position, Sprite)
+///     
 ///     fn onUpdate(dt: float) { }
 /// }
 /// </code>

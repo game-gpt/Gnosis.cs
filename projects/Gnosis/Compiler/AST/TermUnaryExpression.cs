@@ -14,7 +14,7 @@ namespace Gnosis.Compiler.AST;
 /// i--             // 后缀自减
 /// </code>
 /// </remarks>
-public sealed record UnaryExpr(
+public sealed record TermUnaryExpression(
     SourceSpan? Span,
     string Operator,
     AstNode Operand,

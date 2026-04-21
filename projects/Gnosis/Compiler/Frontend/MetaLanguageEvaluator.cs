@@ -52,7 +52,7 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             NodeType.PluginDecl => node,
             NodeType.FunctionDecl => EvaluateFunctionDecl((FunctionDecl)node),
             NodeType.BlockStmt => EvaluateBlockStmt((BlockStmt)node),
-            NodeType.IfStmt => EvaluateIfStmt((IfStmt)node),
+            NodeType.IfStmt => EvaluateIfStmt((IfStatement)node),
             NodeType.LoopStmt => EvaluateLoopStmt((LoopStmt)node),
             NodeType.MetaBlock => EvaluateMetaBlock((MetaBlock)node),
             NodeType.StructDecl => node,
@@ -138,7 +138,7 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
         return node with { Statements = statements };
     }
 
-    private AstNode EvaluateIfStmt(IfStmt node)
+    private AstNode EvaluateIfStmt(IfStatement node)
     {
         var condition = EvaluateNode(node.Condition);
         var thenBlock = EvaluateNode(node.ThenBlock);

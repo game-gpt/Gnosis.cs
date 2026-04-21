@@ -6,14 +6,21 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// uniform modelMatrix: mat4 @ (0, 0);       // group 0, binding 0
-/// uniform viewMatrix: mat4 @ (0, 1);        // group 0, binding 1
-/// uniform projectionMatrix: mat4 @ (0, 2);  // group 0, binding 2
+/// # group 0, binding 0
+/// uniform modelMatrix: mat4 @ (0, 0)
 /// 
-/// uniform lights: Light[] @ (1, 0);         // 数组类型的 uniform
+/// # group 0, binding 1
+/// uniform viewMatrix: mat4 @ (0, 1)
 /// 
-/// [readonly]                                // 带属性的 uniform
-/// uniform textures: Texture2D @ (2, 0);
+/// # group 0, binding 2
+/// uniform projectionMatrix: mat4 @ (0, 2)
+/// 
+/// # 数组类型的 uniform
+/// uniform lights: Light[] @ (1, 0)
+/// 
+/// # 带属性的 uniform
+/// [readonly]
+/// uniform textures: Texture2D @ (2, 0)
 /// </code>
 /// </remarks>
 public sealed record UniformBindingDecl(

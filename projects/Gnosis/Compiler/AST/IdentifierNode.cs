@@ -13,9 +13,7 @@ namespace Gnosis.Compiler.AST;
 /// _              // 丢弃模式
 /// </code>
 /// </remarks>
-public sealed record IdentifierExpr(
-    SourceSpan? Span,
-    string Name) : AstNode(NodeType.IdentifierExpr, Span)
+public sealed record IdentifierNode(SourceSpan? Span, string Name) : AstNode(NodeType.IdentifierExpr, Span)
 {
     /// <summary>
     /// 接受访问者访问

@@ -6,9 +6,14 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// using std::io;                     // 导入整个命名空间
-/// using std::math::{sin, cos};       // 选择性导入
-/// using engine::render::*;           // 导入所有内容
+/// # 导入整个命名空间
+/// using std::io
+/// 
+/// # 选择性导入
+/// using std::math::{sin, cos}
+/// 
+/// # 导入所有内容
+/// using engine::render::*
 /// </code>
 /// </remarks>
 public sealed record UsingDecl(

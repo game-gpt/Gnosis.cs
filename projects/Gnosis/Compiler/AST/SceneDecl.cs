@@ -6,26 +6,31 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// scene MainMenu {                       // 主菜单场景
-///     let selectedOption = 0;
+/// # 主菜单场景
+/// scene MainMenu {
+///     let selectedOption = 0
 ///     
-///     fn onEnter() {                     // 进入场景时调用
-///         playMusic("menu_bgm");
+///     # 进入场景时调用
+///     fn onEnter() {
+///         playMusic("menu_bgm")
 ///     }
 ///     
-///     fn onExit() {                      // 离开场景时调用
-///         stopMusic();
+///     # 离开场景时调用
+///     fn onExit() {
+///         stopMusic()
 ///     }
 ///     
-///     fn onUpdate(dt: float) {           // 每帧更新
-///         handleInput();
-///         render();
+///     # 每帧更新
+///     fn onUpdate(dt: float) {
+///         handleInput()
+///         render()
 ///     }
 /// }
 /// 
-/// scene GameLevel {                      // 游戏关卡场景
-///     let score = 0;
-///     let player: Entity;
+/// # 游戏关卡场景
+/// scene GameLevel {
+///     let score = 0
+///     let player: Entity
 ///     
 ///     fn onEnter() { }
 ///     fn onUpdate(dt: float) { }

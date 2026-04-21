@@ -7,22 +7,28 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// plugin MathPlugin {
-///     requires: ["x86_64", "sse2"];          // 架构要求
-///     provides_macros: ["vec_add", "vec_mul"]; // 提供的宏
-///     provides_capabilities: ["simd"];       // 提供的能力
+///     # 架构要求
+///     requires: ["x86_64", "sse2"]
 ///     
-///     fn vecAdd(a: vec4, b: vec4): vec4 {    // 提供的函数
-///         return a + b;
+///     # 提供的宏
+///     provides_macros: ["vec_add", "vec_mul"]
+///     
+///     # 提供的能力
+///     provides_capabilities: ["simd"]
+///     
+///     # 提供的函数
+///     fn vecAdd(a: vec4, b: vec4): vec4 {
+///         return a + b
 ///     }
 ///     
 ///     fn vecMul(a: vec4, b: vec4): vec4 {
-///         return a * b;
+///         return a * b
 ///     }
 /// }
 /// 
 /// plugin AudioPlugin {
-///     requires: ["audio_api"];
-///     provides_capabilities: ["playback", "recording"];
+///     requires: ["audio_api"]
+///     provides_capabilities: ["playback", "recording"]
 ///     
 ///     fn playSound(path: string) { }
 ///     fn stopSound() { }

@@ -6,9 +6,14 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// _ = foo();              // 丢弃函数返回值
-/// _ = obj.property;       // 丢弃属性值
-/// let (_, b) = tuple;     // 解构时丢弃部分值
+/// # 丢弃函数返回值
+/// _ = foo()
+/// 
+/// # 丢弃属性值
+/// _ = obj.property
+/// 
+/// # 解构时丢弃部分值
+/// let (_, b) = tuple
 /// </code>
 /// </remarks>
 public sealed record DiscardStmt(

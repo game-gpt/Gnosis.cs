@@ -13,7 +13,7 @@ namespace Gnosis.Compiler.AST;
 /// print("hello");         // 打印语句
 /// </code>
 /// </remarks>
-public sealed record ExprStmt(
+public sealed record TermExpressionStatement(
     SourceSpan? Span,
     AstNode Expression) : AstNode(NodeType.ExprStmt, Span)
 {

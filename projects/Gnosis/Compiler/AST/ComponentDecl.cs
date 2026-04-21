@@ -6,20 +6,23 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// component Position {               // 简单组件
-///     x: float;
-///     y: float;
+/// # 简单组件
+/// component Position {
+///     x: float
+///     y: float
 /// }
 /// 
-/// component Velocity {               // 带默认值的组件
-///     dx: float = 0.0;
-///     dy: float = 0.0;
+/// # 带默认值的组件
+/// component Velocity {
+///     dx: float = 0.0
+///     dy: float = 0.0
 /// }
 /// 
-/// [serialize]                        // 带属性的组件
+/// # 带属性的组件
+/// [serialize]
 /// component Health {
-///     current: int;
-///     max: int;
+///     current: int
+///     max: int
 /// }
 /// </code>
 /// </remarks>

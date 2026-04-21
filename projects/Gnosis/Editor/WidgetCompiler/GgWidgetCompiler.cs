@@ -215,7 +215,7 @@ public partial class GgWidgetCompiler
             return new LiteralExpr(null, LiteralType.Number, floatVal.ToString());
         }
 
-        return new IdentifierExpr(null, defaultStr);
+        return new IdentifierNode(null, defaultStr);
     }
 
     #endregion
@@ -250,7 +250,7 @@ public partial class GgWidgetCompiler
                 var text = template[pos..].Trim();
                 if (!string.IsNullOrEmpty(text))
                 {
-                    statements.Add(new ExprStmt(null, new LiteralExpr(null, LiteralType.String, text)));
+                    statements.Add(new TermExpressionStatement(null, new LiteralExpr(null, LiteralType.String, text)));
                 }
                 break;
             }
@@ -260,7 +260,7 @@ public partial class GgWidgetCompiler
                 var text = template[pos..textEnd].Trim();
                 if (!string.IsNullOrEmpty(text))
                 {
-                    statements.Add(new ExprStmt(null, new LiteralExpr(null, LiteralType.String, text)));
+                    statements.Add(new TermExpressionStatement(null, new LiteralExpr(null, LiteralType.String, text)));
                 }
             }
 
@@ -298,7 +298,7 @@ public partial class GgWidgetCompiler
                 var condition = tagName.Length > 3 ? tagName[3..].Trim() : "true";
                 var (ifBody, endPos) = ParseConditionalBlock(template, pos, "if");
                 pos = endPos;
-                statements.Add(new IfStmt(null, new IdentifierExpr(null, condition), ifBody, null));
+                statements.Add(new IfStatement(null, new IdentifierNode(null, condition), ifBody, null));
             }
             else if (tagName == "for" || tagName.StartsWith("for "))
             {
@@ -317,17 +317,17 @@ public partial class GgWidgetCompiler
 
                     if (children.Statements.Count > 0)
                     {
-                        statements.Add(new ExprStmt(null, widgetCall));
+                        statements.Add(new TermExpressionStatement(null, widgetCall));
                         statements.AddRange(children.Statements);
                     }
                     else
                     {
-                        statements.Add(new ExprStmt(null, widgetCall));
+                        statements.Add(new TermExpressionStatement(null, widgetCall));
                     }
                 }
                 else
                 {
-                    statements.Add(new ExprStmt(null, widgetCall));
+                    statements.Add(new TermExpressionStatement(null, widgetCall));
                 }
             }
         }
@@ -355,7 +355,7 @@ public partial class GgWidgetCompiler
         return (tagName, attributes);
     }
 
-    private static CallExpr CreateWidgetCall(string tagName, Dictionary<string, string> attributes)
+    private static TermCallExpression CreateWidgetCall(string tagName, Dictionary<string, string> attributes)
     {
         var args = new List<AstNode>();
 
@@ -363,12 +363,12 @@ public partial class GgWidgetCompiler
         {
             var propKey = key.TrimStart(':', '@');
             args.Add(new BinaryExpr(null,
-                new IdentifierExpr(null, propKey),
+                new IdentifierNode(null, propKey),
                 "=",
                 ParseTemplateValue(value)));
         }
 
-        return new CallExpr(null, new IdentifierExpr(null, $"widget_{tagName}"), args);
+        return new TermCallExpression(null, new IdentifierNode(null, $"widget_{tagName}"), args);
     }
 
     private static AstNode ParseTemplateValue(string value)
@@ -376,7 +376,7 @@ public partial class GgWidgetCompiler
         if (value.StartsWith("{{") && value.EndsWith("}}"))
         {
             var expr = value[2..^2].Trim();
-            return new IdentifierExpr(null, expr);
+            return new IdentifierNode(null, expr);
         }
 
         if (value.StartsWith("\"") && value.EndsWith("\""))
@@ -389,7 +389,7 @@ public partial class GgWidgetCompiler
             return new LiteralExpr(null, LiteralType.String, value[1..^1]);
         }
 
-        return new IdentifierExpr(null, value);
+        return new IdentifierNode(null, value);
     }
 
     private (BlockStmt body, int endPos) ParseConditionalBlock(string template, int startPos, string blockType)
@@ -469,7 +469,7 @@ public partial class GgWidgetCompiler
                 {
                     var blockContent = template[blockStart..nextOpen].Trim();
                     var body = new BlockStmt(null, ParseTemplateStatements(blockContent));
-                    return (new LoopStmt(null, "item", new IdentifierExpr(null, "items"), body), nextClose + 1);
+                    return (new LoopStmt(null, "item", new IdentifierNode(null, "items"), body), nextClose + 1);
                 }
             }
 

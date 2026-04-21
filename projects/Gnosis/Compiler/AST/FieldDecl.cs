@@ -7,11 +7,18 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// struct Example {
-///     x: int;                           // 简单字段
-///     name: string = "default";         // 带默认值的字段
-///     [range(0, 100)]                   // 带属性的字段
-///     value: float = 0.0;
-///     data: vec3[];                     // 数组类型字段
+///     # 简单字段
+///     x: int
+///     
+///     # 带默认值的字段
+///     name: string = "default"
+///     
+///     # 带属性的字段
+///     [range(0, 100)]
+///     value: float = 0.0
+///     
+///     # 数组类型字段
+///     data: vec3[]
 /// }
 /// </code>
 /// </remarks>

@@ -13,7 +13,7 @@ namespace Gnosis.Compiler.AST;
 /// dict["key"]         // 字典键访问
 /// </code>
 /// </remarks>
-public sealed record IndexExpr(
+public sealed record TermIndexExpression(
     SourceSpan? Span,
     AstNode Object,
     AstNode Index) : AstNode(NodeType.IndexExpr, Span)

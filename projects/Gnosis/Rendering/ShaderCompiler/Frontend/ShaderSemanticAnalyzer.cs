@@ -167,7 +167,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
         switch (expr.Type)
         {
             case NodeType.IdentifierExpr:
-                var idExpr = (IdentifierExpr)expr;
+                var idExpr = (IdentifierNode)expr;
                 if (!IsVariableInScope(idExpr.Name) && !IsKnownIdentifier(idExpr.Name))
                 {
                     _diagnostics.AddWarning(
@@ -186,11 +186,11 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 break;
 
             case NodeType.UnaryExpr:
-                ValidateExpression(((UnaryExpr)expr).Operand);
+                ValidateExpression(((TermUnaryExpression)expr).Operand);
                 break;
 
             case NodeType.CallExpr:
-                var callExpr = (CallExpr)expr;
+                var callExpr = (TermCallExpression)expr;
                 ValidateExpression(callExpr.Callee);
                 foreach (var arg in callExpr.Arguments)
                 {
@@ -211,7 +211,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 break;
 
             case NodeType.IndexExpr:
-                var indexExpr = (IndexExpr)expr;
+                var indexExpr = (TermIndexExpression)expr;
                 ValidateExpression(indexExpr.Object);
                 ValidateExpression(indexExpr.Index);
                 break;
@@ -261,7 +261,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 break;
 
             case NodeType.IfStmt:
-                var ifStmt = (IfStmt)stmt;
+                var ifStmt = (IfStatement)stmt;
                 ValidateExpression(ifStmt.Condition);
                 ValidateStatement(ifStmt.ThenBlock);
                 if (ifStmt.ElseBlock is not null)
@@ -303,7 +303,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 break;
 
             case NodeType.ReturnStmt:
-                var returnStmt = (ReturnStmt)stmt;
+                var returnStmt = (ReturnStatement)stmt;
                 if (returnStmt.Value is not null)
                 {
                     ValidateExpression(returnStmt.Value);
@@ -314,7 +314,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 break;
 
             case NodeType.ExprStmt:
-                ValidateExpression(((ExprStmt)stmt).Expression);
+                ValidateExpression(((TermExpressionStatement)stmt).Expression);
                 break;
 
             case NodeType.BlockStmt:
@@ -778,7 +778,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
         switch (expr.Type)
         {
             case NodeType.IdentifierExpr:
-                var idExpr = (IdentifierExpr)expr;
+                var idExpr = (IdentifierNode)expr;
                 foreach (var scope in _scopes)
                 {
                     if (scope.TryGetValue(idExpr.Name, out var type) && type is not null)
@@ -808,8 +808,8 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 return ResolveBinaryResultType(leftType, rightType, binExpr.Operator);
 
             case NodeType.CallExpr:
-                var callExpr = (CallExpr)expr;
-                if (callExpr.Callee is IdentifierExpr calleeId &&
+                var callExpr = (TermCallExpression)expr;
+                if (callExpr.Callee is IdentifierNode calleeId &&
                     _functions.TryGetValue(calleeId.Name, out var calledFunc))
                 {
                     return ResolveShaderType(calledFunc.ReturnType);
@@ -851,7 +851,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 return null;
 
             case NodeType.UnaryExpr:
-                return ResolveExpressionType(((UnaryExpr)expr).Operand);
+                return ResolveExpressionType(((TermUnaryExpression)expr).Operand);
 
             case NodeType.AssignmentExpr:
                 return ResolveExpressionType(((AssignmentExpr)expr).Target);

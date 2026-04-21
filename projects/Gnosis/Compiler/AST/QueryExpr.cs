@@ -27,10 +27,17 @@ public enum QueryKind
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// query all(Position, Velocity)           // 查询所有拥有 Position 和 Velocity 组件的实体
-/// query any(Health)                       // 查询是否存在拥有 Health 组件的实体
-/// query none(Dead)                        // 查询是否没有 Dead 组件的实体
-/// query all(A, B).filter(any(C))          // 带过滤器的查询
+/// # 查询所有拥有 Position 和 Velocity 组件的实体
+/// query all(Position, Velocity)
+/// 
+/// # 查询是否存在拥有 Health 组件的实体
+/// query any(Health)
+/// 
+/// # 查询是否没有 Dead 组件的实体
+/// query none(Dead)
+/// 
+/// # 带过滤器的查询
+/// query all(A, B).filter(any(C))
 /// </code>
 /// </remarks>
 public sealed record QueryExpr(

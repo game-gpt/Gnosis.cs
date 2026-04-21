@@ -13,7 +13,7 @@ namespace Gnosis.Compiler.AST;
 /// return { a: 1, b: 2 };  // 返回对象字面量
 /// </code>
 /// </remarks>
-public sealed record ReturnStmt(
+public sealed record ReturnStatement(
     SourceSpan? Span,
     AstNode? Value) : AstNode(NodeType.ReturnStmt, Span)
 {

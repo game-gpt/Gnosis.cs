@@ -6,26 +6,27 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// if (x &gt; 0) {              // 简单 if 语句
+/// # 简单 if 语句
+/// if (x &gt; 0) {
 ///     doSomething();
 /// }
-/// 
-/// if (x &gt; 0) {              // if-else 语句
+/// # if-else 语句
+/// if (x &gt; 0) {
 ///     doA();
 /// } else {
 ///     doB();
 /// }
-/// 
-/// if (x &gt; 0) {              // if-else if-else 链
+/// # if-else if-else 链
+/// if x &gt; 0 {
 ///     doA();
-/// } else if (x &lt; 0) {
+/// } else if x &lt; 0 {
 ///     doB();
 /// } else {
 ///     doC();
 /// }
 /// </code>
 /// </remarks>
-public sealed record IfStmt(
+public sealed record IfStatement(
     SourceSpan? Span,
     AstNode Condition,
     AstNode ThenBlock,

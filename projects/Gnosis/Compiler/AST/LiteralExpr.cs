@@ -32,12 +32,23 @@ public enum LiteralType
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// 42              // 整数字面量
-/// 3.14            // 浮点数字面量
-/// "hello"         // 字符串字面量
-/// true            // 布尔字面量（真）
-/// false           // 布尔字面量（假）
-/// null            // 空值字面量
+/// # 整数字面量
+/// 42
+/// 
+/// # 浮点数字面量
+/// 3.14
+/// 
+/// # 字符串字面量
+/// "hello"
+/// 
+/// # 布尔字面量（真）
+/// true
+/// 
+/// # 布尔字面量（假）
+/// false
+/// 
+/// # 空值字面量
+/// null
 /// </code>
 /// </remarks>
 public sealed record LiteralExpr(

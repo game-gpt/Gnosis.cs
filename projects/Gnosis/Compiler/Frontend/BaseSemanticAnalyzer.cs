@@ -84,7 +84,7 @@ public abstract class BaseSemanticAnalyzer
         switch (expr.Type)
         {
             case NodeType.IdentifierExpr:
-                var idExpr = (IdentifierExpr)expr;
+                var idExpr = (IdentifierNode)expr;
                 if (!IsVariableInScope(idExpr.Name) && !IsKnownIdentifier(idExpr.Name))
                 {
                     _diagnostics.AddWarning(
@@ -102,11 +102,11 @@ public abstract class BaseSemanticAnalyzer
                 break;
 
             case NodeType.UnaryExpr:
-                ValidateExpression(((UnaryExpr)expr).Operand);
+                ValidateExpression(((TermUnaryExpression)expr).Operand);
                 break;
 
             case NodeType.CallExpr:
-                var callExpr = (CallExpr)expr;
+                var callExpr = (TermCallExpression)expr;
                 ValidateExpression(callExpr.Callee);
                 foreach (var arg in callExpr.Arguments)
                 {
@@ -120,7 +120,7 @@ public abstract class BaseSemanticAnalyzer
                 break;
 
             case NodeType.IndexExpr:
-                var indexExpr = (IndexExpr)expr;
+                var indexExpr = (TermIndexExpression)expr;
                 ValidateExpression(indexExpr.Object);
                 ValidateExpression(indexExpr.Index);
                 break;
@@ -175,7 +175,7 @@ public abstract class BaseSemanticAnalyzer
                 break;
 
             case NodeType.IfStmt:
-                var ifStmt = (IfStmt)stmt;
+                var ifStmt = (IfStatement)stmt;
                 ValidateExpression(ifStmt.Condition);
                 ValidateStatement(ifStmt.ThenBlock);
                 if (ifStmt.ElseBlock is not null)
@@ -200,7 +200,7 @@ public abstract class BaseSemanticAnalyzer
                 break;
 
             case NodeType.ReturnStmt:
-                var returnStmt = (ReturnStmt)stmt;
+                var returnStmt = (ReturnStatement)stmt;
                 if (returnStmt.Value is not null)
                 {
                     ValidateExpression(returnStmt.Value);
@@ -208,7 +208,7 @@ public abstract class BaseSemanticAnalyzer
                 break;
 
             case NodeType.ExprStmt:
-                ValidateExpression(((ExprStmt)stmt).Expression);
+                ValidateExpression(((TermExpressionStatement)stmt).Expression);
                 break;
 
             case NodeType.BlockStmt:

@@ -6,16 +6,19 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// {                        // 空代码块
+/// # 空代码块
+/// {
 /// }
 /// 
-/// {                        // 包含语句的代码块
-///     let x = 10;
-///     foo();
+/// # 包含语句的代码块
+/// {
+///     let x = 10
+///     foo()
 /// }
 /// 
-/// if (condition) {         // 作为控制流主体
-///     doSomething();
+/// # 作为控制流主体
+/// if (condition) {
+///     doSomething()
 /// }
 /// </code>
 /// </remarks>

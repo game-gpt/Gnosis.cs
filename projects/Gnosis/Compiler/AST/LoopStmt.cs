@@ -6,20 +6,24 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// for (item in items) {             // 遍历集合
-///     print(item);
+/// # 遍历集合
+/// for (item in items) {
+///     print(item)
 /// }
 /// 
-/// for (i, item in items) {          // 带索引遍历
-///     print(i, item);
+/// # 带索引遍历
+/// for (i, item in items) {
+///     print(i, item)
 /// }
 /// 
-/// for (char in "hello") {           // 遍历字符串
-///     print(char);
+/// # 遍历字符串
+/// for (char in "hello") {
+///     print(char)
 /// }
 /// 
-/// for (key, value in dict) {        // 遍历字典
-///     print(key, value);
+/// # 遍历字典
+/// for (key, value in dict) {
+///     print(key, value)
 /// }
 /// </code>
 /// </remarks>

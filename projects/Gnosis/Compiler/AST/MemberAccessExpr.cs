@@ -6,11 +6,20 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// obj.field           // 字段访问
-/// obj.method()        // 方法访问
-/// Math.PI             // 静态成员访问
-/// person.name         // 属性访问
-/// vector.x            // 向量分量访问
+/// # 字段访问
+/// obj.field
+/// 
+/// # 方法访问
+/// obj.method()
+/// 
+/// # 静态成员访问
+/// Math.PI
+/// 
+/// # 属性访问
+/// person.name
+/// 
+/// # 向量分量访问
+/// vector.x
 /// </code>
 /// </remarks>
 public sealed record MemberAccessExpr(

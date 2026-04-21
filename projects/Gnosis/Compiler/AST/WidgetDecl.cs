@@ -6,20 +6,22 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// widget Button {                        // 简单按钮组件
-///     text: string;
-///     onClick: () =&gt; void;
+/// # 简单按钮组件
+/// widget Button {
+///     text: string
+///     onClick: () =&gt; void
 ///     
 ///     fn render() {
 ///         &lt;button onclick={onClick}&gt;{text}&lt;/button&gt;
 ///     }
 /// }
 /// 
-/// widget Slider {                        // 滑动条组件
-///     value: float;
-///     min: float = 0.0;
-///     max: float = 100.0;
-///     onChange: (float) =&gt; void;
+/// # 滑动条组件
+/// widget Slider {
+///     value: float
+///     min: float = 0.0
+///     max: float = 100.0
+///     onChange: (float) =&gt; void
 ///     
 ///     fn render() {
 ///         &lt;input type="range" min={min} max={max} value={value} onchange={onChange} /&gt;

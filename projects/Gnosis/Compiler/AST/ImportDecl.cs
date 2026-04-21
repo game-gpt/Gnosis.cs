@@ -6,9 +6,14 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// import "std/math";                // 导入模块
-/// import "std/io" as io;            // 带别名的导入
-/// import "engine/core" as core;     // 使用别名简化访问
+/// # 导入模块
+/// import "std/math"
+/// 
+/// # 带别名的导入
+/// import "std/io" as io
+/// 
+/// # 使用别名简化访问
+/// import "engine/core" as core
 /// </code>
 /// </remarks>
 public sealed record ImportDecl(

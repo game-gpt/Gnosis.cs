@@ -6,12 +6,23 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// vec.xyz         // 提取 x、y、z 分量
-/// vec.rgb         // 提取 r、g、b 分量（颜色）
-/// vec.xy          // 提取 x、y 分量
-/// vec.xxx         // 重复 x 分量
-/// vec.zyx         // 反转分量顺序
-/// vec.rgba        // 提取所有颜色分量
+/// # 提取 x、y、z 分量
+/// vec.xyz
+/// 
+/// # 提取 r、g、b 分量（颜色）
+/// vec.rgb
+/// 
+/// # 提取 x、y 分量
+/// vec.xy
+/// 
+/// # 重复 x 分量
+/// vec.xxx
+/// 
+/// # 反转分量顺序
+/// vec.zyx
+/// 
+/// # 提取所有颜色分量
+/// vec.rgba
 /// </code>
 /// </remarks>
 public sealed record SwizzleExpr(

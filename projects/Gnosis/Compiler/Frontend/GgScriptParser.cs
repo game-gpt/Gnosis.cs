@@ -861,7 +861,7 @@ public class GgScriptParser : IParser
         return new BlockStmt(SourceSpan.FromToken(startToken), statements);
     }
 
-    private IfStmt ParseIfStmt()
+    private IfStatement ParseIfStmt()
     {
         var startToken = ConsumeKeyword("if", "GG0172", "期望 'if' 关键字");
 
@@ -882,7 +882,7 @@ public class GgScriptParser : IParser
             }
         }
 
-        return new IfStmt(SourceSpan.FromToken(startToken), condition, thenBlock, elseBlock);
+        return new IfStatement(SourceSpan.FromToken(startToken), condition, thenBlock, elseBlock);
     }
 
     private LoopStmt ParseLoopStmt()
@@ -918,7 +918,7 @@ public class GgScriptParser : IParser
         return new WhileStmt(SourceSpan.FromToken(startToken), condition, body);
     }
 
-    private ReturnStmt ParseReturnStmt()
+    private ReturnStatement ParseReturnStmt()
     {
         var startToken = ConsumeKeyword("return", "GG0175", "期望 'return' 关键字");
 
@@ -931,14 +931,14 @@ public class GgScriptParser : IParser
 
         Match(TokenType.Delimiter, ";");
 
-        return new ReturnStmt(SourceSpan.FromToken(startToken), value);
+        return new ReturnStatement(SourceSpan.FromToken(startToken), value);
     }
 
-    private ExprStmt ParseExprStmt()
+    private TermExpressionStatement ParseExprStmt()
     {
         var expr = ParseExpression();
         Match(TokenType.Delimiter, ";");
-        return new ExprStmt(null, expr);
+        return new TermExpressionStatement(null, expr);
     }
 
     #endregion
@@ -1058,7 +1058,7 @@ public class GgScriptParser : IParser
         {
             var op = Advance().Value;
             var operand = ParseUnary();
-            return new UnaryExpr(null, op, operand, true);
+            return new TermUnaryExpression(null, op, operand, true);
         }
 
         return ParsePostfix();
@@ -1091,14 +1091,14 @@ public class GgScriptParser : IParser
                 }
 
                 Consume(TokenType.Delimiter, ")", "GG0181", "期望 ')'");
-                expr = new CallExpr(null, expr, args);
+                expr = new TermCallExpression(null, expr, args);
             }
             else if (Check(TokenType.Delimiter, "["))
             {
                 Advance();
                 var index = ParseExpression();
                 Consume(TokenType.Delimiter, "]", "GG0182", "期望 ']'");
-                expr = new IndexExpr(null, expr, index);
+                expr = new TermIndexExpression(null, expr, index);
             }
             else
             {
@@ -1138,14 +1138,14 @@ public class GgScriptParser : IParser
         if (Check(TokenType.Keyword, "create_entity"))
         {
             Advance();
-            return new CallExpr(null, new IdentifierExpr(null, "create_entity"), Array.Empty<AstNode>());
+            return new TermCallExpression(null, new IdentifierNode(null, "create_entity"), Array.Empty<AstNode>());
         }
 
         if (Check(TokenType.Keyword, "destroy_entity"))
         {
             Advance();
             var arg = ParseExpression();
-            return new CallExpr(null, new IdentifierExpr(null, "destroy_entity"), new[] { arg });
+            return new TermCallExpression(null, new IdentifierNode(null, "destroy_entity"), new[] { arg });
         }
 
         if (Check(TokenType.Keyword, "new"))
@@ -1171,13 +1171,13 @@ public class GgScriptParser : IParser
                 Consume(TokenType.Delimiter, ")", "GG0183", "期望 ')'");
             }
 
-            return new CallExpr(null, new IdentifierExpr(null, $"new_{typeName.Name}"), args);
+            return new TermCallExpression(null, new IdentifierNode(null, $"new_{typeName.Name}"), args);
         }
 
         if (Check(TokenType.Identifier) || Check(TokenType.TypeKeyword))
         {
             var token = Advance();
-            return new IdentifierExpr(SourceSpan.FromToken(token), token.Value);
+            return new IdentifierNode(SourceSpan.FromToken(token), token.Value);
         }
 
         if (Check(TokenType.Delimiter, "("))

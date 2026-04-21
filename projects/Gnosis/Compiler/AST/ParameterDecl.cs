@@ -6,10 +6,17 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// fn foo(x: int) { }                    // 简单参数
-/// fn bar(a: int, b: string) { }         // 多参数
-/// fn baz(data: vec3[]) { }              // 数组类型参数
-/// fn qux([range(0, 10)] value: int) { } // 带属性的参数
+/// # 简单参数
+/// fn foo(x: int) { }
+/// 
+/// # 多参数
+/// fn bar(a: int, b: string) { }
+/// 
+/// # 数组类型参数
+/// fn baz(data: vec3[]) { }
+/// 
+/// # 带属性的参数
+/// fn qux([range(0, 10)] value: int) { }
 /// </code>
 /// </remarks>
 public sealed record ParameterDecl(

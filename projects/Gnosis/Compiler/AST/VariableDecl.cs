@@ -6,12 +6,20 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// let x = 10;                   // 不可变变量声明
-/// let x: int = 10;              // 带类型注解的不可变变量
-/// var y = 20;                   // 可变变量声明
-/// var y: string = "hello";      // 带类型注解的可变变量
-/// let z;                        // 无初始值的声明（需要类型注解）
-/// let z: float;                 // 无初始值但带类型注解
+/// # 不可变变量声明
+/// let x = 10
+/// 
+/// # 带类型注解的不可变变量
+/// let x: int = 10
+/// 
+/// # 可变变量声明
+/// var y = 20
+/// 
+/// # 带类型注解的可变变量
+/// var y: string = "hello"
+/// 
+/// # 无初始值的声明（需要类型注解）
+/// let z: float
 /// </code>
 /// </remarks>
 public sealed record VariableDecl(

@@ -6,16 +6,19 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// for (let i = 0; i &lt; 10; i++) {    // 标准 for 循环
-///     print(i);
+/// # 标准 for 循环
+/// for (let i = 0; i &lt; 10; i++) {
+///     print(i)
 /// }
 /// 
-/// for (;;) {                        // 无限循环
-///     if (done) break;
+/// # 无限循环
+/// for (;;) {
+///     if (done) break
 /// }
 /// 
-/// for (let i = 0, j = 10; i &lt; j; i++, j--) {    // 多变量循环
-///     print(i, j);
+/// # 多变量循环
+/// for (let i = 0, j = 10; i &lt; j; i++, j--) {
+///     print(i, j)
 /// }
 /// </code>
 /// </remarks>

@@ -6,22 +6,25 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// struct Point {                // 简单结构体
-///     x: float;
-///     y: float;
+/// # 简单结构体
+/// struct Point {
+///     x: float
+///     y: float
 /// }
 /// 
-/// struct Person {               // 带默认值的结构体
-///     name: string;
-///     age: int = 0;
-///     active: bool = true;
+/// # 带默认值的结构体
+/// struct Person {
+///     name: string
+///     age: int = 0
+///     active: bool = true
 /// }
 /// 
-/// [packed]                      // 带属性的结构体
+/// # 带属性的结构体
+/// [packed]
 /// struct Vertex {
-///     position: vec3;
-///     normal: vec3;
-///     uv: vec2;
+///     position: vec3
+///     normal: vec3
+///     uv: vec2
 /// }
 /// </code>
 /// </remarks>

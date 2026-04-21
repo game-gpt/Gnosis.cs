@@ -14,7 +14,7 @@ namespace Gnosis.Compiler.AST;
 /// lambda(x, y)             // Lambda 调用
 /// </code>
 /// </remarks>
-public sealed record CallExpr(
+public sealed record TermCallExpression(
     SourceSpan? Span,
     AstNode Callee,
     IReadOnlyList<AstNode> Arguments) : AstNode(NodeType.CallExpr, Span)

@@ -6,12 +6,23 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// let x: int;                          // 简单类型
-/// let arr: int[];                      // 数组类型
-/// let map: Map&lt;string, int&gt;;           // 泛型类型
-/// let func: (int, int) =&gt; int;         // 函数类型
-/// let vec: vec3;                       // 内置类型
-/// let opt: Option&lt;string&gt;;             // 可选类型
+/// # 简单类型
+/// let x: int
+/// 
+/// # 数组类型
+/// let arr: int[]
+/// 
+/// # 泛型类型
+/// let map: Map&lt;string, int&gt;
+/// 
+/// # 函数类型
+/// let func: (int, int) =&gt; int
+/// 
+/// # 内置类型
+/// let vec: vec3
+/// 
+/// # 可选类型
+/// let opt: Option&lt;string&gt;
 /// </code>
 /// </remarks>
 public sealed record TypeAnnotation(

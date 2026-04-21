@@ -6,21 +6,25 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// fn add(a: int, b: int): int {        // 带参数和返回类型的函数
-///     return a + b;
+/// # 带参数和返回类型的函数
+/// fn add(a: int, b: int): int {
+///     return a + b
 /// }
 /// 
-/// fn greet(name: string) {              // 无返回类型的函数
-///     print("Hello, " + name);
+/// # 无返回类型的函数
+/// fn greet(name: string) {
+///     print("Hello, " + name)
 /// }
 /// 
-/// fn main() {                           // 无参数函数
-///     run();
+/// # 无参数函数
+/// fn main() {
+///     run()
 /// }
 /// 
-/// [inline]                              // 带属性的函数
+/// # 带属性的函数
+/// [inline]
 /// fn fastAdd(a: int, b: int): int {
-///     return a + b;
+///     return a + b
 /// }
 /// </code>
 /// </remarks>

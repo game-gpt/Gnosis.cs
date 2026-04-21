@@ -136,7 +136,7 @@ public class BytecodeGenerator : IBytecodeGenerator
                 GenerateWidgetDecl((WidgetDecl)decl);
                 break;
             case NodeType.ExprStmt:
-                GenerateExprStmt((ExprStmt)decl);
+                GenerateExprStmt((TermExpressionStatement)decl);
                 break;
             case NodeType.BlockStmt:
                 GenerateBlockStmt((BlockStmt)decl);
@@ -346,13 +346,13 @@ public class BytecodeGenerator : IBytecodeGenerator
                 GenerateVariableDecl((VariableDecl)stmt);
                 break;
             case NodeType.ExprStmt:
-                GenerateExprStmt((ExprStmt)stmt);
+                GenerateExprStmt((TermExpressionStatement)stmt);
                 break;
             case NodeType.ReturnStmt:
-                GenerateReturnStmt((ReturnStmt)stmt);
+                GenerateReturnStmt((ReturnStatement)stmt);
                 break;
             case NodeType.IfStmt:
-                GenerateIfStmt((IfStmt)stmt);
+                GenerateIfStmt((IfStatement)stmt);
                 break;
             case NodeType.LoopStmt:
                 GenerateLoopStmt((LoopStmt)stmt);
@@ -374,7 +374,7 @@ public class BytecodeGenerator : IBytecodeGenerator
         }
     }
 
-    private void GenerateExprStmt(ExprStmt stmt)
+    private void GenerateExprStmt(TermExpressionStatement stmt)
     {
         GenerateExpression(stmt.Expression);
 
@@ -384,24 +384,24 @@ public class BytecodeGenerator : IBytecodeGenerator
         }
     }
 
-    private void GenerateReturnStmt(ReturnStmt stmt)
+    private void GenerateReturnStmt(ReturnStatement statement)
     {
-        if (stmt.Value is not null)
+        if (statement.Value is not null)
         {
-            GenerateExpression(stmt.Value);
+            GenerateExpression(statement.Value);
         }
 
         Emit(OpCode.Return);
     }
 
-    private void GenerateIfStmt(IfStmt stmt)
+    private void GenerateIfStmt(IfStatement statement)
     {
-        GenerateExpression(stmt.Condition);
+        GenerateExpression(statement.Condition);
         Emit(OpCode.JumpIfFalse);
         var elseJump = _instructions.Count;
         EmitInt(0);
 
-        GenerateStatement(stmt.ThenBlock);
+        GenerateStatement(statement.ThenBlock);
 
         Emit(OpCode.Jump);
         var endJump = _instructions.Count;
@@ -409,9 +409,9 @@ public class BytecodeGenerator : IBytecodeGenerator
 
         PatchJump(elseJump, _instructions.Count);
 
-        if (stmt.ElseBlock is not null)
+        if (statement.ElseBlock is not null)
         {
-            GenerateStatement(stmt.ElseBlock);
+            GenerateStatement(statement.ElseBlock);
         }
 
         PatchJump(endJump, _instructions.Count);
@@ -523,22 +523,22 @@ public class BytecodeGenerator : IBytecodeGenerator
                 GenerateLiteralExpr((LiteralExpr)expr);
                 break;
             case NodeType.IdentifierExpr:
-                GenerateIdentifierExpr((IdentifierExpr)expr);
+                GenerateIdentifierExpr((IdentifierNode)expr);
                 break;
             case NodeType.BinaryExpr:
                 GenerateBinaryExpr((BinaryExpr)expr);
                 break;
             case NodeType.UnaryExpr:
-                GenerateUnaryExpr((UnaryExpr)expr);
+                GenerateUnaryExpr((TermUnaryExpression)expr);
                 break;
             case NodeType.CallExpr:
-                GenerateCallExpr((CallExpr)expr);
+                GenerateCallExpr((TermCallExpression)expr);
                 break;
             case NodeType.MemberAccessExpr:
                 GenerateMemberAccessExpr((MemberAccessExpr)expr);
                 break;
             case NodeType.IndexExpr:
-                GenerateIndexExpr((IndexExpr)expr);
+                GenerateIndexExpr((TermIndexExpression)expr);
                 break;
             case NodeType.AssignmentExpr:
                 GenerateAssignmentExpr((AssignmentExpr)expr);
@@ -614,15 +614,15 @@ public class BytecodeGenerator : IBytecodeGenerator
         }
     }
 
-    private void GenerateIdentifierExpr(IdentifierExpr expr)
+    private void GenerateIdentifierExpr(IdentifierNode node)
     {
-        if (expr.Name == "create_entity")
+        if (node.Name == "create_entity")
         {
             Emit(OpCode.SpawnEntity);
             return;
         }
 
-        if (_localVariables.TryGetValue(expr.Name, out var localIdx))
+        if (_localVariables.TryGetValue(node.Name, out var localIdx))
         {
             Emit(OpCode.LoadLocal);
             EmitInt(localIdx);
@@ -630,7 +630,7 @@ public class BytecodeGenerator : IBytecodeGenerator
         }
 
         Emit(OpCode.LoadGlobal);
-        EmitInt(AddConstant(expr.Name));
+        EmitInt(AddConstant(node.Name));
     }
 
     private void GenerateBinaryExpr(BinaryExpr expr)
@@ -656,15 +656,15 @@ public class BytecodeGenerator : IBytecodeGenerator
         Emit(op);
     }
 
-    private void GenerateUnaryExpr(UnaryExpr expr)
+    private void GenerateUnaryExpr(TermUnaryExpression expression)
     {
-        GenerateExpression(expr.Operand);
+        GenerateExpression(expression.Operand);
 
-        if (expr.Operator == "-")
+        if (expression.Operator == "-")
         {
             Emit(OpCode.NegInt);
         }
-        else if (expr.Operator == "!")
+        else if (expression.Operator == "!")
         {
             Emit(OpCode.PushInt8);
             EmitByte(1);
@@ -672,9 +672,9 @@ public class BytecodeGenerator : IBytecodeGenerator
         }
     }
 
-    private void GenerateCallExpr(CallExpr expr)
+    private void GenerateCallExpr(TermCallExpression expression)
     {
-        if (expr.Callee is IdentifierExpr idExpr)
+        if (expression.Callee is IdentifierNode idExpr)
         {
             switch (idExpr.Name)
             {
@@ -682,14 +682,14 @@ public class BytecodeGenerator : IBytecodeGenerator
                     Emit(OpCode.SpawnEntity);
                     return;
                 case "destroy_entity":
-                    GenerateExpression(expr.Arguments[0]);
+                    GenerateExpression(expression.Arguments[0]);
                     Emit(OpCode.DestroyEntity);
                     return;
                 default:
                     if (idExpr.Name.StartsWith("new_"))
                     {
                         var typeName = idExpr.Name[4..];
-                        foreach (var arg in expr.Arguments)
+                        foreach (var arg in expression.Arguments)
                         {
                             GenerateExpression(arg);
                         }
@@ -703,19 +703,19 @@ public class BytecodeGenerator : IBytecodeGenerator
             }
         }
 
-        if (expr.Callee is MemberAccessExpr memberExpr)
+        if (expression.Callee is MemberAccessExpr memberExpr)
         {
-            GenerateMemberCall(memberExpr, expr.Arguments);
+            GenerateMemberCall(memberExpr, expression.Arguments);
             return;
         }
 
-        foreach (var arg in expr.Arguments)
+        foreach (var arg in expression.Arguments)
         {
             GenerateExpression(arg);
         }
 
-        if (_nativeBindings.TryGetValue(expr.Callee.ToString() ?? "", out var nativeIdx) ||
-            expr.Callee is IdentifierExpr calleeId && _nativeBindings.TryGetValue(calleeId.Name, out nativeIdx))
+        if (_nativeBindings.TryGetValue(expression.Callee.ToString() ?? "", out var nativeIdx) ||
+            expression.Callee is IdentifierNode calleeId && _nativeBindings.TryGetValue(calleeId.Name, out nativeIdx))
         {
             Emit(OpCode.CallNative);
             EmitInt(nativeIdx);
@@ -723,7 +723,7 @@ public class BytecodeGenerator : IBytecodeGenerator
         else
         {
             Emit(OpCode.Call);
-            EmitInt(AddConstant(expr.Callee.ToString() ?? ""));
+            EmitInt(AddConstant(expression.Callee.ToString() ?? ""));
         }
     }
 
@@ -770,10 +770,10 @@ public class BytecodeGenerator : IBytecodeGenerator
         EmitInt(AddConstant(expr.MemberName));
     }
 
-    private void GenerateIndexExpr(IndexExpr expr)
+    private void GenerateIndexExpr(TermIndexExpression expression)
     {
-        GenerateExpression(expr.Object);
-        GenerateExpression(expr.Index);
+        GenerateExpression(expression.Object);
+        GenerateExpression(expression.Index);
         Emit(OpCode.GetField);
         EmitInt(AddConstant("index"));
     }
@@ -801,7 +801,7 @@ public class BytecodeGenerator : IBytecodeGenerator
             Emit(op);
         }
 
-        if (expr.Target is IdentifierExpr idExpr)
+        if (expr.Target is IdentifierNode idExpr)
         {
             if (_localVariables.TryGetValue(idExpr.Name, out var localIdx))
             {

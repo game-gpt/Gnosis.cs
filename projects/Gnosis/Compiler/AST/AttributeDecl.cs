@@ -6,18 +6,22 @@ namespace Gnosis.Compiler.AST;
 /// <remarks>
 /// 语法示例：
 /// <code>
-/// [inline]                           // 无参数特性
+/// # 无参数特性
+/// [inline]
 /// fn fastFunc() { }
 /// 
-/// [range(min = 0, max = 100)]        // 带命名参数的特性
-/// let value: int;
+/// # 带命名参数的特性
+/// [range(min = 0, max = 100)]
+/// let value: int
 /// 
-/// [deprecated("use newFunc instead")] // 带字符串参数的特性
+/// # 带字符串参数的特性
+/// [deprecated("use newFunc instead")]
 /// fn oldFunc() { }
 /// 
-/// [serialize, json]                  // 多个特性
+/// # 多个特性
+/// [serialize, json]
 /// struct Data {
-///     name: string;
+///     name: string
 /// }
 /// </code>
 /// </remarks>

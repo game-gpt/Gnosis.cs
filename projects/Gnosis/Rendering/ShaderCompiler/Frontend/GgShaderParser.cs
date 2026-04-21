@@ -811,7 +811,7 @@ public class GgShaderParser : IParser
         return new BlockStmt(SourceSpan.FromToken(startToken), statements);
     }
 
-    private IfStmt ParseIfStmt()
+    private IfStatement ParseIfStmt()
     {
         var startToken = ConsumeKeyword("if", "GG3052", "期望 'if' 关键字");
 
@@ -832,7 +832,7 @@ public class GgShaderParser : IParser
             }
         }
 
-        return new IfStmt(SourceSpan.FromToken(startToken), condition, thenBlock, elseBlock);
+        return new IfStatement(SourceSpan.FromToken(startToken), condition, thenBlock, elseBlock);
     }
 
     private ForStmt ParseForStmt()
@@ -913,7 +913,7 @@ public class GgShaderParser : IParser
         return new LoopStmt(SourceSpan.FromToken(startToken), iteratorName, iterable, body);
     }
 
-    private ReturnStmt ParseReturnStmt()
+    private ReturnStatement ParseReturnStmt()
     {
         var startToken = ConsumeKeyword("return", "GG3058", "期望 'return' 关键字");
 
@@ -926,7 +926,7 @@ public class GgShaderParser : IParser
 
         Match(TokenType.Delimiter, ";");
 
-        return new ReturnStmt(SourceSpan.FromToken(startToken), value);
+        return new ReturnStatement(SourceSpan.FromToken(startToken), value);
     }
 
     private DiscardStmt ParseDiscardStmt()
@@ -938,11 +938,11 @@ public class GgShaderParser : IParser
         return new DiscardStmt(SourceSpan.FromToken(startToken));
     }
 
-    private ExprStmt ParseExprStmt()
+    private TermExpressionStatement ParseExprStmt()
     {
         var expr = ParseExpression();
         Match(TokenType.Delimiter, ";");
-        return new ExprStmt(null, expr);
+        return new TermExpressionStatement(null, expr);
     }
 
     #endregion
@@ -1062,7 +1062,7 @@ public class GgShaderParser : IParser
         {
             var op = Advance().Value;
             var operand = ParseUnary();
-            return new UnaryExpr(null, op, operand, true);
+            return new TermUnaryExpression(null, op, operand, true);
         }
 
         return ParsePostfix();
@@ -1111,14 +1111,14 @@ public class GgShaderParser : IParser
                 }
 
                 Consume(TokenType.Delimiter, ")", "GG3061", "期望 ')'");
-                expr = new CallExpr(null, expr, args);
+                expr = new TermCallExpression(null, expr, args);
             }
             else if (Check(TokenType.Delimiter, "["))
             {
                 Advance();
                 var index = ParseExpression();
                 Consume(TokenType.Delimiter, "]", "GG3062", "期望 ']'");
-                expr = new IndexExpr(null, expr, index);
+                expr = new TermIndexExpression(null, expr, index);
             }
             else
             {
@@ -1178,7 +1178,7 @@ public class GgShaderParser : IParser
         if (Check(TokenType.Identifier) || Check(TokenType.TypeKeyword))
         {
             var token = Advance();
-            return new IdentifierExpr(SourceSpan.FromToken(token), token.Value);
+            return new IdentifierNode(SourceSpan.FromToken(token), token.Value);
         }
 
         if (Check(TokenType.Delimiter, "("))
