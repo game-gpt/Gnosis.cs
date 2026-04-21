@@ -7,13 +7,13 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # group 0, binding 0
-/// uniform modelMatrix: mat4 @ (0, 0)
+/// uniform model_matrix: mat4 @ (0, 0)
 /// 
 /// # group 0, binding 1
-/// uniform viewMatrix: mat4 @ (0, 1)
+/// uniform view_matrix: mat4 @ (0, 1)
 /// 
 /// # group 0, binding 2
-/// uniform projectionMatrix: mat4 @ (0, 2)
+/// uniform projection_matrix: mat4 @ (0, 2)
 /// 
 /// # 数组类型的 uniform
 /// uniform lights: Light[] @ (1, 0)

@@ -83,6 +83,8 @@ public sealed class NetworkManager : INetworkManager
         _backend = _backendType switch
         {
             NetworkBackendType.None => new NullNetworkBackend(),
+            NetworkBackendType.WebSocket => new WebSocketBackend(),
+            NetworkBackendType.Steam => new SteamNetworkBackend(),
             _ => throw new NotSupportedException($"不支持的网络后端类型：{_backendType}")
         };
 

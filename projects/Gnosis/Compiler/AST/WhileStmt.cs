@@ -18,7 +18,7 @@ namespace Gnosis.Compiler.AST;
 /// }
 /// 
 /// # 带函数条件的循环
-/// while hasNext() {
+/// while has_next() {
 ///     process(next())
 /// }
 /// </code>

@@ -8,23 +8,23 @@ namespace Gnosis.Compiler.AST;
 /// <code>
 /// # 简单 if 语句
 /// if x &gt; 0 {
-///     doSomething()
+///     do_something()
 /// }
 /// 
 /// # if-else 语句
 /// if x &gt; 0 {
-///     doA()
+///     do_a()
 /// } else {
-///     doB()
+///     do_b()
 /// }
 /// 
 /// # if-else if-else 链
 /// if x &gt; 0 {
-///     doA()
+///     do_a()
 /// } else if x &lt; 0 {
-///     doB()
+///     do_b()
 /// } else {
-///     doC()
+///     do_c()
 /// }
 /// </code>
 /// </remarks>

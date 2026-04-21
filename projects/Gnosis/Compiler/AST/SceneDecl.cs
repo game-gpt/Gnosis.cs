@@ -8,21 +8,21 @@ namespace Gnosis.Compiler.AST;
 /// <code>
 /// # 主菜单场景
 /// scene MainMenu {
-///     let selectedOption = 0
+///     let selected_option = 0
 ///     
 ///     # 进入场景时调用
-///     micro onEnter {
-///         playMusic("menu_bgm")
+///     micro on_enter {
+///         play_music("menu_bgm")
 ///     }
 ///     
 ///     # 离开场景时调用
-///     micro onExit {
-///         stopMusic()
+///     micro on_exit {
+///         stop_music()
 ///     }
 ///     
 ///     # 每帧更新
-///     micro onUpdate(dt: float) {
-///         handleInput()
+///     micro on_update(dt: float) {
+///         handle_input()
 ///         render()
 ///     }
 /// }
@@ -32,9 +32,9 @@ namespace Gnosis.Compiler.AST;
 ///     let score = 0
 ///     let player: Entity
 ///     
-///     micro onEnter { }
-///     micro onUpdate(dt: float) { }
-///     micro onExit { }
+///     micro on_enter { }
+///     micro on_update(dt: float) { }
+///     micro on_exit { }
 /// }
 /// </code>
 /// </remarks>

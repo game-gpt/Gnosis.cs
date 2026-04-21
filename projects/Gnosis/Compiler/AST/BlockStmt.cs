@@ -18,7 +18,7 @@ namespace Gnosis.Compiler.AST;
 /// 
 /// # 作为控制流主体
 /// if condition {
-///     doSomething()
+///     do_something()
 /// }
 /// </code>
 /// </remarks>

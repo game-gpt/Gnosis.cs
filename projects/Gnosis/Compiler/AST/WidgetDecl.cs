@@ -9,10 +9,10 @@ namespace Gnosis.Compiler.AST;
 /// # 简单按钮组件
 /// widget Button {
 ///     text: string
-///     onClick: () =&gt; void
+///     on_click: () =&gt; void
 ///     
 ///     micro render {
-///         &lt;button onclick={onClick}&gt;{text}&lt;/button&gt;
+///         &lt;button onclick={on_click}&gt;{text}&lt;/button&gt;
 ///     }
 /// }
 /// 
@@ -21,10 +21,10 @@ namespace Gnosis.Compiler.AST;
 ///     value: float
 ///     min: float = 0.0
 ///     max: float = 100.0
-///     onChange: (float) =&gt; void
+///     on_change: (float) =&gt; void
 ///     
 ///     micro render {
-///         &lt;input type="range" min={min} max={max} value={value} onchange={onChange} /&gt;
+///         &lt;input type="range" min={min} max={max} value={value} onchange={on_change} /&gt;
 ///     }
 /// }
 /// </code>

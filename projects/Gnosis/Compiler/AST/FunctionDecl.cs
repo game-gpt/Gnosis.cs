@@ -23,7 +23,7 @@ namespace Gnosis.Compiler.AST;
 /// 
 /// # 带属性的函数
 /// [inline]
-/// micro fastAdd(a: int, b: int): int {
+/// micro fast_add(a: int, b: int): int {
 ///     return a + b
 /// }
 /// </code>

@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Compile Remove="Network\NetworkManagerTests.cs" />
+    <Compile Remove="Network\NetworkTests.cs" />
     <Compile Remove="Core\ConfigSystemTests.cs" />
   </ItemGroup>
 

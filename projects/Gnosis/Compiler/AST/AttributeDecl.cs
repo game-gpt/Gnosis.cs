@@ -8,15 +8,15 @@ namespace Gnosis.Compiler.AST;
 /// <code>
 /// # 无参数特性
 /// [inline]
-/// micro fastFunc { }
+/// micro fast_func { }
 /// 
 /// # 带命名参数的特性
 /// [range(min = 0, max = 100)]
 /// let value: int
 /// 
 /// # 带字符串参数的特性
-/// [deprecated("use newFunc instead")]
-/// micro oldFunc { }
+/// [deprecated("use new_func instead")]
+/// micro old_func { }
 /// 
 /// # 多个特性
 /// [serialize, json]

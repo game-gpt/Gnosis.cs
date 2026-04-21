@@ -15,12 +15,12 @@ namespace Gnosis.Compiler.AST;
 /// 
 /// system MovementSystem {
 ///     query all(Position, Velocity)
-///     micro onUpdate(dt: float) { }
+///     micro on_update(dt: float) { }
 /// }
 /// 
 /// scene GameScene {
-///     micro onEnter { }
-///     micro onUpdate(dt: float) { }
+///     micro on_enter { }
+///     micro on_update(dt: float) { }
 /// }
 /// </code>
 /// </remarks>
