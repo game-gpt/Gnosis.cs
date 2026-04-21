@@ -8,7 +8,7 @@ namespace Gnosis.Compiler.AST;
 /// <code>
 /// # 无参数特性
 /// [inline]
-/// fn fastFunc() { }
+/// micro fastFunc { }
 /// 
 /// # 带命名参数的特性
 /// [range(min = 0, max = 100)]
@@ -16,7 +16,7 @@ namespace Gnosis.Compiler.AST;
 /// 
 /// # 带字符串参数的特性
 /// [deprecated("use newFunc instead")]
-/// fn oldFunc() { }
+/// micro oldFunc { }
 /// 
 /// # 多个特性
 /// [serialize, json]

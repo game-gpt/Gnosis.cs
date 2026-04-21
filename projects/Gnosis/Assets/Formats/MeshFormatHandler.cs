@@ -33,6 +33,6 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".mesh", ".scirptmesh", ".obj", ".fbx", ".gltf", ".glb" };
+        return new List<string> { ".gnosis-mesh", ".mesh", ".obj", ".fbx", ".gltf", ".glb", ".scirptmesh" };
     }
 }

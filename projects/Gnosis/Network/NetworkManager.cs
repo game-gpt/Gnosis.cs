@@ -12,10 +12,13 @@ public sealed class NetworkManager : INetworkManager
 {
     #region 字段
 
-    private readonly INetworkBackend _backend;
-    private bool _isInitialized;
+    private INetworkBackend? _backend;
+    private NetworkBackendType _backendType;
+    private NetworkMode _networkMode = NetworkMode.Offline;
+    private int _playerCount;
+    private string? _lobbyId;
     private int _maxPlayers;
-    private ConnectionState _connectionState;
+    private readonly List<INetworkMessage> _pendingMessages = new();
 
     #endregion
 
@@ -24,29 +27,34 @@ public sealed class NetworkManager : INetworkManager
     /// <summary>
     /// 获取是否为服务器
     /// </summary>
-    public bool IsServer { get; private set; }
+    public bool IsServer => _networkMode == NetworkMode.Host || _networkMode == NetworkMode.Server;
 
     /// <summary>
     /// 获取是否为客户端
     /// </summary>
-    public bool IsClient { get; private set; }
+    public bool IsClient => _networkMode == NetworkMode.Client;
 
     /// <summary>
     /// 获取玩家数量
     /// </summary>
-    public int PlayerCount { get; private set; }
+    public int PlayerCount => _playerCount;
 
     #endregion
 
     #region 事件
 
     /// <summary>
-    /// 连接状态变化事件
+    /// 玩家加入时触发
     /// </summary>
-    public event Action<ConnectionState>? OnConnectionStateChanged;
+    public event Action<PlayerId>? OnPlayerJoined;
 
     /// <summary>
-    /// 消息接收事件
+    /// 玩家离开时触发
+    /// </summary>
+    public event Action<PlayerId>? OnPlayerLeft;
+
+    /// <summary>
+    /// 收到消息时触发
     /// </summary>
     public event Action<INetworkMessage>? OnMessageReceived;
 
@@ -57,10 +65,10 @@ public sealed class NetworkManager : INetworkManager
     /// <summary>
     /// 初始化网络管理器
     /// </summary>
-    /// <param name="backend">网络后端实例</param>
-    public NetworkManager(INetworkBackend backend)
+    /// <param name="backendType">网络后端类型</param>
+    public NetworkManager(NetworkBackendType backendType = NetworkBackendType.None)
     {
-        _backend = backend;
+        _backendType = backendType;
     }
 
     #endregion
@@ -68,13 +76,23 @@ public sealed class NetworkManager : INetworkManager
     #region 公共方法
 
     /// <summary>
-    /// 初始化网络连接
+    /// 初始化网络管理器，根据后端类型创建对应后端实例
     /// </summary>
     public void Initialize()
     {
-        _backend.Connect("localhost", 0);
-        _isInitialized = true;
-        SetConnectionState(ConnectionState.Connected);
+        _backend = _backendType switch
+        {
+            NetworkBackendType.None => new NullNetworkBackend(),
+            _ => throw new NotSupportedException($"不支持的网络后端类型：{_backendType}")
+        };
+
+        _backend.OnMessageReceived += message =>
+        {
+            _pendingMessages.Add(message);
+            OnMessageReceived?.Invoke(message);
+        };
+
+        _networkMode = NetworkMode.Offline;
     }
 
     /// <summary>
@@ -82,13 +100,16 @@ public sealed class NetworkManager : INetworkManager
     /// </summary>
     public void Shutdown()
     {
-        SetConnectionState(ConnectionState.Disconnecting);
-        _backend.Disconnect();
-        IsServer = false;
-        IsClient = false;
-        PlayerCount = 0;
-        _isInitialized = false;
-        SetConnectionState(ConnectionState.Disconnected);
+        if (_backend is not null && _backend.IsConnected)
+        {
+            _backend.Disconnect();
+        }
+
+        _pendingMessages.Clear();
+        _networkMode = NetworkMode.Offline;
+        _playerCount = 0;
+        _lobbyId = null;
+        _backend = null;
     }
 
     /// <summary>
@@ -97,10 +118,17 @@ public sealed class NetworkManager : INetworkManager
     /// <param name="maxPlayers">最大玩家数</param>
     public void CreateLobby(int maxPlayers)
     {
-        EnsureInitialized();
-        IsServer = true;
-        PlayerCount = 1;
+        if (_backend is null)
+        {
+            throw new InvalidOperationException("网络管理器未初始化");
+        }
+
+        _backend.Connect("localhost", 0);
+        _networkMode = NetworkMode.Host;
         _maxPlayers = maxPlayers;
+        _playerCount = 1;
+        _lobbyId = Guid.NewGuid().ToString("N")[..8];
+        OnPlayerJoined?.Invoke(_backend.LocalPlayerId);
     }
 
     /// <summary>
@@ -109,9 +137,15 @@ public sealed class NetworkManager : INetworkManager
     /// <param name="lobbyId">大厅标识</param>
     public void JoinLobby(string lobbyId)
     {
-        EnsureInitialized();
-        IsClient = true;
-        PlayerCount = 1;
+        if (_backend is null)
+        {
+            throw new InvalidOperationException("网络管理器未初始化");
+        }
+
+        _backend.Connect("server", 0);
+        _networkMode = NetworkMode.Client;
+        _lobbyId = lobbyId;
+        _playerCount = 1;
     }
 
     /// <summary>
@@ -119,10 +153,14 @@ public sealed class NetworkManager : INetworkManager
     /// </summary>
     public void LeaveLobby()
     {
-        EnsureInitialized();
-        IsServer = false;
-        IsClient = false;
-        PlayerCount = 0;
+        if (_backend is not null && _backend.IsConnected)
+        {
+            _backend.Disconnect();
+        }
+
+        _networkMode = NetworkMode.Offline;
+        _playerCount = 0;
+        _lobbyId = null;
     }
 
     /// <summary>
@@ -132,7 +170,11 @@ public sealed class NetworkManager : INetworkManager
     /// <param name="reliable">是否使用可靠传输</param>
     public void SendToServer(byte[] data, bool reliable = false)
     {
-        EnsureInitialized();
+        if (_backend is null)
+        {
+            throw new InvalidOperationException("网络管理器未初始化");
+        }
+
         if (reliable)
         {
             _backend.SendReliable(data);
@@ -150,7 +192,11 @@ public sealed class NetworkManager : INetworkManager
     /// <param name="reliable">是否使用可靠传输</param>
     public void SendToAll(byte[] data, bool reliable = false)
     {
-        EnsureInitialized();
+        if (_backend is null)
+        {
+            throw new InvalidOperationException("网络管理器未初始化");
+        }
+
         if (reliable)
         {
             _backend.SendReliable(data);
@@ -167,44 +213,17 @@ public sealed class NetworkManager : INetworkManager
     /// <returns>接收到的消息集合</returns>
     public IEnumerable<INetworkMessage> PollMessages()
     {
-        EnsureInitialized();
-        var messages = _backend.Receive();
-        foreach (var message in messages)
+        if (_backend is null)
         {
-            OnMessageReceived?.Invoke(message);
+            return Enumerable.Empty<INetworkMessage>();
         }
+
+        var received = _backend.Receive();
+        _pendingMessages.AddRange(received);
+
+        var messages = _pendingMessages.ToList();
+        _pendingMessages.Clear();
         return messages;
-    }
-
-    #endregion
-
-    #region 私有方法
-
-    /// <summary>
-    /// 确保网络管理器已初始化
-    /// </summary>
-    /// <exception cref="InvalidOperationException">网络管理器未初始化时抛出</exception>
-    private void EnsureInitialized()
-    {
-        if (!_isInitialized)
-        {
-            throw new InvalidOperationException("网络管理器未初始化，请先调用 Initialize 方法");
-        }
-    }
-
-    /// <summary>
-    /// 设置连接状态并触发事件
-    /// </summary>
-    /// <param name="state">新的连接状态</param>
-    private void SetConnectionState(ConnectionState state)
-    {
-        if (_connectionState == state)
-        {
-            return;
-        }
-
-        _connectionState = state;
-        OnConnectionStateChanged?.Invoke(state);
     }
 
     #endregion

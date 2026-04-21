@@ -11,15 +11,15 @@ namespace Gnosis.Compiler.AST;
 ///     query all(Position, Velocity)
 ///     
 ///     # 生命周期方法
-///     fn onInit() { }
+///     micro onInit { }
 ///     
-///     fn onUpdate(dt: float) {
-///         for (entity in query) {
+///     micro onUpdate(dt: float) {
+///         for entity in query {
 ///             entity.position.x += entity.velocity.dx * dt
 ///         }
 ///     }
 ///     
-///     fn onDestroy() { }
+///     micro onDestroy { }
 /// }
 /// 
 /// # 带属性的系统
@@ -27,7 +27,7 @@ namespace Gnosis.Compiler.AST;
 /// system RenderSystem {
 ///     query all(Position, Sprite)
 ///     
-///     fn onUpdate(dt: float) { }
+///     micro onUpdate(dt: float) { }
 /// }
 /// </code>
 /// </remarks>

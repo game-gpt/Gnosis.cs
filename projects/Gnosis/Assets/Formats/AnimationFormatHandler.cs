@@ -24,6 +24,6 @@ public class AnimationFormatHandler : FormatHandlerBase, IAnimationFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".anim", ".scirptanim", ".fbx", ".gltf", ".glb" };
+        return new List<string> { ".gnosis-anim", ".anim", ".fbx", ".gltf", ".glb", ".scirptanim" };
     }
 }

@@ -7,23 +7,23 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # 带参数和返回类型的函数
-/// fn add(a: int, b: int): int {
+/// micro add(a: int, b: int): int {
 ///     return a + b
 /// }
 /// 
 /// # 无返回类型的函数
-/// fn greet(name: string) {
+/// micro greet(name: string) {
 ///     print("Hello, " + name)
 /// }
 /// 
 /// # 无参数函数
-/// fn main() {
+/// micro main {
 ///     run()
 /// }
 /// 
 /// # 带属性的函数
 /// [inline]
-/// fn fastAdd(a: int, b: int): int {
+/// micro fastAdd(a: int, b: int): int {
 ///     return a + b
 /// }
 /// </code>

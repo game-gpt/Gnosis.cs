@@ -4,10 +4,10 @@
     <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <IsPackable>true</IsPackable>
+    <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <PackageId>Gnosis.Testing</PackageId>
-    <Description>Gnosis 引擎测试框架，提供测试基类、Mock 工厂和测试工具</Description>
+    <PackageId>Gnosis.Security.Tests</PackageId>
+    <Description>Gnosis 安全模块单元测试</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,11 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gnosis\Gnosis.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Network\NetworkManagerTests.cs" />
-    <Compile Remove="Core\ConfigSystemTests.cs" />
   </ItemGroup>
 
 </Project>

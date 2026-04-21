@@ -498,9 +498,23 @@ public sealed class SpirvGenerator
     private void EmitLoad(LoadInstruction load)
     {
         var resultType = MapType(load.ResultType);
+
+        if (load.Value.HasValue)
+        {
+            var resultId = load.ResultType switch
+            {
+                ShaderIrType.BoolType => _builder.AddConstant(resultType, load.Value.Value),
+                ShaderIrType.IntType => _builder.AddConstant(resultType, load.Value.Value),
+                ShaderIrType.FloatType => _builder.AddConstant(resultType, load.Value.Value),
+                _ => _builder.AddConstant(resultType, load.Value.Value)
+            };
+            _variableIds[load.ResultId] = resultId;
+            return;
+        }
+
         var ptrId = _variableIds.TryGetValue(load.PointerId, out var pid) ? pid : load.PointerId;
-        var resultId = _builder.AddLoad(resultType, ptrId);
-        _variableIds[load.ResultId] = resultId;
+        var resultId2 = _builder.AddLoad(resultType, ptrId);
+        _variableIds[load.ResultId] = resultId2;
     }
 
     private void EmitAccessChain(AccessChainInstruction access)

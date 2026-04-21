@@ -7,16 +7,16 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # 简单参数
-/// fn foo(x: int) { }
+/// micro foo(x: int) { }
 /// 
 /// # 多参数
-/// fn bar(a: int, b: string) { }
+/// micro bar(a: int, b: string) { }
 /// 
 /// # 数组类型参数
-/// fn baz(data: vec3[]) { }
+/// micro baz(data: vec3[]) { }
 /// 
 /// # 带属性的参数
-/// fn qux([range(0, 10)] value: int) { }
+/// micro qux([range(0, 10)] value: int) { }
 /// </code>
 /// </remarks>
 public sealed record ParameterDecl(

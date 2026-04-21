@@ -31,6 +31,6 @@ public class SceneFormatHandler : FormatHandlerBase, ISceneFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".scene", ".shader" };
+        return new List<string> { ".gnosis-scene", ".scene" };
     }
 }

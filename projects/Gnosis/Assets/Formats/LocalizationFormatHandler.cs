@@ -38,6 +38,6 @@ public class LocalizationFormatHandler : FormatHandlerBase, ILocalizationFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".po", ".mo", ".json", ".resx", ".xliff", ".scirptlocale" };
+        return new List<string> { ".gnosis-locale", ".po", ".mo", ".json", ".resx", ".xliff", ".scirptlocale" };
     }
 }

@@ -11,7 +11,7 @@ namespace Gnosis.Compiler.AST;
 ///     text: string
 ///     onClick: () =&gt; void
 ///     
-///     fn render() {
+///     micro render {
 ///         &lt;button onclick={onClick}&gt;{text}&lt;/button&gt;
 ///     }
 /// }
@@ -23,7 +23,7 @@ namespace Gnosis.Compiler.AST;
 ///     max: float = 100.0
 ///     onChange: (float) =&gt; void
 ///     
-///     fn render() {
+///     micro render {
 ///         &lt;input type="range" min={min} max={max} value={value} onchange={onChange} /&gt;
 ///     }
 /// }

@@ -41,7 +41,7 @@ public class PrefabFormatHandler : FormatHandlerBase, IPrefabFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".prefab", ".scirptp" };
+        return new List<string> { ".gnosis-prefab", ".prefab", ".scirptp" };
     }
     
     private Task<EntityId> CreateEntityFromPrefab(PrefabData prefab, CancellationToken cancellationToken)

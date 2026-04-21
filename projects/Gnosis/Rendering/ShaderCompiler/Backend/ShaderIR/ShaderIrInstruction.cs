@@ -146,7 +146,8 @@ public sealed record SelectionMergeInstruction(
 
 public sealed record LoadInstruction(
     ShaderIrType ResultType,
-    uint PointerId) : ShaderIrInstruction(ShaderIrOpCode.Load);
+    uint PointerId,
+    uint? Value = null) : ShaderIrInstruction(ShaderIrOpCode.Load);
 
 public sealed record StoreInstruction(
     uint PointerId,

@@ -40,6 +40,6 @@ public class AssetFormatHandler : FormatHandlerBase, IAssetFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".asset", ".scirpta" };
+        return new List<string> { ".gnosis-asset", ".asset", ".scirpta" };
     }
 }

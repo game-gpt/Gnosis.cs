@@ -31,6 +31,6 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".wav", ".mp3", ".ogg", ".aac", ".flac", ".scirptaudio" };
+        return new List<string> { ".gnosis-audio", ".wav", ".mp3", ".ogg", ".aac", ".flac", ".scirptaudio" };
     }
 }

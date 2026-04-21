@@ -42,6 +42,6 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".hdr", ".exr", ".dds", ".ktx", ".scirpttexture" };
+        return new List<string> { ".gnosis-texture", ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".hdr", ".exr", ".dds", ".ktx", ".scirpttexture" };
     }
 }

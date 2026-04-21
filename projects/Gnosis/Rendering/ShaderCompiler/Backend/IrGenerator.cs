@@ -15,10 +15,12 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
     private readonly List<ShaderEntryPointIr> _entryPoints = new();
     private readonly List<ExternalFunctionRef> _externalFunctions = new();
     private readonly Dictionary<string, ShaderIrType> _typeMap = new();
+    private readonly Dictionary<string, ShaderIrType> _variableTypeMap = new();
     private readonly Dictionary<string, uint> _variableMap = new();
     private readonly List<ShaderIrInstruction> _currentInstructions = new();
     private readonly List<LocalVariableInstruction> _currentLocals = new();
     private readonly List<string> _currentInterfaceVars = new();
+    private string _currentFilePath = "unknown";
     private uint _nextId = 1;
 
     #endregion
@@ -42,8 +44,10 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         _entryPoints.Clear();
         _externalFunctions.Clear();
         _typeMap.Clear();
+        _variableTypeMap.Clear();
         _variableMap.Clear();
         _nextId = 1;
+        _currentFilePath = ast.FilePath ?? "unknown";
 
         foreach (var decl in ast.Declarations)
         {
@@ -96,6 +100,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         _currentLocals.Clear();
         _currentInterfaceVars.Clear();
         _variableMap.Clear();
+        _variableTypeMap.Clear();
 
         var executionModel = GetExecutionModel(node.Attributes);
         var isEntryPoint = executionModel != null;
@@ -114,6 +119,12 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             };
             parameters.Add(irParam);
             _variableMap[param.Name] = irParam.ResultId;
+            _variableTypeMap[param.Name] = paramType;
+
+            if (storage is StorageClass.Input or StorageClass.Output)
+            {
+                _currentInterfaceVars.Add(param.Name);
+            }
         }
 
         var returnType = node.ReturnType != null ? ResolveType(node.ReturnType) : new ShaderIrType.VoidType();
@@ -154,6 +165,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         var varType = ResolveType(node.VarType);
         var varId = AllocateId();
         _variableMap[node.Name] = varId;
+        _variableTypeMap[node.Name] = varType;
 
         ShaderIrInstruction? initValue = null;
         if (node.Initializer != null)
@@ -217,6 +229,82 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return null;
     }
 
+    public ShaderIrInstruction? VisitForStmt(ForStmt node)
+    {
+        if (node.Initializer != null)
+        {
+            node.Initializer.Accept(this);
+        }
+
+        var headerLabelId = AllocateId();
+        var bodyLabelId = AllocateId();
+        var continueLabelId = AllocateId();
+        var mergeLabelId = AllocateId();
+
+        _currentInstructions.Add(new LabelInstruction(headerLabelId));
+        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
+
+        if (node.Condition != null)
+        {
+            var condition = node.Condition.Accept(this);
+            if (condition != null)
+            {
+                _currentInstructions.Add(new BranchConditionalInstruction(condition.ResultId, bodyLabelId, mergeLabelId));
+            }
+            else
+            {
+                _currentInstructions.Add(new BranchInstruction(bodyLabelId));
+            }
+        }
+        else
+        {
+            _currentInstructions.Add(new BranchInstruction(bodyLabelId));
+        }
+
+        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
+        node.Body.Accept(this);
+
+        _currentInstructions.Add(new LabelInstruction(continueLabelId));
+        if (node.Update != null)
+        {
+            node.Update.Accept(this);
+        }
+        _currentInstructions.Add(new BranchInstruction(headerLabelId));
+
+        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
+        return null;
+    }
+
+    public ShaderIrInstruction? VisitWhileStmt(WhileStmt node)
+    {
+        var headerLabelId = AllocateId();
+        var bodyLabelId = AllocateId();
+        var continueLabelId = AllocateId();
+        var mergeLabelId = AllocateId();
+
+        _currentInstructions.Add(new LabelInstruction(headerLabelId));
+        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
+
+        var condition = node.Condition.Accept(this);
+        if (condition != null)
+        {
+            _currentInstructions.Add(new BranchConditionalInstruction(condition.ResultId, bodyLabelId, mergeLabelId));
+        }
+        else
+        {
+            _currentInstructions.Add(new BranchInstruction(bodyLabelId));
+        }
+
+        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
+        node.Body.Accept(this);
+
+        _currentInstructions.Add(new LabelInstruction(continueLabelId));
+        _currentInstructions.Add(new BranchInstruction(headerLabelId));
+
+        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
+        return null;
+    }
+
     public ShaderIrInstruction? VisitReturnStmt(ReturnStatement node)
     {
         if (node.Value != null)
@@ -238,6 +326,12 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return node.Expression.Accept(this);
     }
 
+    public ShaderIrInstruction? VisitDiscardStmt(DiscardStmt node)
+    {
+        _currentInstructions.Add(new DiscardInstruction());
+        return null;
+    }
+
     public ShaderIrInstruction? VisitBinaryExpr(BinaryExpr node)
     {
         var left = node.Left.Accept(this);
@@ -247,15 +341,38 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             return null;
         }
 
-        var resultType = left.ResultType ?? new ShaderIrType.FloatType();
         var opCode = MapBinaryOp(node.Operator);
-        var instruction = new ArithmeticInstruction(opCode, resultType, left.ResultId, right.ResultId)
+
+        if (IsCompareOp(opCode))
+        {
+            var instruction = new CompareInstruction(opCode, left.ResultType ?? new ShaderIrType.FloatType(), left.ResultId, right.ResultId)
+            {
+                ResultId = AllocateId(),
+                ResultType = new ShaderIrType.BoolType()
+            };
+            _currentInstructions.Add(instruction);
+            return instruction;
+        }
+
+        if (IsLogicalOp(opCode))
+        {
+            var instruction = new LogicalInstruction(opCode, left.ResultType ?? new ShaderIrType.BoolType(), left.ResultId, right.ResultId)
+            {
+                ResultId = AllocateId(),
+                ResultType = new ShaderIrType.BoolType()
+            };
+            _currentInstructions.Add(instruction);
+            return instruction;
+        }
+
+        var resultType = left.ResultType ?? new ShaderIrType.FloatType();
+        var arithInstruction = new ArithmeticInstruction(opCode, resultType, left.ResultId, right.ResultId)
         {
             ResultId = AllocateId(),
             ResultType = resultType
         };
-        _currentInstructions.Add(instruction);
-        return instruction;
+        _currentInstructions.Add(arithInstruction);
+        return arithInstruction;
     }
 
     public ShaderIrInstruction? VisitUnaryExpr(TermUnaryExpression node)
@@ -284,7 +401,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             var instruction = new LogicalInstruction(ShaderIrOpCode.LogicalNot, resultType, operand.ResultId, 0)
             {
                 ResultId = AllocateId(),
-                ResultType = resultType
+                ResultType = new ShaderIrType.BoolType()
             };
             _currentInstructions.Add(instruction);
             return instruction;
@@ -332,13 +449,19 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
                     }
                 }
 
-                var resultType = new ShaderIrType.VectorType(new ShaderIrType.FloatType(), 4);
+                var resultType = InferExternalReturnType(builtinName);
                 var instruction = new CallInstruction(resultType, builtinName, args.ToArray())
                 {
                     ResultId = AllocateId(),
                     ResultType = resultType
                 };
                 _currentInstructions.Add(instruction);
+
+                if (resultType is ShaderIrType.VoidType)
+                {
+                    _diagnostics.AddWarning(_currentFilePath, null, "SHD002", $"无法推导外部函数 '{builtinName}' 的返回类型，默认为 void");
+                }
+
                 return instruction;
             }
         }
@@ -364,9 +487,6 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return callInstruction;
     }
 
-    /// <summary>
-    /// 访问成员访问表达式，生成结构体字段访问指令
-    /// </summary>
     public ShaderIrInstruction? VisitMemberAccessExpr(MemberAccessExpr node)
     {
         var obj = node.Object.Accept(this);
@@ -375,32 +495,112 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             return null;
         }
 
-        if (obj.ResultType is ShaderIrType.StructType structType)
+        var swizzleComponents = ParseSwizzleComponents(node.MemberName);
+        if (swizzleComponents != null)
         {
-            var fieldIndex = -1;
-            for (var i = 0; i < structType.Fields.Count; i++)
+            if (swizzleComponents.Length == 1)
             {
-                if (structType.Fields[i].Name == node.MemberName)
-                {
-                    fieldIndex = i;
-                    break;
-                }
-            }
-
-            if (fieldIndex >= 0)
-            {
-                var fieldType = structType.Fields[fieldIndex].Type;
-                var instruction = new CompositeExtractInstruction(fieldType, obj.ResultId, new[] { fieldIndex })
+                var resultType = new ShaderIrType.FloatType();
+                var instruction = new CompositeExtractInstruction(resultType, obj.ResultId, swizzleComponents)
                 {
                     ResultId = AllocateId(),
-                    ResultType = fieldType
+                    ResultType = resultType
                 };
                 _currentInstructions.Add(instruction);
                 return instruction;
             }
+
+            var vecResultType = new ShaderIrType.VectorType(new ShaderIrType.FloatType(), swizzleComponents.Length);
+            var swizzleInstruction = new VectorSwizzleInstruction(vecResultType, obj.ResultId, swizzleComponents)
+            {
+                ResultId = AllocateId(),
+                ResultType = vecResultType
+            };
+            _currentInstructions.Add(swizzleInstruction);
+            return swizzleInstruction;
+        }
+
+        if (obj.ResultType is ShaderIrType.StructType structType)
+        {
+            for (int i = 0; i < structType.Fields.Count; i++)
+            {
+                if (structType.Fields[i].Name == node.MemberName)
+                {
+                    var fieldType = structType.Fields[i].Type;
+                    var instruction = new AccessChainInstruction(fieldType, obj.ResultId, new[] { (uint)i })
+                    {
+                        ResultId = AllocateId(),
+                        ResultType = fieldType
+                    };
+                    _currentInstructions.Add(instruction);
+                    return instruction;
+                }
+            }
         }
 
         return obj;
+    }
+
+    public ShaderIrInstruction? VisitSwizzleExpr(SwizzleExpr node)
+    {
+        var obj = node.Object.Accept(this);
+        if (obj == null)
+        {
+            return null;
+        }
+
+        var components = ParseSwizzleComponents(node.Components);
+        if (components == null)
+        {
+            _diagnostics.AddWarning(_currentFilePath, null, "SHD003", $"无法解析 swizzle 分量 '{node.Components}'");
+            return obj;
+        }
+
+        if (components.Length == 1)
+        {
+            var resultType = new ShaderIrType.FloatType();
+            var instruction = new CompositeExtractInstruction(resultType, obj.ResultId, components)
+            {
+                ResultId = AllocateId(),
+                ResultType = resultType
+            };
+            _currentInstructions.Add(instruction);
+            return instruction;
+        }
+
+        var vecResultType = new ShaderIrType.VectorType(new ShaderIrType.FloatType(), components.Length);
+        var swizzleInstruction = new VectorSwizzleInstruction(vecResultType, obj.ResultId, components)
+        {
+            ResultId = AllocateId(),
+            ResultType = vecResultType
+        };
+        _currentInstructions.Add(swizzleInstruction);
+        return swizzleInstruction;
+    }
+
+    public ShaderIrInstruction? VisitIndexExpr(TermIndexExpression node)
+    {
+        var obj = node.Object.Accept(this);
+        var index = node.Index.Accept(this);
+        if (obj == null || index == null)
+        {
+            return null;
+        }
+
+        var resultType = obj.ResultType switch
+        {
+            ShaderIrType.VectorType v => new ShaderIrType.FloatType(),
+            ShaderIrType.MatrixType m => new ShaderIrType.VectorType(m.ElementType, m.RowCount),
+            _ => obj.ResultType ?? new ShaderIrType.VoidType()
+        };
+
+        var instruction = new AccessChainInstruction(resultType, obj.ResultId, new[] { index.ResultId })
+        {
+            ResultId = AllocateId(),
+            ResultType = resultType
+        };
+        _currentInstructions.Add(instruction);
+        return instruction;
     }
 
     public ShaderIrInstruction? VisitLiteralExpr(LiteralExpr node)
@@ -413,7 +613,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             _ => (new ShaderIrType.IntType() as ShaderIrType, 0u)
         };
 
-        var instruction = new LoadInstruction(type, 0)
+        var instruction = new LoadInstruction(type, 0, value)
         {
             ResultId = AllocateId(),
             ResultType = type
@@ -426,7 +626,9 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
     {
         if (_variableMap.TryGetValue(node.Name, out var varId))
         {
-            var type = new ShaderIrType.FloatType();
+            var type = _variableTypeMap.TryGetValue(node.Name, out var varType)
+                ? varType
+                : new ShaderIrType.FloatType();
             var instruction = new LoadInstruction(type, varId)
             {
                 ResultId = AllocateId(),
@@ -455,116 +657,6 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return value;
     }
 
-    public ShaderIrInstruction? VisitImportDecl(ImportDecl node) => null;
-    public ShaderIrInstruction? VisitFieldDecl(FieldDecl node) => null;
-    public ShaderIrInstruction? VisitParameterDecl(ParameterDecl node) => null;
-    public ShaderIrInstruction? VisitTypeAnnotation(TypeAnnotation node) => null;
-    public ShaderIrInstruction? VisitAttributeDecl(AttributeDecl node) => null;
-    public ShaderIrInstruction? VisitQueryExpr(QueryExpr node) => null;
-    public ShaderIrInstruction? VisitMetaBlock(MetaBlock node) => null;
-    public ShaderIrInstruction? VisitSystemDecl(SystemDecl node) => null;
-    public ShaderIrInstruction? VisitWidgetDecl(WidgetDecl node) => null;
-    public ShaderIrInstruction? VisitSceneDecl(SceneDecl node) => null;
-    public ShaderIrInstruction? VisitPluginDecl(PluginDecl node) => null;
-    /// <summary>
-    /// 访问 for-each 循环语句，生成基本循环结构
-    /// </summary>
-    public ShaderIrInstruction? VisitLoopStmt(LoopStmt node)
-    {
-        var bodyLabelId = AllocateId();
-        var continueLabelId = AllocateId();
-        var mergeLabelId = AllocateId();
-
-        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(bodyLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
-        node.Body.Accept(this);
-        _currentInstructions.Add(new BranchInstruction(continueLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(bodyLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
-        return null;
-    }
-
-    /// <summary>
-    /// 访问 while 循环语句，生成 SPIR-V 结构化循环
-    /// </summary>
-    public ShaderIrInstruction? VisitWhileStmt(WhileStmt node)
-    {
-        var headerLabelId = AllocateId();
-        var bodyLabelId = AllocateId();
-        var continueLabelId = AllocateId();
-        var mergeLabelId = AllocateId();
-
-        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(headerLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(headerLabelId));
-        var condition = node.Condition.Accept(this);
-        if (condition == null)
-        {
-            return null;
-        }
-        _currentInstructions.Add(new BranchConditionalInstruction(condition.ResultId, bodyLabelId, mergeLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
-        node.Body.Accept(this);
-        _currentInstructions.Add(new BranchInstruction(continueLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(headerLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
-        return null;
-    }
-
-    /// <summary>
-    /// 访问索引访问表达式，生成 AccessChain 指令
-    /// </summary>
-    public ShaderIrInstruction? VisitIndexExpr(TermIndexExpression node)
-    {
-        var obj = node.Object.Accept(this);
-        if (obj == null)
-        {
-            return null;
-        }
-
-        var index = node.Index.Accept(this);
-        if (index == null)
-        {
-            return null;
-        }
-
-        var resultType = obj.ResultType ?? new ShaderIrType.FloatType();
-        var instruction = new AccessChainInstruction(resultType, obj.ResultId, new[] { index.ResultId })
-        {
-            ResultId = AllocateId(),
-            ResultType = resultType
-        };
-        _currentInstructions.Add(instruction);
-        return instruction;
-    }
-
-    /// <summary>
-    /// 访问 Lambda 表达式，内联生成函数体
-    /// </summary>
-    public ShaderIrInstruction? VisitLambdaExpr(LambdaExpr node)
-    {
-        foreach (var param in node.Parameters)
-        {
-            var paramId = AllocateId();
-            _variableMap[param.Name] = paramId;
-        }
-
-        return node.Body.Accept(this);
-    }
-
-    /// <summary>
-    /// 访问结构体声明，生成结构体 IR 并注册类型映射
-    /// </summary>
     public ShaderIrInstruction? VisitStructDecl(StructDecl node)
     {
         var fields = new List<ShaderStructFieldIr>();
@@ -585,142 +677,98 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return null;
     }
 
-    /// <summary>
-    /// 访问 for 循环语句，生成 SPIR-V 结构化循环
-    /// </summary>
-    public ShaderIrInstruction? VisitForStmt(ForStmt node)
+    public ShaderIrInstruction? VisitUniformBindingDecl(UniformBindingDecl node)
     {
-        if (node.Initializer != null)
+        var varType = ResolveType(node.TypeAnnotation);
+        var varId = AllocateId();
+        _variableMap[node.Name] = varId;
+        _variableTypeMap[node.Name] = varType;
+
+        var storage = MapBindingTypeToStorage(node.BindingType);
+        var resourceKind = MapBindingTypeToResourceKind(node.BindingType, varType);
+
+        ShaderResourceIr? resource = null;
+        if (node.Group.HasValue && node.Binding.HasValue)
         {
-            node.Initializer.Accept(this);
-        }
-
-        var headerLabelId = AllocateId();
-        var bodyLabelId = AllocateId();
-        var continueLabelId = AllocateId();
-        var mergeLabelId = AllocateId();
-
-        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
-        _currentInstructions.Add(new BranchInstruction(headerLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(headerLabelId));
-        if (node.Condition != null)
-        {
-            var condition = node.Condition.Accept(this);
-            if (condition != null)
+            resource = new ShaderResourceIr(
+                node.Name,
+                resourceKind,
+                (uint)node.Group.Value,
+                (uint)node.Binding.Value,
+                varType)
             {
-                _currentInstructions.Add(new BranchConditionalInstruction(condition.ResultId, bodyLabelId, mergeLabelId));
-            }
-            else
-            {
-                _currentInstructions.Add(new BranchInstruction(bodyLabelId));
-            }
+                ResultId = AllocateId()
+            };
         }
-        else
+
+        var global = new ShaderGlobalVariableIr(node.Name, varType, storage, resource)
         {
-            _currentInstructions.Add(new BranchInstruction(bodyLabelId));
-        }
+            ResultId = varId
+        };
+        _globals.Add(global);
 
-        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
-        node.Body.Accept(this);
-        _currentInstructions.Add(new BranchInstruction(continueLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(continueLabelId));
-        if (node.Update != null)
-        {
-            node.Update.Accept(this);
-        }
-        _currentInstructions.Add(new BranchInstruction(headerLabelId));
-
-        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
         return null;
     }
 
-    /// <summary>
-    /// 访问丢弃语句，生成 Discard 指令
-    /// </summary>
-    public ShaderIrInstruction? VisitDiscardStmt(DiscardStmt node)
+    public ShaderIrInstruction? VisitImportDecl(ImportDecl node) => null;
+
+    public ShaderIrInstruction? VisitFieldDecl(FieldDecl node) => null;
+
+    public ShaderIrInstruction? VisitParameterDecl(ParameterDecl node) => null;
+
+    public ShaderIrInstruction? VisitTypeAnnotation(TypeAnnotation node) => null;
+
+    public ShaderIrInstruction? VisitAttributeDecl(AttributeDecl node) => null;
+
+    public ShaderIrInstruction? VisitQueryExpr(QueryExpr node)
     {
-        var instruction = new DiscardInstruction();
-        _currentInstructions.Add(instruction);
-        return instruction;
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 QueryExpr");
+        return null;
     }
 
-    /// <summary>
-    /// 访问向量分量重组表达式，生成 CompositeExtract 或 VectorSwizzle 指令
-    /// </summary>
-    public ShaderIrInstruction? VisitSwizzleExpr(SwizzleExpr node)
+    public ShaderIrInstruction? VisitMetaBlock(MetaBlock node)
     {
-        var obj = node.Object.Accept(this);
-        if (obj == null)
-        {
-            return null;
-        }
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 MetaBlock");
+        return null;
+    }
 
-        var components = ParseSwizzleComponents(node.Components);
-        if (components.Length == 0)
-        {
-            return obj;
-        }
+    public ShaderIrInstruction? VisitSystemDecl(SystemDecl node)
+    {
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 SystemDecl");
+        return null;
+    }
 
-        if (components.Length == 1)
-        {
-            var resultType = new ShaderIrType.FloatType();
-            var instruction = new CompositeExtractInstruction(resultType, obj.ResultId, components)
-            {
-                ResultId = AllocateId(),
-                ResultType = resultType
-            };
-            _currentInstructions.Add(instruction);
-            return instruction;
-        }
+    public ShaderIrInstruction? VisitWidgetDecl(WidgetDecl node)
+    {
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 WidgetDecl");
+        return null;
+    }
 
-        var vectorResultType = new ShaderIrType.VectorType(new ShaderIrType.FloatType(), components.Length);
-        var swizzleInstruction = new VectorSwizzleInstruction(vectorResultType, obj.ResultId, components)
-        {
-            ResultId = AllocateId(),
-            ResultType = vectorResultType
-        };
-        _currentInstructions.Add(swizzleInstruction);
-        return swizzleInstruction;
+    public ShaderIrInstruction? VisitSceneDecl(SceneDecl node)
+    {
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 SceneDecl");
+        return null;
+    }
+
+    public ShaderIrInstruction? VisitPluginDecl(PluginDecl node)
+    {
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 PluginDecl");
+        return null;
+    }
+
+    public ShaderIrInstruction? VisitLoopStmt(LoopStmt node)
+    {
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 for-each 循环");
+        return null;
+    }
+
+    public ShaderIrInstruction? VisitLambdaExpr(LambdaExpr node)
+    {
+        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 LambdaExpr");
+        return null;
     }
 
     public ShaderIrInstruction? VisitUsingDecl(UsingDecl node) => null;
-
-    /// <summary>
-    /// 访问 Uniform 绑定声明，生成全局变量和资源绑定 IR
-    /// </summary>
-    public ShaderIrInstruction? VisitUniformBindingDecl(UniformBindingDecl node)
-    {
-        var type = ResolveType(node.TypeAnnotation);
-        var storage = MapBindingTypeToStorageClass(node.BindingType);
-        var kind = MapBindingTypeToResourceKind(node.BindingType);
-
-        var resource = new ShaderResourceIr(
-            node.Name,
-            kind,
-            (uint)(node.Group ?? 0),
-            (uint)(node.Binding ?? 0),
-            type)
-        {
-            ResultId = AllocateId()
-        };
-
-        var global = new ShaderGlobalVariableIr(node.Name, type, storage, resource)
-        {
-            ResultId = AllocateId()
-        };
-
-        _globals.Add(global);
-        _variableMap[node.Name] = global.ResultId;
-
-        if (storage == StorageClass.Input || storage == StorageClass.Output)
-        {
-            _currentInterfaceVars.Add(node.Name);
-        }
-
-        return null;
-    }
 
     #endregion
 
@@ -755,6 +803,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             "texture_2d" => new ShaderIrType.ImageType(new ShaderIrType.FloatType(), 1, 0, false, false, 0),
             "sampler" => new ShaderIrType.SamplerType(),
             "image_2d" => new ShaderIrType.ImageType(new ShaderIrType.FloatType(), 1, 0, false, false, 0),
+            _ when _typeMap.TryGetValue(name, out var mappedType) => mappedType,
             _ when _structs.Any(s => s.Name == name) => new ShaderIrType.StructType(name, _structs.First(s => s.Name == name).Fields),
             _ => new ShaderIrType.VoidType()
         };
@@ -841,6 +890,14 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         _ => ShaderIrOpCode.Add
     };
 
+    private static bool IsCompareOp(ShaderIrOpCode op) => op is
+        ShaderIrOpCode.Equal or ShaderIrOpCode.NotEqual or
+        ShaderIrOpCode.LessThan or ShaderIrOpCode.GreaterThan or
+        ShaderIrOpCode.LessEqual or ShaderIrOpCode.GreaterEqual;
+
+    private static bool IsLogicalOp(ShaderIrOpCode op) => op is
+        ShaderIrOpCode.LogicalAnd or ShaderIrOpCode.LogicalOr;
+
     private static bool IsBuiltinFunction(string name) =>
         name is "abs" or "sign" or "floor" or "ceil" or "round"
             or "min" or "max" or "clamp" or "mix" or "lerp"
@@ -866,6 +923,61 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         _ => new ShaderIrType.VoidType()
     };
 
+    private static ShaderIrType InferExternalReturnType(string name) => name switch
+    {
+        "evaluate_nerf_network" => new ShaderIrType.VectorType(new ShaderIrType.FloatType(), 4),
+        "denoise_step" => new ShaderIrType.VectorType(new ShaderIrType.FloatType(), 4),
+        _ => new ShaderIrType.VoidType()
+    };
+
+    private static int[]? ParseSwizzleComponents(string memberName)
+    {
+        if (string.IsNullOrEmpty(memberName) || memberName.Length > 4)
+        {
+            return null;
+        }
+
+        var isXyzw = memberName.All(c => c is 'x' or 'y' or 'z' or 'w');
+        var isRgba = memberName.All(c => c is 'r' or 'g' or 'b' or 'a');
+        var isStpq = memberName.All(c => c is 's' or 't' or 'p' or 'q');
+
+        if (!isXyzw && !isRgba && !isStpq)
+        {
+            return null;
+        }
+
+        return memberName.Select(c => c switch
+        {
+            'x' or 'r' or 's' => 0,
+            'y' or 'g' or 't' => 1,
+            'z' or 'b' or 'p' => 2,
+            'w' or 'a' or 'q' => 3,
+            _ => 0
+        }).ToArray();
+    }
+
+    private static StorageClass MapBindingTypeToStorage(string bindingType) => bindingType switch
+    {
+        "uniform" => StorageClass.Uniform,
+        "texture_2d" or "texture_cube" => StorageClass.UniformConstant,
+        "sampler" => StorageClass.UniformConstant,
+        "image_2d" => StorageClass.UniformConstant,
+        "storage_buffer" => StorageClass.StorageBuffer,
+        "push_constant" => StorageClass.PushConstant,
+        _ => StorageClass.UniformConstant
+    };
+
+    private static ShaderResourceKind MapBindingTypeToResourceKind(string bindingType, ShaderIrType type) => bindingType switch
+    {
+        "uniform" => type is ShaderIrType.StructType ? ShaderResourceKind.UniformBuffer : ShaderResourceKind.UniformBuffer,
+        "texture_2d" or "texture_cube" => ShaderResourceKind.Texture,
+        "sampler" => ShaderResourceKind.Sampler,
+        "image_2d" => ShaderResourceKind.StorageBuffer,
+        "storage_buffer" => ShaderResourceKind.StorageBuffer,
+        "push_constant" => ShaderResourceKind.PushConstant,
+        _ => ShaderResourceKind.UniformBuffer
+    };
+
     private static uint GetAlignment(ShaderIrType type) => type switch
     {
         ShaderIrType.BoolType => 4,
@@ -886,56 +998,6 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         ShaderIrType.MatrixType m => (uint)(m.ColumnCount * m.RowCount * 4),
         ShaderIrType.StructType s => s.Fields.Count > 0 ? s.Fields.Max(f => f.Offset + GetTypeSize(f.Type)) : 0,
         _ => 4u
-    };
-
-    /// <summary>
-    /// 解析 swizzle 分量字符串为索引数组
-    /// </summary>
-    private static int[] ParseSwizzleComponents(string components)
-    {
-        var indices = new int[components.Length];
-        for (var i = 0; i < components.Length; i++)
-        {
-            indices[i] = components[i] switch
-            {
-                'x' or 'r' => 0,
-                'y' or 'g' => 1,
-                'z' or 'b' => 2,
-                'w' or 'a' => 3,
-                _ => 0
-            };
-        }
-        return indices;
-    }
-
-    /// <summary>
-    /// 根据绑定类型映射到存储类
-    /// </summary>
-    private static StorageClass MapBindingTypeToStorageClass(string bindingType) => bindingType switch
-    {
-        "uniform" => StorageClass.Uniform,
-        "texture_2d" or "texture_cube" or "texture_3d" => StorageClass.UniformConstant,
-        "sampler" => StorageClass.UniformConstant,
-        "sampled_image" => StorageClass.UniformConstant,
-        "storage_buffer" => StorageClass.StorageBuffer,
-        "push_constant" => StorageClass.PushConstant,
-        "input" => StorageClass.Input,
-        "output" => StorageClass.Output,
-        _ => StorageClass.Uniform
-    };
-
-    /// <summary>
-    /// 根据绑定类型映射到资源种类
-    /// </summary>
-    private static ShaderResourceKind MapBindingTypeToResourceKind(string bindingType) => bindingType switch
-    {
-        "uniform" => ShaderResourceKind.UniformBuffer,
-        "texture_2d" or "texture_cube" or "texture_3d" => ShaderResourceKind.Texture,
-        "sampler" => ShaderResourceKind.Sampler,
-        "sampled_image" => ShaderResourceKind.SampledImage,
-        "storage_buffer" => ShaderResourceKind.StorageBuffer,
-        "push_constant" => ShaderResourceKind.PushConstant,
-        _ => ShaderResourceKind.UniformBuffer
     };
 
     #endregion

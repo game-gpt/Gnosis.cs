@@ -24,6 +24,6 @@ public class MaterialFormatHandler : FormatHandlerBase, IMaterialFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".mat", ".material", ".scirptmat" };
+        return new List<string> { ".gnosis-material", ".mat", ".material", ".scirptmat" };
     }
 }
