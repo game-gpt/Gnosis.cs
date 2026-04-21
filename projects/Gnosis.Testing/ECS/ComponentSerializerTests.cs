@@ -1,5 +1,5 @@
-using Gnosis.Core;
 using Gnosis.ECS;
+using Gnosis.ECS.Core;
 using Gnosis.Testing;
 using NUnit.Framework;
 

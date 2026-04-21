@@ -1,4 +1,5 @@
-using Gnosis.Core;
+using Gnosis.ECS.Core;
+using Gnosis.Infrastructure;
 
 namespace Gnosis.Testing.Generators
 {

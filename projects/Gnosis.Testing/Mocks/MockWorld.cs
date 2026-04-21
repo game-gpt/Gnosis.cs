@@ -1,5 +1,6 @@
-using Gnosis.Core;
 using Gnosis.ECS;
+using Gnosis.ECS.Core;
+using Gnosis.ECS.Interface;
 
 namespace Gnosis.Testing.Mocks
 {

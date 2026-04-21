@@ -1,4 +1,3 @@
-using Gnosis.Core;
 using Gnosis.Security;
 using NUnit.Framework;
 

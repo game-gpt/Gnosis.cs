@@ -1,4 +1,4 @@
-using Gnosis.Core;
+using Gnosis.ECS.Core;
 
 namespace Gnosis.Security;
 

@@ -1,4 +1,6 @@
 using Gnosis.Network;
+using Gnosis.Network.Backends;
+using Gnosis.Network.Core;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Network

@@ -1,5 +1,7 @@
-using Gnosis.Core;
+using Gnosis.ECS.Core;
+using Gnosis.Infrastructure;
 using Gnosis.Network;
+using Gnosis.Network.Messages;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Network

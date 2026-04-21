@@ -1,4 +1,6 @@
 using System;
+using Gnosis.Network.Core;
+using Gnosis.Network.Sync;
 
 namespace Gnosis.Network;
 

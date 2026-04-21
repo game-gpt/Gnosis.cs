@@ -1,4 +1,6 @@
 using Gnosis.Network;
+using Gnosis.Network.Core;
+using Gnosis.Network.Sync;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Network

@@ -1,5 +1,5 @@
 using System.Threading;
-using Gnosis.Core;
+using Gnosis.Infrastructure;
 using NUnit.Framework;
 
 namespace Gnosis.Testing.Core;

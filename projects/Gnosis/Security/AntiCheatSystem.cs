@@ -1,5 +1,3 @@
-using Gnosis.Core;
-
 namespace Gnosis.Security;
 
 /// <summary>

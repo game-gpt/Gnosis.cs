@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Gnosis.Core;
+using Gnosis.ECS.Core;
+using Gnosis.Network.Core;
+using Gnosis.Network.Sync;
 
 namespace Gnosis.Network;
 

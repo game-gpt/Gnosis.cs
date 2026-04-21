@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Gnosis.Network.Core;
 
 namespace Gnosis.Network;
 

@@ -5,7 +5,9 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Gnosis.Core;
+using Gnosis.ECS.Core;
+using Gnosis.Network.Core;
+using Gnosis.Network.Messages;
 
 namespace Gnosis.Network;
 
