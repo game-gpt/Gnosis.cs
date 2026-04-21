@@ -1,3 +1,4 @@
+using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Meta;
@@ -489,15 +490,32 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
     }
 
     /// <summary>
-    /// 访问成员访问表达式，仅处理结构体字段访问
-    /// Swizzle 逻辑已迁移至 VisitSwizzleExpr
+    /// 访问成员访问表达式
     /// </summary>
+    /// <remarks>
+    /// 处理流程：
+    /// 1. 先尝试编译期钩子（如 swizzle）
+    /// 2. 再尝试结构体字段访问
+    /// </remarks>
     public ShaderIrInstruction? VisitMemberAccessExpr(MemberAccessExpr node)
     {
         var obj = node.Object.Accept(this);
         if (obj == null)
         {
             return null;
+        }
+
+        var typeName = GetTypeName(obj.ResultType);
+        if (typeName != null)
+        {
+            var context = new CompileTimeContext(_currentFilePath, _diagnostics, new MacroTable());
+            var resolved = CompileTimeHookRegistry.Instance.ExecuteMemberAccessHook(
+                typeName, node.Object, node.MemberName, context);
+
+            if (resolved != null)
+            {
+                return resolved.Accept(this);
+            }
         }
 
         if (obj.ResultType is ShaderIrType.StructType structType)
@@ -978,6 +996,18 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         ShaderIrType.MatrixType m => (uint)(m.ColumnCount * m.RowCount * 4),
         ShaderIrType.StructType s => s.Fields.Count > 0 ? s.Fields.Max(f => f.Offset + GetTypeSize(f.Type)) : 0,
         _ => 4u
+    };
+
+    private static string? GetTypeName(ShaderIrType? type) => type switch
+    {
+        ShaderIrType.VectorType v when v.ElementType is ShaderIrType.FloatType => $"vec{v.ComponentCount}",
+        ShaderIrType.VectorType v => $"vec{v.ComponentCount}<>",
+        ShaderIrType.MatrixType m => $"mat{m.ColumnCount}x{m.RowCount}",
+        ShaderIrType.StructType s => s.StructName,
+        ShaderIrType.IntType => "i32",
+        ShaderIrType.FloatType => "f32",
+        ShaderIrType.BoolType => "bool",
+        _ => null
     };
 
     #endregion

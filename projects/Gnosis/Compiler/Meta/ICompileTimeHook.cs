@@ -1,4 +1,5 @@
 using Gnosis.Compiler.AST;
+using Gnosis.Compiler.Diagnostics;
 
 namespace Gnosis.Compiler.Meta;
 
