@@ -17,11 +17,11 @@ namespace Gnosis.Compiler.AST;
 ///     provides_capabilities: ["simd"]
 ///     
 ///     # 提供的函数
-///     fn vecAdd(a: vec4, b: vec4): vec4 {
+///     micro vecAdd(a: vec4, b: vec4): vec4 {
 ///         return a + b
 ///     }
 ///     
-///     fn vecMul(a: vec4, b: vec4): vec4 {
+///     micro vecMul(a: vec4, b: vec4): vec4 {
 ///         return a * b
 ///     }
 /// }
@@ -30,8 +30,8 @@ namespace Gnosis.Compiler.AST;
 ///     requires: ["audio_api"]
 ///     provides_capabilities: ["playback", "recording"]
 ///     
-///     fn playSound(path: string) { }
-///     fn stopSound() { }
+///     micro playSound(path: string) { }
+///     micro stopSound { }
 /// }
 /// </code>
 /// </remarks>

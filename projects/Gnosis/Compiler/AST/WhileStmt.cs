@@ -7,18 +7,18 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # 条件循环
-/// while (x &gt; 0) {
+/// while x &gt; 0 {
 ///     x--
 /// }
 /// 
 /// # 无限循环
-/// while (true) {
-///     if (done) break
+/// while true {
+///     if done break
 ///     process()
 /// }
 /// 
 /// # 带函数条件的循环
-/// while (hasNext()) {
+/// while hasNext() {
 ///     process(next())
 /// }
 /// </code>

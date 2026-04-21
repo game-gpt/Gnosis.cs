@@ -7,17 +7,17 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # 标准 for 循环
-/// for (let i = 0; i &lt; 10; i++) {
+/// for let i = 0; i &lt; 10; i++ {
 ///     print(i)
 /// }
 /// 
 /// # 无限循环
-/// for (;;) {
-///     if (done) break
+/// for {
+///     if done break
 /// }
 /// 
 /// # 多变量循环
-/// for (let i = 0, j = 10; i &lt; j; i++, j--) {
+/// for let i = 0, j = 10; i &lt; j; i++, j-- {
 ///     print(i, j)
 /// }
 /// </code>

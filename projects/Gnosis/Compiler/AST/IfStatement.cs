@@ -7,22 +7,24 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # 简单 if 语句
-/// if (x &gt; 0) {
-///     doSomething();
+/// if x &gt; 0 {
+///     doSomething()
 /// }
+/// 
 /// # if-else 语句
-/// if (x &gt; 0) {
-///     doA();
+/// if x &gt; 0 {
+///     doA()
 /// } else {
-///     doB();
+///     doB()
 /// }
+/// 
 /// # if-else if-else 链
 /// if x &gt; 0 {
-///     doA();
+///     doA()
 /// } else if x &lt; 0 {
-///     doB();
+///     doB()
 /// } else {
-///     doC();
+///     doC()
 /// }
 /// </code>
 /// </remarks>

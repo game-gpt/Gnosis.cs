@@ -7,22 +7,22 @@ namespace Gnosis.Compiler.AST;
 /// 语法示例：
 /// <code>
 /// # 遍历集合
-/// for (item in items) {
+/// for item in items {
 ///     print(item)
 /// }
 /// 
 /// # 带索引遍历
-/// for (i, item in items) {
+/// for i, item in items {
 ///     print(i, item)
 /// }
 /// 
 /// # 遍历字符串
-/// for (char in "hello") {
+/// for char in "hello" {
 ///     print(char)
 /// }
 /// 
 /// # 遍历字典
-/// for (key, value in dict) {
+/// for key, value in dict {
 ///     print(key, value)
 /// }
 /// </code>
