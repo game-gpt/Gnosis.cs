@@ -1,4 +1,4 @@
-using Gnosis.Core.ValueObjects;
+using Gnosis.Core;
 
 namespace Gnosis.Security;
 

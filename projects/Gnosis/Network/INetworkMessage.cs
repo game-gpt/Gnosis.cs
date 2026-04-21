@@ -1,4 +1,4 @@
-using Gnosis.Core.ValueObjects;
+using Gnosis.Core;
 
 namespace Gnosis.Network;
 
@@ -6,7 +6,7 @@ public interface INetworkMessage
 {
     int MessageId { get; }
     PlayerId SenderId { get; }
-    Core.ValueObjects.Timestamp Timestamp { get; }
+    Timestamp Timestamp { get; }
     ReadOnlySpan<byte> Payload { get; }
     bool IsReliable { get; }
 }

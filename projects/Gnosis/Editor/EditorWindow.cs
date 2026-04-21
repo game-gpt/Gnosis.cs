@@ -1,15 +1,8 @@
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using GnosisEngine.UI;
-using GnosisEngine.UI.Layout;
-using Gnosis;
+using Gnosis.Editor.Widget;
+using UiColor = Gnosis.Editor.Widget.Color;
+using UiDock = Gnosis.Editor.Widget.Dock;
 
-using UiColor = GnosisEngine.UI.Color;
-using UiDock = GnosisEngine.UI.Dock;
-
-namespace GnosisEngine.Editor;
+namespace Gnosis.Editor;
 
 public sealed class EditorWindow : Window
 {

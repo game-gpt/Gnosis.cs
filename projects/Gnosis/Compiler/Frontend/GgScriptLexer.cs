@@ -1,6 +1,5 @@
 using System.Text;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.ValueObjects;
 
 namespace Gnosis.Compiler.Frontend;
 

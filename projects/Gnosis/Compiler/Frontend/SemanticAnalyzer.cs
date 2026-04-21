@@ -1,7 +1,6 @@
 using System.Linq;
+using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.ValueObjects;
-using Gnosis.Compiler.ValueObjects.AST;
 
 namespace Gnosis.Compiler.Frontend;
 

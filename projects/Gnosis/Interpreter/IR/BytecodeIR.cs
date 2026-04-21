@@ -1,3 +1,5 @@
+using Gnosis.Compiler;
+
 namespace Gnosis.Interpreter.IR;
 
 public sealed class BytecodeUnit
@@ -14,7 +16,7 @@ public sealed class BytecodeUnit
 
     public IReadOnlyList<string> Exports { get; }
 
-    public IReadOnlyList<(int Offset, Compiler.ValueObjects.SourceSpan? Span)> SourceMap { get; }
+    public IReadOnlyList<(int Offset, SourceSpan? Span)> SourceMap { get; }
 
     #endregion
 
@@ -26,7 +28,7 @@ public sealed class BytecodeUnit
         IReadOnlyList<BytecodeFunction> functions,
         IReadOnlyList<string> imports,
         IReadOnlyList<string> exports,
-        IReadOnlyList<(int Offset, Compiler.ValueObjects.SourceSpan? Span)> sourceMap)
+        IReadOnlyList<(int Offset, SourceSpan? Span)> sourceMap)
     {
         ModuleName = moduleName;
         Constants = constants;

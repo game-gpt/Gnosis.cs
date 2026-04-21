@@ -1,5 +1,3 @@
-using Gnosis.Core.ValueObjects;
-
 namespace Gnosis.Core.Events;
 
 public interface IDomainEvent

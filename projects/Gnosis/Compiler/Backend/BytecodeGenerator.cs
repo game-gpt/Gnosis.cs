@@ -1,8 +1,7 @@
 using System.Text;
+using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Interpreter.IR;
-using Gnosis.Compiler.ValueObjects;
-using Gnosis.Compiler.ValueObjects.AST;
 
 namespace Gnosis.Compiler.Backend;
 

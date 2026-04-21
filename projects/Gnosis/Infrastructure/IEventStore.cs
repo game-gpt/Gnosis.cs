@@ -1,5 +1,5 @@
+using Gnosis.Core;
 using Gnosis.Core.Events;
-using Gnosis.Core.ValueObjects;
 
 namespace Gnosis.Infrastructure;
 

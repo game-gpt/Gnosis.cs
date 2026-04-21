@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Gnosis.Compiler.ValueObjects;
-using Gnosis.Compiler.ValueObjects.AST;
+using Gnosis.Compiler.AST;
 
 namespace Gnosis.Compiler.Frontend;
 

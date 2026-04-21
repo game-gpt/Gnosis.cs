@@ -1,9 +1,8 @@
+using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Backend;
 using Gnosis.Compiler.Cache;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Frontend;
-using Gnosis.Compiler.ValueObjects;
-using Gnosis.Compiler.ValueObjects.AST;
 
 namespace Gnosis.Compiler;
 

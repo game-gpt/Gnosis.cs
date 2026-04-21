@@ -1,4 +1,4 @@
-using Gnosis.Core.ValueObjects;
+using Gnosis.Core;
 
 namespace Gnosis.Security;
 
@@ -16,8 +16,8 @@ public interface IAntiCheatSystem
 }
 
 public record ViolationEventArgs(
-    Enums.ViolationType Type,
-    Enums.ViolationResponse Response,
+    ViolationType Type,
+    ViolationResponse Response,
     string Details,
     EntityId? EntityId
 );

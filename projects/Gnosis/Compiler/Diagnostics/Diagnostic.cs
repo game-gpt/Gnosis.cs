@@ -1,5 +1,3 @@
-using Gnosis.Compiler.ValueObjects;
-
 namespace Gnosis.Compiler.Diagnostics;
 
 public sealed record Diagnostic

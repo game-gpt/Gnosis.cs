@@ -1,0 +1,10 @@
+namespace Gnosis.Compiler.AST;
+
+public sealed record ParameterDecl(
+    SourceSpan? Span,
+    string Name,
+    TypeAnnotation ParamType,
+    IReadOnlyList<AttributeDecl> Attributes) : AstNode(NodeType.ParameterDecl, Span)
+{
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitParameterDecl(this);
+}
