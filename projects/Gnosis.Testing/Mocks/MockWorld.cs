@@ -4,7 +4,7 @@ using Gnosis.ECS.Interface;
 
 namespace Gnosis.Testing.Mocks
 {
-    public class MockWorld : IWorld
+    public class MockWorld : ECS.Interface.IWorld
     {
         #region Fields
 
@@ -70,12 +70,12 @@ namespace Gnosis.Testing.Mocks
             }
         }
 
-        public IQuery CreateQuery()
+        public ECS.Interface.IQuery CreateQuery()
         {
             throw new NotImplementedException("MockWorld.CreateQuery 未实现");
         }
 
-        public IArchetype GetArchetype(params Type[] componentTypes)
+        public ECS.Interface.IArchetype GetArchetype(params Type[] componentTypes)
         {
             throw new NotImplementedException("MockWorld.GetArchetype 未实现");
         }

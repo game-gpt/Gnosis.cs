@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using Gnosis.Assets.Formats;
 using Gnosis.Assets.Formats.BcCompression;
 
-namespace Gnosis.Testing.Assets.Formats;
+namespace Gnosis.Tests.Assets.Formats;
 
 [TestFixture]
 public class TextureFormatHandlerTests

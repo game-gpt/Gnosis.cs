@@ -3,7 +3,7 @@ using Gnosis.ECS;
 using Gnosis.Testing;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.ECS;
+namespace Gnosis.Tests.ECS;
 
 [TestFixture]
 public class ComponentStorageTests : TestBase
