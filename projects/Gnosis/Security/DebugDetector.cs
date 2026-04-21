@@ -31,6 +31,6 @@ public static class DebugDetector
     /// 通过 P/Invoke 调用 Windows kernel32.dll 的 IsDebuggerPresent 函数检测调试器。
     /// </summary>
     /// <returns>如果调试器存在则返回 <c>true</c>；否则返回 <c>false</c>。</returns>
-    [DllImport("kernel32.dll")]
+    [DllImport("kernel32.dll", EntryPoint = "IsDebuggerPresent")]
     private static extern bool IsDebuggerPresentNative();
 }

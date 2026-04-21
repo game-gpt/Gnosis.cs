@@ -27,7 +27,7 @@ public sealed class NetworkManager : INetworkManager
     /// <summary>
     /// 获取是否为服务器
     /// </summary>
-    public bool IsServer => _networkMode == NetworkMode.Host || _networkMode == NetworkMode.Server;
+    public bool IsServer => _networkMode is NetworkMode.Host or NetworkMode.Server;
 
     /// <summary>
     /// 获取是否为客户端

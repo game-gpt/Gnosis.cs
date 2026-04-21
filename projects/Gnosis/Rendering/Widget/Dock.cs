@@ -44,7 +44,7 @@ public sealed class Dock : ContainerWidget
                 continue;
             }
 
-            if (pos == DockPosition.Top || pos == DockPosition.Bottom)
+            if (pos is DockPosition.Top or DockPosition.Bottom)
             {
                 child.Measure(new Size(availableSize.Width, availableSize.Height));
 
@@ -60,7 +60,7 @@ public sealed class Dock : ContainerWidget
         }
 
         // 计算 Top/Bottom 消耗后剩余的高度
-        float remainingHeight = Math.Max(0, availableSize.Height - consumedTop - consumedBottom);
+        var remainingHeight = Math.Max(0, availableSize.Height - consumedTop - consumedBottom);
 
         // 第二阶段：测量 Left 和 Right 停靠的子组件
         foreach (var child in Children)
@@ -75,7 +75,7 @@ public sealed class Dock : ContainerWidget
                 continue;
             }
 
-            if (pos == DockPosition.Left || pos == DockPosition.Right)
+            if (pos is DockPosition.Left or DockPosition.Right)
             {
                 child.Measure(new Size(availableSize.Width, remainingHeight));
 
@@ -91,7 +91,7 @@ public sealed class Dock : ContainerWidget
         }
 
         // 计算 Left/Right 消耗后剩余的宽度
-        float remainingWidth = Math.Max(0, availableSize.Width - consumedLeft - consumedRight);
+        var remainingWidth = Math.Max(0, availableSize.Width - consumedLeft - consumedRight);
 
         // 第三阶段：测量 Fill 停靠的子组件，使用剩余空间
         foreach (var child in Children)
@@ -117,10 +117,10 @@ public sealed class Dock : ContainerWidget
 
     protected override void ArrangeChildren(Rect contentRect)
     {
-        float top = contentRect.Y;
-        float bottom = contentRect.Bottom;
-        float left = contentRect.X;
-        float right = contentRect.Right;
+        var top = contentRect.Y;
+        var bottom = contentRect.Bottom;
+        var left = contentRect.X;
+        var right = contentRect.Right;
 
         foreach (var child in Children)
         {

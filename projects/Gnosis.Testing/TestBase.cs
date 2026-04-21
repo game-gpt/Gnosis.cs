@@ -44,7 +44,7 @@ namespace Gnosis.Testing
             Assert.That(actualList.Count, Is.EqualTo(expectedList.Count),
                 $"集合数量不匹配，期望 {expectedList.Count}，实际 {actualList.Count}");
 
-            for (int i = 0; i < expectedList.Count; i++)
+            for (var i = 0; i < expectedList.Count; i++)
             {
                 Assert.That(actualList[i], Is.EqualTo(expectedList[i]),
                     $"集合索引 {i} 处的元素不匹配");

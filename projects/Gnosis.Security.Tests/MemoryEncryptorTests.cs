@@ -33,7 +33,7 @@ public class MemoryEncryptorTests
     {
         byte[] data = { 1, 2, 3, 4, 5 };
 
-        byte[] encrypted = _encryptor.Encrypt(data);
+        var encrypted = _encryptor.Encrypt(data);
 
         Assert.That(encrypted, Is.Not.Null);
         Assert.That(encrypted, Is.Not.EqualTo(data));
@@ -60,8 +60,8 @@ public class MemoryEncryptorTests
     {
         byte[] data = { 10, 20, 30, 40, 50 };
 
-        byte[] encrypted = _encryptor.Encrypt(data);
-        byte[] decrypted = _encryptor.Decrypt(encrypted);
+        var encrypted = _encryptor.Encrypt(data);
+        var decrypted = _encryptor.Decrypt(encrypted);
 
         Assert.That(decrypted, Is.EqualTo(data));
     }
@@ -85,9 +85,9 @@ public class MemoryEncryptorTests
     [Test]
     public void Obfuscate_Int_ReturnsDifferentValue()
     {
-        int original = 12345;
+        var original = 12345;
 
-        int obfuscated = _encryptor.Obfuscate(original);
+        var obfuscated = _encryptor.Obfuscate(original);
 
         Assert.That(obfuscated, Is.Not.EqualTo(original));
     }
@@ -95,9 +95,9 @@ public class MemoryEncryptorTests
     [Test]
     public void Obfuscate_Float_ReturnsDifferentValue()
     {
-        float original = 3.14f;
+        var original = 3.14f;
 
-        float obfuscated = _encryptor.Obfuscate(original);
+        var obfuscated = _encryptor.Obfuscate(original);
 
         Assert.That(obfuscated, Is.Not.EqualTo(original));
     }
@@ -105,9 +105,9 @@ public class MemoryEncryptorTests
     [Test]
     public void Obfuscate_Long_ReturnsDifferentValue()
     {
-        long original = 9876543210L;
+        var original = 9876543210L;
 
-        long obfuscated = _encryptor.Obfuscate(original);
+        var obfuscated = _encryptor.Obfuscate(original);
 
         Assert.That(obfuscated, Is.Not.EqualTo(original));
     }
@@ -119,10 +119,10 @@ public class MemoryEncryptorTests
     [Test]
     public void Deobfuscate_Int_ReturnsOriginalValue()
     {
-        int original = 12345;
+        var original = 12345;
 
-        int obfuscated = _encryptor.Obfuscate(original);
-        int deobfuscated = _encryptor.Deobfuscate(obfuscated);
+        var obfuscated = _encryptor.Obfuscate(original);
+        var deobfuscated = _encryptor.Deobfuscate(obfuscated);
 
         Assert.That(deobfuscated, Is.EqualTo(original));
     }
@@ -130,10 +130,10 @@ public class MemoryEncryptorTests
     [Test]
     public void Deobfuscate_Float_ReturnsOriginalValue()
     {
-        float original = 3.14f;
+        var original = 3.14f;
 
-        float obfuscated = _encryptor.Obfuscate(original);
-        float deobfuscated = _encryptor.Deobfuscate(obfuscated);
+        var obfuscated = _encryptor.Obfuscate(original);
+        var deobfuscated = _encryptor.Deobfuscate(obfuscated);
 
         Assert.That(deobfuscated, Is.EqualTo(original));
     }
@@ -141,10 +141,10 @@ public class MemoryEncryptorTests
     [Test]
     public void Deobfuscate_Long_ReturnsOriginalValue()
     {
-        long original = 9876543210L;
+        var original = 9876543210L;
 
-        long obfuscated = _encryptor.Obfuscate(original);
-        long deobfuscated = _encryptor.Deobfuscate(obfuscated);
+        var obfuscated = _encryptor.Obfuscate(original);
+        var deobfuscated = _encryptor.Deobfuscate(obfuscated);
 
         Assert.That(deobfuscated, Is.EqualTo(original));
     }
@@ -156,7 +156,7 @@ public class MemoryEncryptorTests
     [Test]
     public void GenerateHoneypot_ReturnsNonEmptyArray()
     {
-        byte[] honeypot = _encryptor.GenerateHoneypot();
+        var honeypot = _encryptor.GenerateHoneypot();
 
         Assert.That(honeypot, Is.Not.Null);
         Assert.That(honeypot.Length, Is.EqualTo(16));
@@ -165,9 +165,9 @@ public class MemoryEncryptorTests
     [Test]
     public void GenerateHoneypot_ContainsExpectedPattern()
     {
-        byte[] honeypot = _encryptor.GenerateHoneypot();
+        var honeypot = _encryptor.GenerateHoneypot();
 
-        int firstInt = BitConverter.ToInt32(honeypot, 0);
+        var firstInt = BitConverter.ToInt32(honeypot, 0);
 
         Assert.That(firstInt, Is.EqualTo(99999));
     }

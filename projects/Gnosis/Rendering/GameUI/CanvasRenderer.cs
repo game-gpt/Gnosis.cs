@@ -72,20 +72,20 @@ public sealed class CanvasRenderer : ICanvasRenderer
 
     private void EmitQuad(IUIElement element)
     {
-        uint baseIndex = (uint)_vertexHead;
+        var baseIndex = (uint)_vertexHead;
 
-        float x = element.X;
-        float y = element.Y;
-        float w = element.Width;
-        float h = element.Height;
-        float r = element.R;
-        float g = element.G;
-        float b = element.B;
-        float a = element.A;
-        float u0 = element.AtlasUV.U;
-        float v0 = element.AtlasUV.V;
-        float u1 = element.AtlasUV.U + element.AtlasUV.Width;
-        float v1 = element.AtlasUV.V + element.AtlasUV.Height;
+        var x = element.X;
+        var y = element.Y;
+        var w = element.Width;
+        var h = element.Height;
+        var r = element.R;
+        var g = element.G;
+        var b = element.B;
+        var a = element.A;
+        var u0 = element.AtlasUV.U;
+        var v0 = element.AtlasUV.V;
+        var u1 = element.AtlasUV.U + element.AtlasUV.Width;
+        var v1 = element.AtlasUV.V + element.AtlasUV.Height;
 
         WriteVertex(new UIVertex(x, y, 0, u0, v0, r, g, b, a));
         WriteVertex(new UIVertex(x + w, y, 0, u1, v0, r, g, b, a));

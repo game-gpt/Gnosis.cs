@@ -12,7 +12,7 @@ public sealed class HBox : ContainerWidget
         float totalWidth = 0;
         float maxHeight = 0;
         float totalFlex = 0;
-        bool first = true;
+        var first = true;
 
         // 先测量非弹性子组件
         foreach (var child in Children)
@@ -50,8 +50,8 @@ public sealed class HBox : ContainerWidget
         // 计算剩余宽度并按 flex 比例分配给弹性子组件
         if (totalFlex > 0)
         {
-            float remainingWidth = Math.Max(0, availableSize.Width - totalWidth);
-            float perFlex = remainingWidth / totalFlex;
+            var remainingWidth = Math.Max(0, availableSize.Width - totalWidth);
+            var perFlex = remainingWidth / totalFlex;
 
             foreach (var child in Children)
             {
@@ -62,7 +62,7 @@ public sealed class HBox : ContainerWidget
 
                 if (child is Flexible flexible)
                 {
-                    float flexWidth = perFlex * flexible.Flex;
+                    var flexWidth = perFlex * flexible.Flex;
                     var flexAvailable = new Size(flexWidth, availableSize.Height);
                     child.Measure(flexAvailable);
 
@@ -83,8 +83,8 @@ public sealed class HBox : ContainerWidget
 
     protected override void ArrangeChildren(Rect contentRect)
     {
-        float x = contentRect.X;
-        bool first = true;
+        var x = contentRect.X;
+        var first = true;
 
         foreach (var child in Children)
         {

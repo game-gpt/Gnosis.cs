@@ -72,7 +72,7 @@ public class ConfigSystem : ISystem
             ?? throw new FileNotFoundException($"配置文件未找到：{path}");
 
         using var reader = new StreamReader(stream);
-        int lineNumber = 0;
+        var lineNumber = 0;
 
         while (reader.ReadLine() is { } line)
         {

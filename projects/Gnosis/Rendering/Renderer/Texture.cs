@@ -18,7 +18,7 @@ public sealed class Texture
         if (x < 0 || x >= Width || y < 0 || y >= Height)
             return;
 
-        int idx = (y * Width + x) * 4;
+        var idx = (y * Width + x) * 4;
         Data[idx] = r;
         Data[idx + 1] = g;
         Data[idx + 2] = b;
@@ -30,7 +30,7 @@ public sealed class Texture
         if (x < 0 || x >= Width || y < 0 || y >= Height)
             return (0, 0, 0, 0);
 
-        int idx = (y * Width + x) * 4;
+        var idx = (y * Width + x) * 4;
         return (Data[idx], Data[idx + 1], Data[idx + 2], Data[idx + 3]);
     }
 }

@@ -732,7 +732,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                     continue;
                 }
 
-                (int Binding, int Set) key = (bindingInfo.Value.Binding, bindingInfo.Value.Set);
+                var key = (bindingInfo.Value.Binding, bindingInfo.Value.Set);
                 if (bindingMap.TryGetValue(key, out var existingName))
                 {
                     _diagnostics.AddError(
@@ -914,7 +914,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
     private static bool IsScalar(ShaderTypeInfo type)
     {
-        return type.VectorSize == 0 && type.MatrixRows == 0;
+        return type is { VectorSize: 0, MatrixRows: 0 };
     }
 
     private static bool IsVector(ShaderTypeInfo type)
@@ -929,7 +929,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
     private static bool IsValidSwizzle(string swizzle)
     {
-        if (swizzle.Length < 1 || swizzle.Length > 4)
+        if (swizzle.Length is < 1 or > 4)
         {
             return false;
         }

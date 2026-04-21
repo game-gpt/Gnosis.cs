@@ -38,7 +38,7 @@ public sealed class Wrap : ContainerWidget
         float crossAxisMax = 0;
         float totalCross = 0;
         float totalMain = 0;
-        bool firstInRun = true;
+        var firstInRun = true;
 
         foreach (var child in Children)
         {
@@ -50,9 +50,9 @@ public sealed class Wrap : ContainerWidget
             child.Measure(availableSize);
 
             // 根据方向获取子组件在主轴和交叉轴上的尺寸
-            float childMain = Direction == WrapDirection.Horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
-            float childCross = Direction == WrapDirection.Horizontal ? child.DesiredSize.Height : child.DesiredSize.Width;
-            float availableMain = Direction == WrapDirection.Horizontal ? availableSize.Width : availableSize.Height;
+            var childMain = Direction == WrapDirection.Horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
+            var childCross = Direction == WrapDirection.Horizontal ? child.DesiredSize.Height : child.DesiredSize.Width;
+            var availableMain = Direction == WrapDirection.Horizontal ? availableSize.Width : availableSize.Height;
 
             // 判断是否需要换行：当前行已有子组件且加入后超出可用空间
             if (!firstInRun && mainAxisUsed + Spacing + childMain > availableMain && currentRun.Count > 0)
@@ -94,18 +94,18 @@ public sealed class Wrap : ContainerWidget
     protected override void ArrangeChildren(Rect contentRect)
     {
         // 交叉轴偏移量，从内容区域起始位置开始
-        float crossOffset = Direction == WrapDirection.Horizontal ? contentRect.Y : contentRect.X;
+        var crossOffset = Direction == WrapDirection.Horizontal ? contentRect.Y : contentRect.X;
 
         foreach (var run in _runs)
         {
-            float mainOffset = Direction == WrapDirection.Horizontal ? contentRect.X : contentRect.Y;
+            var mainOffset = Direction == WrapDirection.Horizontal ? contentRect.X : contentRect.Y;
             float runCrossMax = 0;
-            bool firstInRun = true;
+            var firstInRun = true;
 
             foreach (var child in run)
             {
-                float childMain = Direction == WrapDirection.Horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
-                float childCross = Direction == WrapDirection.Horizontal ? child.DesiredSize.Height : child.DesiredSize.Width;
+                var childMain = Direction == WrapDirection.Horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
+                var childCross = Direction == WrapDirection.Horizontal ? child.DesiredSize.Height : child.DesiredSize.Width;
 
                 // 非首个子组件时添加间距
                 if (!firstInRun)
@@ -115,8 +115,8 @@ public sealed class Wrap : ContainerWidget
                 firstInRun = false;
 
                 // 根据方向计算子组件位置
-                float x = Direction == WrapDirection.Horizontal ? mainOffset : crossOffset;
-                float y = Direction == WrapDirection.Horizontal ? crossOffset : mainOffset;
+                var x = Direction == WrapDirection.Horizontal ? mainOffset : crossOffset;
+                var y = Direction == WrapDirection.Horizontal ? crossOffset : mainOffset;
 
                 child.Arrange(new Rect(x, y, child.DesiredSize.Width, child.DesiredSize.Height));
                 mainOffset += childMain;

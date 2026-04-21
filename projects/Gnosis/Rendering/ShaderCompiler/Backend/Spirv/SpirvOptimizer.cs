@@ -83,7 +83,7 @@ public sealed class SpirvOptimizer
 
             #region 第一遍：收集已定义和已使用的 ID
 
-            for (int i = 5; i < context.Words.Length;)
+            for (var i = 5; i < context.Words.Length;)
             {
                 var word0 = context.Words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -203,7 +203,7 @@ public sealed class SpirvOptimizer
                     break;
 
                 case SpirvConstants.Op.OpFunctionCall:
-                    for (int i = 3; i < wordCount - 1; i++)
+                    for (var i = 3; i < wordCount - 1; i++)
                     {
                         usedIds.Add(words[operandStart + i]);
                     }
@@ -221,7 +221,7 @@ public sealed class SpirvOptimizer
 
             #region 扫描输出变量
 
-            for (int i = 5; i < words.Length;)
+            for (var i = 5; i < words.Length;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -248,7 +248,7 @@ public sealed class SpirvOptimizer
 
             #region 收集存储到输出变量的操作数 ID
 
-            for (int i = 5; i < words.Length;)
+            for (var i = 5; i < words.Length;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -276,7 +276,7 @@ public sealed class SpirvOptimizer
 
             var entryPointFunctionIds = new HashSet<uint>();
 
-            for (int i = 5; i < words.Length;)
+            for (var i = 5; i < words.Length;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -293,7 +293,7 @@ public sealed class SpirvOptimizer
                 i += wordCount;
             }
 
-            for (int i = 5; i < words.Length;)
+            for (var i = 5; i < words.Length;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -331,7 +331,7 @@ public sealed class SpirvOptimizer
 
             #region 第一遍：收集常量定义和类型位宽
 
-            for (int i = 5; i < context.Words.Length;)
+            for (var i = 5; i < context.Words.Length;)
             {
                 var word0 = context.Words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -359,7 +359,7 @@ public sealed class SpirvOptimizer
                     var resultId = context.Words[i + 2];
                     ulong value = 0;
 
-                    for (int j = 0; j < wordCount - 3; j++)
+                    for (var j = 0; j < wordCount - 3; j++)
                     {
                         value |= (ulong)context.Words[i + 3 + j] << (j * 32);
                     }
@@ -374,7 +374,7 @@ public sealed class SpirvOptimizer
 
             #region 第二遍：对算术指令进行常量折叠
 
-            for (int i = 5; i < context.Words.Length;)
+            for (var i = 5; i < context.Words.Length;)
             {
                 var word0 = context.Words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -551,7 +551,7 @@ public sealed class SpirvOptimizer
         {
             var exprHash = new Dictionary<string, uint>();
 
-            for (int i = 5; i < context.Words.Length;)
+            for (var i = 5; i < context.Words.Length;)
             {
                 var word0 = context.Words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -595,7 +595,7 @@ public sealed class SpirvOptimizer
             sb.Append(opCode);
             sb.Append('_');
 
-            for (int i = 2; i < wordCount - 1; i++)
+            for (var i = 2; i < wordCount - 1; i++)
             {
                 sb.Append(words[instrStart + i]);
                 sb.Append('_');
@@ -630,7 +630,7 @@ public sealed class SpirvOptimizer
         {
             var loops = new List<LoopInfo>();
 
-            for (int i = 5; i < words.Length;)
+            for (var i = 5; i < words.Length;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -670,7 +670,7 @@ public sealed class SpirvOptimizer
         /// </summary>
         private static int FindLoopBodyEnd(uint[] words, int startIndex, uint mergeBlockId)
         {
-            for (int i = startIndex; i < words.Length;)
+            for (var i = startIndex; i < words.Length;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -694,7 +694,7 @@ public sealed class SpirvOptimizer
         }
 
         /// <summary>
-        /// 分析循环体内的不变量指令
+        /// 分析循环体内的不变量指令，并将不变量指令外提至循环前
         /// </summary>
         private static void AnalyzeLoopInvariants(uint[] words, LoopInfo loop, SpirvOptContext context)
         {
@@ -703,7 +703,7 @@ public sealed class SpirvOptimizer
 
             #region 收集循环体内定义的 ID 和算术指令
 
-            for (int i = loop.HeaderInstructionIndex; i < loop.BodyEndIndex;)
+            for (var i = loop.HeaderInstructionIndex; i < loop.BodyEndIndex;)
             {
                 var word0 = words[i];
                 var wordCount = (int)(word0 >> 16);
@@ -727,7 +727,7 @@ public sealed class SpirvOptimizer
 
             #endregion
 
-            #region 检查每个候选指令的操作数是否都在循环外定义
+            #region 检查每个候选指令的操作数是否都在循环外定义，并外提不变量
 
             foreach (var candidate in invariantCandidates)
             {
@@ -735,7 +735,7 @@ public sealed class SpirvOptimizer
                 var wordCount = (int)(word0 >> 16);
                 var allOperandsOutside = true;
 
-                for (int opIdx = 3; opIdx < wordCount && allOperandsOutside; opIdx++)
+                for (var opIdx = 3; opIdx < wordCount && allOperandsOutside; opIdx++)
                 {
                     var operandId = context.ResolveId(words[candidate.Index + opIdx]);
 
@@ -747,7 +747,10 @@ public sealed class SpirvOptimizer
 
                 if (allOperandsOutside)
                 {
-                    context.MarkLoopInvariant(candidate.ResultId, candidate.Index);
+                    var hoistedWords = new uint[wordCount];
+                    Array.Copy(words, candidate.Index, hoistedWords, 0, wordCount);
+                    context.HoistInstructionBeforeLoop(hoistedWords, candidate.Index, loop.HeaderInstructionIndex);
+                    context.MarkInstructionDead(candidate.Index, wordCount);
                 }
             }
 
@@ -823,6 +826,7 @@ public sealed class SpirvOptContext
     private readonly Dictionary<uint, (uint TypeId, ulong Value)> _constants = new();
     private readonly HashSet<uint> _loopInvariantIds = new();
     private readonly List<uint[]> _pendingInstructions = new();
+    private readonly Dictionary<int, List<uint[]>> _hoistedInstructions = new();
     private uint _nextId;
 
     #endregion
@@ -854,7 +858,7 @@ public sealed class SpirvOptContext
     /// </summary>
     public void MarkInstructionDead(int startIndex, int wordCount)
     {
-        for (int i = startIndex; i < startIndex + wordCount && i < Words.Length; i++)
+        for (var i = startIndex; i < startIndex + wordCount && i < Words.Length; i++)
         {
             _deadInstructions.Add(i);
         }
@@ -934,6 +938,21 @@ public sealed class SpirvOptContext
     }
 
     /// <summary>
+    /// 将指令外提至循环头之前，在 Compact 阶段插入到指定位置
+    /// </summary>
+    public void HoistInstructionBeforeLoop(uint[] instructionWords, int originalIndex, int insertBeforeIndex)
+    {
+        if (!_hoistedInstructions.TryGetValue(insertBeforeIndex, out var list))
+        {
+            list = new List<uint[]>();
+            _hoistedInstructions[insertBeforeIndex] = list;
+        }
+
+        list.Add(instructionWords);
+        _loopInvariantIds.Add(instructionWords.Length >= 3 ? instructionWords[2] : 0);
+    }
+
+    /// <summary>
     /// 压缩 SPIR-V 二进制，移除所有标记为死代码的指令并插入新生成的指令
     /// </summary>
     public byte[] Compact()
@@ -942,7 +961,7 @@ public sealed class SpirvOptContext
 
         #region 保留 SPIR-V 头部（5 个字：魔数、版本、生成器魔术数、Bound、Schema）
 
-        for (int i = 0; i < 5 && i < Words.Length; i++)
+        for (var i = 0; i < 5 && i < Words.Length; i++)
         {
             validWords.Add(Words[i]);
         }
@@ -958,10 +977,18 @@ public sealed class SpirvOptContext
 
         #endregion
 
-        #region 保留未被标记为死亡的原有指令
+        #region 保留未被标记为死亡的原有指令，并在循环头前插入外提指令
 
-        for (int i = 5; i < Words.Length; i++)
+        for (var i = 5; i < Words.Length; i++)
         {
+            if (_hoistedInstructions.TryGetValue(i, out var hoisted))
+            {
+                foreach (var instr in hoisted)
+                {
+                    validWords.AddRange(instr);
+                }
+            }
+
             if (!_deadInstructions.Contains(i))
             {
                 validWords.Add(Words[i]);

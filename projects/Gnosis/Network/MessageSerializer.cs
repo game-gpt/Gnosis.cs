@@ -16,7 +16,7 @@ public sealed class MessageSerializer : IMessageSerializer
     /// <returns>包含序列化数据的字节数组</returns>
     public byte[] Serialize<T>(T message) where T : struct
     {
-        ReadOnlySpan<T> span = MemoryMarshal.CreateReadOnlySpan(ref message, 1);
+        var span = MemoryMarshal.CreateReadOnlySpan(ref message, 1);
         return MemoryMarshal.AsBytes(span).ToArray();
     }
 
@@ -29,7 +29,7 @@ public sealed class MessageSerializer : IMessageSerializer
     /// <exception cref="ArgumentException">当数据长度小于结构体大小时抛出</exception>
     public T Deserialize<T>(ReadOnlySpan<byte> data) where T : struct
     {
-        int size = Unsafe.SizeOf<T>();
+        var size = Unsafe.SizeOf<T>();
 
         if (data.Length < size)
         {

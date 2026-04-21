@@ -44,7 +44,7 @@ public class ComponentPool<T> : IComponentPool where T : struct
             throw new InvalidOperationException($"组件类型不匹配：期望 {typeof(T).Name}，实际 {typeof(TComponent).Name}");
         }
 
-        if (!_sparse.TryGetValue(entityId, out int index))
+        if (!_sparse.TryGetValue(entityId, out var index))
         {
             throw new KeyNotFoundException($"实体 {entityId} 没有组件 {typeof(T).Name}");
         }
@@ -59,12 +59,12 @@ public class ComponentPool<T> : IComponentPool where T : struct
             throw new InvalidOperationException($"组件类型不匹配：期望 {typeof(T).Name}，实际 {typeof(TComponent).Name}");
         }
 
-        if (!_sparse.TryGetValue(entityId, out int index))
+        if (!_sparse.TryGetValue(entityId, out var index))
         {
             return;
         }
 
-        int lastIndex = _dense.Count - 1;
+        var lastIndex = _dense.Count - 1;
 
         if (index != lastIndex)
         {

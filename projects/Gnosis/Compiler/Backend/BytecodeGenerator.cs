@@ -1026,7 +1026,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
         var usedOpCodes = AnalyzeUsedOpCodes(module.Instructions);
 
-        foreach (OpCode op in usedOpCodes)
+        foreach (var op in usedOpCodes)
         {
             sb.AppendLine($"            case 0x{(byte)op:X2}: /* {op} */");
             sb.AppendLine(GenerateOpCodeHandler(op));

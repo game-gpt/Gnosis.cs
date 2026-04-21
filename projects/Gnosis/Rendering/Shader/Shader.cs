@@ -125,13 +125,13 @@ public static class BuiltinShaderModules
             MicroFunctionKind.Vertex,
             execute: (input, index) =>
             {
-                float x = input[0];
-                float y = input[1];
-                float z = input[2];
+                var x = input[0];
+                var y = input[1];
+                var z = input[2];
 
-                float r = input.Length > 3 ? input[3] : 1.0f;
-                float g = input.Length > 4 ? input[4] : 1.0f;
-                float b = input.Length > 5 ? input[5] : 1.0f;
+                var r = input.Length > 3 ? input[3] : 1.0f;
+                var g = input.Length > 4 ? input[4] : 1.0f;
+                var b = input.Length > 5 ? input[5] : 1.0f;
 
                 return new float[] { x, y, z, 1.0f, r, g, b };
             }
@@ -142,9 +142,9 @@ public static class BuiltinShaderModules
             MicroFunctionKind.Fragment,
             execute: (interpolated, index) =>
             {
-                float r = interpolated.Length > 4 ? interpolated[4] : 1.0f;
-                float g = interpolated.Length > 5 ? interpolated[5] : 1.0f;
-                float b = interpolated.Length > 6 ? interpolated[6] : 1.0f;
+                var r = interpolated.Length > 4 ? interpolated[4] : 1.0f;
+                var g = interpolated.Length > 5 ? interpolated[5] : 1.0f;
+                var b = interpolated.Length > 6 ? interpolated[6] : 1.0f;
 
                 return new float[] { r, g, b, 1.0f };
             }

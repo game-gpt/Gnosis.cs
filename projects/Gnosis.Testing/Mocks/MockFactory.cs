@@ -23,7 +23,7 @@ namespace Gnosis.Testing.Mocks
         public static List<EntityId> CreateEntities(MockWorld world, int count)
         {
             var entities = new List<EntityId>();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 entities.Add(world.CreateEntity());
             }

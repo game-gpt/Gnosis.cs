@@ -35,7 +35,7 @@ namespace Gnosis.Testing.Generators
         public static List<Position> RandomPositions(int count)
         {
             var positions = new List<Position>();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 positions.Add(RandomPosition());
             }
@@ -73,7 +73,7 @@ namespace Gnosis.Testing.Generators
         {
             var count = RandomInt(minCount, maxCount);
             var list = new List<T>();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 list.Add(generator());
             }
@@ -88,7 +88,7 @@ namespace Gnosis.Testing.Generators
         {
             var count = RandomInt(minCount, maxCount);
             var dict = new Dictionary<TKey, TValue>();
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 dict[keyGenerator()] = valueGenerator();
             }

@@ -49,7 +49,7 @@ public class ComponentStorage : IComponentStorage
 
         var candidates = new HashSet<EntityId>(firstEntityIds);
 
-        for (int i = 1; i < componentTypes.Length; i++)
+        for (var i = 1; i < componentTypes.Length; i++)
         {
             if (!_pools.TryGetValue(componentTypes[i], out var pool))
             {

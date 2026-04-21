@@ -294,7 +294,7 @@ public class TimeManagerTests
     [Test]
     public void 多帧累计_TotalTime接近UnscaledTotalTime()
     {
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             Thread.Sleep(10);
             _timeManager.BeginFrame();
@@ -308,7 +308,7 @@ public class TimeManagerTests
     {
         _timeManager.TimeScale = 2f;
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             Thread.Sleep(10);
             _timeManager.BeginFrame();

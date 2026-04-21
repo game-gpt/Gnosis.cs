@@ -243,7 +243,7 @@ public class GgScriptLexer : ILexer
 
         var c = Peek();
 
-        if (c == '"' || c == '\'')
+        if (c is '"' or '\'')
         {
             return ScanString(startLine, startColumn);
         }
@@ -460,7 +460,7 @@ public class GgScriptLexer : ILexer
 
     private static bool IsHexDigit(char c)
     {
-        return char.IsDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        return char.IsDigit(c) || c is >= 'a' and <= 'f' || c is >= 'A' and <= 'F';
     }
 
     private Token ScanIdentifierOrKeyword(int startLine, int startColumn)
@@ -476,7 +476,7 @@ public class GgScriptLexer : ILexer
 
         if (Keywords.Contains(text))
         {
-            if (text == "true" || text == "false" || text == "null")
+            if (text is "true" or "false" or "null")
             {
                 return new Token(TokenType.Literal, text, startLine, startColumn);
             }
@@ -542,7 +542,7 @@ public class GgScriptLexer : ILexer
 
         var op = sb.ToString();
 
-        if (op == ":" || op == "::")
+        if (op is ":" or "::")
         {
             return new Token(TokenType.Punctuation, op, startLine, startColumn);
         }

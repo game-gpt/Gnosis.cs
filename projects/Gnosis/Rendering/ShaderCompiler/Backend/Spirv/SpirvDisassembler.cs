@@ -277,7 +277,7 @@ public sealed class SpirvDisassembler
     {
         var bytes = new List<byte>();
 
-        for (int i = startWordIndex; i < operands.Length; i++)
+        for (var i = startWordIndex; i < operands.Length; i++)
         {
             var word = operands[i];
             bytes.Add((byte)(word & 0xFF));

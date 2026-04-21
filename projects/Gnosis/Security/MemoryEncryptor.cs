@@ -48,7 +48,7 @@ public class MemoryEncryptor : IMemoryProtector
         result[0] = (byte)_encryptionKey.Length;
         Buffer.BlockCopy(_encryptionKey, 0, result, 1, _encryptionKey.Length);
 
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             result[1 + _encryptionKey.Length + i] = (byte)(data[i] ^ _encryptionKey[i % _encryptionKey.Length]);
         }
@@ -79,10 +79,10 @@ public class MemoryEncryptor : IMemoryProtector
         var key = new byte[keyLength];
         Buffer.BlockCopy(encryptedData, 1, key, 0, keyLength);
 
-        int dataLength = encryptedData.Length - 1 - keyLength;
+        var dataLength = encryptedData.Length - 1 - keyLength;
         var result = new byte[dataLength];
 
-        for (int i = 0; i < dataLength; i++)
+        for (var i = 0; i < dataLength; i++)
         {
             result[i] = (byte)(encryptedData[1 + keyLength + i] ^ key[i % keyLength]);
         }
@@ -102,11 +102,11 @@ public class MemoryEncryptor : IMemoryProtector
     /// <returns>混淆后的值</returns>
     public T Obfuscate<T>(T value) where T : struct
     {
-        int size = Unsafe.SizeOf<T>();
-        byte[] bytes = new byte[size];
-        MemoryMarshal.Write(bytes, ref value);
+        var size = Unsafe.SizeOf<T>();
+        var bytes = new byte[size];
+        MemoryMarshal.Write(bytes, in value);
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             bytes[i] = (byte)(bytes[i] ^ _obfuscationKey[i % _obfuscationKey.Length]);
         }
@@ -122,11 +122,11 @@ public class MemoryEncryptor : IMemoryProtector
     /// <returns>还原后的原始值</returns>
     public T Deobfuscate<T>(T obfuscatedValue) where T : struct
     {
-        int size = Unsafe.SizeOf<T>();
-        byte[] bytes = new byte[size];
-        MemoryMarshal.Write(bytes, ref obfuscatedValue);
+        var size = Unsafe.SizeOf<T>();
+        var bytes = new byte[size];
+        MemoryMarshal.Write(bytes, in obfuscatedValue);
 
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             bytes[i] = (byte)(bytes[i] ^ _obfuscationKey[i % _obfuscationKey.Length]);
         }
@@ -145,7 +145,7 @@ public class MemoryEncryptor : IMemoryProtector
     public byte[] GenerateHoneypot()
     {
         var result = new byte[16];
-        int offset = 0;
+        var offset = 0;
 
         BitConverter.TryWriteBytes(result.AsSpan(offset, 4), 99999);
         offset += 4;

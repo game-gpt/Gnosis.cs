@@ -33,7 +33,7 @@ namespace Gnosis.Testing.Network
         [Test]
         public void Connect_触发OnConnected事件()
         {
-            bool eventFired = false;
+            var eventFired = false;
             _backend.OnConnected += () => eventFired = true;
 
             _backend.Connect("localhost", 0);
@@ -54,7 +54,7 @@ namespace Gnosis.Testing.Network
         public void Disconnect_触发OnDisconnected事件()
         {
             _backend.Connect("localhost", 0);
-            bool eventFired = false;
+            var eventFired = false;
             _backend.OnDisconnected += () => eventFired = true;
 
             _backend.Disconnect();

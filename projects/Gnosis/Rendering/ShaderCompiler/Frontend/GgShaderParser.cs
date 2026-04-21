@@ -499,11 +499,11 @@ public class GgShaderParser : IParser
         {
             foreach (var attr in attrs)
             {
-                if (attr.Name == "Group" && attr.Arguments.Count > 0 && int.TryParse(attr.Arguments[0].Value, out var g))
+                if (attr is { Name: "Group", Arguments.Count: > 0 } && int.TryParse(attr.Arguments[0].Value, out var g))
                 {
                     group = g;
                 }
-                else if (attr.Name == "Binding" && attr.Arguments.Count > 0 && int.TryParse(attr.Arguments[0].Value, out var b))
+                else if (attr is { Name: "Binding", Arguments.Count: > 0 } && int.TryParse(attr.Arguments[0].Value, out var b))
                 {
                     binding = b;
                 }
@@ -1131,7 +1131,7 @@ public class GgShaderParser : IParser
 
     private static bool IsSwizzlePattern(string name)
     {
-        if (name.Length < 1 || name.Length > 4)
+        if (name.Length is < 1 or > 4)
         {
             return false;
         }

@@ -39,8 +39,8 @@ public sealed class Stack : ContainerWidget
                 continue;
             }
 
-            float x = contentRect.X;
-            float y = contentRect.Y;
+            var x = contentRect.X;
+            var y = contentRect.Y;
 
             // 如果子组件实现了 IStackPositioned，则应用偏移
             if (child is IStackPositioned positioned)

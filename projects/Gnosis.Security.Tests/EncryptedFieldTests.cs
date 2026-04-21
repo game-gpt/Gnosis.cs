@@ -26,14 +26,14 @@ public class EncryptedFieldTests
     public void Value_StoresEncryptedInMemory()
     {
         var field = new EncryptedField<int>();
-        int originalValue = 42;
+        var originalValue = 42;
 
         field.Value = originalValue;
 
         var encryptedValueField = typeof(EncryptedField<int>).GetField("_encryptedValue",
             BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.That(encryptedValueField, Is.Not.Null);
-        int storedValue = (int)encryptedValueField!.GetValue(field)!;
+        var storedValue = (int)encryptedValueField!.GetValue(field)!;
 
         Assert.That(storedValue, Is.Not.EqualTo(originalValue));
     }
@@ -42,7 +42,7 @@ public class EncryptedFieldTests
     public void Value_FloatRoundtrip()
     {
         var field = new EncryptedField<float>();
-        float original = 2.718f;
+        var original = 2.718f;
 
         field.Value = original;
 

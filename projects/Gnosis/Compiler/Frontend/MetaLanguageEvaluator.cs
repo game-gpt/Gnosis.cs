@@ -545,7 +545,7 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 
         var conditionResult = EvaluateCondition(condition);
 
-        string elseBody = "";
+        var elseBody = "";
         var elseIdx = content.IndexOf("else", bodyEnd + 1, StringComparison.Ordinal);
         var constructEnd = bodyEnd + 1;
 
@@ -652,7 +652,7 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 
             var caseBody = content[(caseValueEnd + 1)..caseBodyEnd].Trim();
 
-            if (caseValue == "_" || caseValue == "default")
+            if (caseValue is "_" or "default")
             {
                 defaultBody = caseBody;
             }

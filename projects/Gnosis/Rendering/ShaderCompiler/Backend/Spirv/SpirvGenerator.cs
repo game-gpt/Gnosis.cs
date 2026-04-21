@@ -71,7 +71,7 @@ public sealed class SpirvGenerator
             var structId = _typeCache.GetStructType(memberTypeIds, structIr.Name);
             _builder.AddName(structId, structIr.Name);
 
-            for (int i = 0; i < structIr.Fields.Count; i++)
+            for (var i = 0; i < structIr.Fields.Count; i++)
             {
                 _builder.AddMemberName(structId, (uint)i, structIr.Fields[i].Name);
                 _builder.AddMemberDecorate(structId, (uint)i, SpirvConstants.Decoration.Offset, structIr.Fields[i].Offset);

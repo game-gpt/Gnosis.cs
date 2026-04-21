@@ -28,8 +28,8 @@ public sealed class SizedBox : Widget
     protected override Size MeasureOverride(Size availableSize)
     {
         // 未指定的维度使用可用空间
-        float w = BoxWidth ?? availableSize.Width;
-        float h = BoxHeight ?? availableSize.Height;
+        var w = BoxWidth ?? availableSize.Width;
+        var h = BoxHeight ?? availableSize.Height;
 
         return new Size(
             Math.Min(w, availableSize.Width),

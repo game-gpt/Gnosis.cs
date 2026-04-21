@@ -448,10 +448,10 @@ public sealed class SpirvBuilder
     {
         var words = new List<uint>();
         var bytes = System.Text.Encoding.UTF8.GetBytes(str + "\0");
-        for (int i = 0; i < bytes.Length; i += 4)
+        for (var i = 0; i < bytes.Length; i += 4)
         {
             uint word = 0;
-            for (int j = 0; j < 4 && i + j < bytes.Length; j++)
+            for (var j = 0; j < 4 && i + j < bytes.Length; j++)
             {
                 word |= (uint)bytes[i + j] << (j * 8);
             }

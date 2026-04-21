@@ -21,7 +21,7 @@ public class ComponentSerializer
     {
         var wrapper = new ComponentWrapper<T>
         {
-            Type = typeof(T).AssemblyQualifiedName,
+            Type = typeof(T).AssemblyQualifiedName!,
             Data = component
         };
         return JsonSerializer.Serialize(wrapper, _options);
@@ -45,17 +45,17 @@ public class ComponentSerializer
         {
             throw new InvalidOperationException("反序列化失败：JSON 为空");
         }
-        var dataProperty = wrapperType.GetProperty("Data");
-        return dataProperty.GetValue(wrapper);
+        var dataProperty = wrapperType.GetProperty("Data")!;
+        return dataProperty.GetValue(wrapper)!;
     }
 
     private class ComponentWrapper<T>
     {
         [JsonPropertyName("$type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = string.Empty;
 
         [JsonPropertyName("data")]
-        public T Data { get; set; }
+        public T Data { get; set; } = default!;
     }
 
     private class ComponentJsonConverterFactory : JsonConverterFactory
@@ -69,7 +69,7 @@ public class ComponentSerializer
         {
             var componentType = typeToConvert.GetGenericArguments()[0];
             var converterType = typeof(ComponentWrapperConverter<>).MakeGenericType(componentType);
-            return (JsonConverter)Activator.CreateInstance(converterType);
+            return (JsonConverter)Activator.CreateInstance(converterType)!;
         }
     }
 
@@ -84,7 +84,7 @@ public class ComponentSerializer
 
             if (root.TryGetProperty("$type", out var typeProp))
             {
-                wrapper.Type = typeProp.GetString();
+                wrapper.Type = typeProp.GetString() ?? string.Empty;
             }
 
             if (root.TryGetProperty("data", out var dataProp))

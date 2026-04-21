@@ -183,7 +183,7 @@ public class MemoryManager
         }
 
         var unreachableIds = _objects
-            .Where(kvp => !kvp.Value.IsMarked && kvp.Value.ReferenceCount <= 0)
+            .Where(kvp => kvp.Value is { IsMarked: false, ReferenceCount: <= 0 })
             .Select(kvp => kvp.Key)
             .ToList();
 

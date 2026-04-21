@@ -27,8 +27,8 @@ public sealed class TextWidget : Widget
     protected override Size MeasureOverride(Size availableSize)
     {
         // 基于字符数和字体大小估算文本尺寸
-        float estimatedWidth = Text.Length * FontSize * 0.6f;
-        float height = FontSize * 1.2f;
+        var estimatedWidth = Text.Length * FontSize * 0.6f;
+        var height = FontSize * 1.2f;
 
         return new Size(
             Math.Min(estimatedWidth, availableSize.Width),

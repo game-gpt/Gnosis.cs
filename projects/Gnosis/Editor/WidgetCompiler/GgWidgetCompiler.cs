@@ -151,7 +151,7 @@ public partial class GgWidgetCompiler
 
         defaultStr = defaultStr.Trim();
 
-        if (defaultStr == "true" || defaultStr == "false")
+        if (defaultStr is "true" or "false")
         {
             return "bool";
         }

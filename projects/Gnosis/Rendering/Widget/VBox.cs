@@ -12,7 +12,7 @@ public sealed class VBox : ContainerWidget
         float totalHeight = 0;
         float maxWidth = 0;
         float totalFlex = 0;
-        bool first = true;
+        var first = true;
 
         // 先测量非弹性子组件
         foreach (var child in Children)
@@ -50,8 +50,8 @@ public sealed class VBox : ContainerWidget
         // 计算剩余高度并按 flex 比例分配给弹性子组件
         if (totalFlex > 0)
         {
-            float remainingHeight = Math.Max(0, availableSize.Height - totalHeight - (totalFlex > 0 && Children.Count > totalFlex ? Spacing : 0) * (Children.Count(c => c is Flexible && c.Visibility != Visibility.Collapsed) - 1));
-            float perFlex = remainingHeight / totalFlex;
+            var remainingHeight = Math.Max(0, availableSize.Height - totalHeight - (totalFlex > 0 && Children.Count > totalFlex ? Spacing : 0) * (Children.Count(c => c is Flexible && c.Visibility != Visibility.Collapsed) - 1));
+            var perFlex = remainingHeight / totalFlex;
 
             foreach (var child in Children)
             {
@@ -62,7 +62,7 @@ public sealed class VBox : ContainerWidget
 
                 if (child is Flexible flexible)
                 {
-                    float flexHeight = perFlex * flexible.Flex;
+                    var flexHeight = perFlex * flexible.Flex;
                     var flexAvailable = new Size(
                         CrossAxisAlignment == CrossAxisAlignment.Stretch ? availableSize.Width : availableSize.Width,
                         flexHeight
@@ -86,8 +86,8 @@ public sealed class VBox : ContainerWidget
 
     protected override void ArrangeChildren(Rect contentRect)
     {
-        float y = contentRect.Y;
-        bool first = true;
+        var y = contentRect.Y;
+        var first = true;
 
         foreach (var child in Children)
         {

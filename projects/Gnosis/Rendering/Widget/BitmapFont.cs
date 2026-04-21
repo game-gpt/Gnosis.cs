@@ -1,4 +1,4 @@
-namespace Gnosis.Editor.Widget;
+namespace Gnosis.Rendering.Widget;
 
 internal static class BitmapFont
 {
@@ -8,9 +8,9 @@ internal static class BitmapFont
 
     static BitmapFont()
     {
-        for (int i = 0; i < 128; i++)
+        for (var i = 0; i < 128; i++)
         {
-            _glyphs[i] = i >= 0x20 && i < 0x7F
+            _glyphs[i] = i is >= 0x20 and < 0x7F
                 ? BuildGlyph((char)i)
                 : BuildGlyph('\0');
         }
@@ -18,19 +18,14 @@ internal static class BitmapFont
 
     public static byte[] GetGlyph(char ch)
     {
-        int index = ch & 0x7F;
+        var index = ch & 0x7F;
 
-        if (index < 0x20 || index >= 0x7F)
-        {
-            return _glyphs[0];
-        }
-
-        return _glyphs[index];
+        return index is < 0x20 or >= 0x7F ? _glyphs[0] : _glyphs[index];
     }
 
     private static byte[] BuildGlyph(char ch)
     {
-        byte[] glyph = new byte[8];
+        var glyph = new byte[8];
 
         if (ch == '\0')
         {

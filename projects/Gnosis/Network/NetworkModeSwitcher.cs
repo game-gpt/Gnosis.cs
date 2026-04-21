@@ -1,37 +1,59 @@
+using System;
+
 namespace Gnosis.Network;
 
 /// <summary>
-/// 网络模式切换器，支持运行时在单机、状态同步和帧同步模式间切换
+/// 网络模式切换器，实现运行时同步模式切换
 /// </summary>
 public sealed class NetworkModeSwitcher
 {
     #region 字段
 
+    private readonly INetworkManager _networkManager;
     private SyncMode _currentMode = SyncMode.None;
+    private IStateSyncSystem? _stateSyncSystem;
+    private ILockstepSystem? _lockstepSystem;
 
     #endregion
 
     #region 属性
 
     /// <summary>
-    /// 当前同步模式
+    /// 获取当前同步模式
     /// </summary>
     public SyncMode CurrentMode => _currentMode;
 
     /// <summary>
-    /// 关联的网络管理器
+    /// 获取或设置状态同步系统
     /// </summary>
-    public INetworkManager? Manager { get; private set; }
+    public IStateSyncSystem? StateSyncSystem
+    {
+        get => _stateSyncSystem;
+        set => _stateSyncSystem = value;
+    }
 
     /// <summary>
-    /// 关联的状态同步系统
+    /// 获取或设置帧同步系统
     /// </summary>
-    public IStateSyncSystem? StateSync { get; private set; }
+    public ILockstepSystem? LockstepSystem
+    {
+        get => _lockstepSystem;
+        set => _lockstepSystem = value;
+    }
+
+    #endregion
+
+    #region 事件
 
     /// <summary>
-    /// 关联的帧同步系统
+    /// 模式切换前触发
     /// </summary>
-    public ILockstepSystem? Lockstep { get; private set; }
+    public event Action<SyncMode, SyncMode>? OnModeChanging;
+
+    /// <summary>
+    /// 模式切换后触发
+    /// </summary>
+    public event Action<SyncMode>? OnModeChanged;
 
     #endregion
 
@@ -40,14 +62,10 @@ public sealed class NetworkModeSwitcher
     /// <summary>
     /// 初始化网络模式切换器
     /// </summary>
-    /// <param name="manager">网络管理器</param>
-    /// <param name="stateSync">状态同步系统</param>
-    /// <param name="lockstep">帧同步系统</param>
-    public NetworkModeSwitcher(INetworkManager? manager = null, IStateSyncSystem? stateSync = null, ILockstepSystem? lockstep = null)
+    /// <param name="networkManager">网络管理器</param>
+    public NetworkModeSwitcher(INetworkManager networkManager)
     {
-        Manager = manager;
-        StateSync = stateSync;
-        Lockstep = lockstep;
+        _networkManager = networkManager;
     }
 
     #endregion
@@ -58,33 +76,93 @@ public sealed class NetworkModeSwitcher
     /// 切换到指定同步模式
     /// </summary>
     /// <param name="mode">目标同步模式</param>
+    /// <exception cref="InvalidOperationException">网络管理器未初始化时抛出</exception>
     public void SwitchTo(SyncMode mode)
     {
-        throw new NotImplementedException("模式切换尚未实现");
-    }
-
-    /// <summary>
-    /// 重置当前网络状态
-    /// </summary>
-    public void ResetState()
-    {
-        throw new NotImplementedException("模式切换尚未实现");
-    }
-
-    /// <summary>
-    /// 获取指定模式所需的系统列表
-    /// </summary>
-    /// <param name="mode">同步模式</param>
-    /// <returns>系统名称列表</returns>
-    public IEnumerable<string> GetRequiredSystems(SyncMode mode)
-    {
-        return mode switch
+        if (_currentMode == mode)
         {
-            SyncMode.None => Array.Empty<string>(),
-            SyncMode.StateSync => new[] { "ServerMovement", "ClientPredictionMovement" },
-            SyncMode.Lockstep => new[] { "LockstepCombat" },
-            _ => Array.Empty<string>()
-        };
+            return;
+        }
+
+        OnModeChanging?.Invoke(_currentMode, mode);
+
+        DisableCurrentSystems();
+        ResetNetworkState();
+
+        _currentMode = mode;
+
+        EnableCurrentSystems();
+
+        OnModeChanged?.Invoke(mode);
+    }
+
+    /// <summary>
+    /// 切换到单机模式
+    /// </summary>
+    public void SwitchToOffline()
+    {
+        SwitchTo(SyncMode.None);
+    }
+
+    /// <summary>
+    /// 切换到状态同步模式
+    /// </summary>
+    public void SwitchToStateSync()
+    {
+        SwitchTo(SyncMode.StateSync);
+    }
+
+    /// <summary>
+    /// 切换到帧同步模式
+    /// </summary>
+    public void SwitchToLockstep()
+    {
+        SwitchTo(SyncMode.Lockstep);
+    }
+
+    #endregion
+
+    #region 私有方法
+
+    /// <summary>
+    /// 禁用当前模式的系统
+    /// </summary>
+    private void DisableCurrentSystems()
+    {
+        if (_currentMode == SyncMode.StateSync && _stateSyncSystem is not null)
+        {
+            _stateSyncSystem.PredictionEnabled = false;
+        }
+    }
+
+    /// <summary>
+    /// 重置网络状态
+    /// </summary>
+    private void ResetNetworkState()
+    {
+        if (_networkManager.IsServer || _networkManager.IsClient)
+        {
+            _networkManager.LeaveLobby();
+        }
+    }
+
+    /// <summary>
+    /// 启用当前模式的系统
+    /// </summary>
+    private void EnableCurrentSystems()
+    {
+        switch (_currentMode)
+        {
+            case SyncMode.StateSync:
+                if (_stateSyncSystem is not null)
+                {
+                    _stateSyncSystem.PredictionEnabled = true;
+                }
+                break;
+
+            case SyncMode.Lockstep:
+                break;
+        }
     }
 
     #endregion

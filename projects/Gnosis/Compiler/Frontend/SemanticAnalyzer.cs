@@ -265,7 +265,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                 $"有效的生命周期方法: {string.Join(", ", validNames)}");
         }
 
-        if (method.Name == "on_update" && method.Parameters.Count > 1)
+        if (method is { Name: "on_update", Parameters.Count: > 1 })
         {
             _diagnostics.AddError(
                 string.Empty,
@@ -325,7 +325,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
 
     private void ValidateUniformBindingDecl(UniformBindingDecl decl)
     {
-        if (decl.Group.HasValue && decl.Group.Value < 0)
+        if (decl.Group is < 0)
         {
             _diagnostics.AddError(
                 string.Empty,
@@ -334,7 +334,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                 $"Group 值不能为负数: {decl.Group.Value}");
         }
 
-        if (decl.Binding.HasValue && decl.Binding.Value < 0)
+        if (decl.Binding is < 0)
         {
             _diagnostics.AddError(
                 string.Empty,

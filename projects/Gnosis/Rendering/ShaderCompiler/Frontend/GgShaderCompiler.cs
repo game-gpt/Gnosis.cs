@@ -157,7 +157,7 @@ public class GgShaderLexer
 
         var c = Peek();
 
-        if (c == '"' || c == '\'')
+        if (c is '"' or '\'')
         {
             return ScanString(startLine, startColumn);
         }
@@ -331,7 +331,7 @@ public class GgShaderLexer
 
         var text = sb.ToString();
 
-        if (text == "true" || text == "false" || text == "null")
+        if (text is "true" or "false" or "null")
         {
             return new Token(TokenType.Literal, text, startLine, startColumn);
         }

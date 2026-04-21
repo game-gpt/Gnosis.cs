@@ -487,6 +487,10 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return callInstruction;
     }
 
+    /// <summary>
+    /// 访问成员访问表达式，仅处理结构体字段访问
+    /// Swizzle 逻辑已迁移至 VisitSwizzleExpr
+    /// </summary>
     public ShaderIrInstruction? VisitMemberAccessExpr(MemberAccessExpr node)
     {
         var obj = node.Object.Accept(this);
@@ -495,34 +499,9 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
             return null;
         }
 
-        var swizzleComponents = ParseSwizzleComponents(node.MemberName);
-        if (swizzleComponents != null)
-        {
-            if (swizzleComponents.Length == 1)
-            {
-                var resultType = new ShaderIrType.FloatType();
-                var instruction = new CompositeExtractInstruction(resultType, obj.ResultId, swizzleComponents)
-                {
-                    ResultId = AllocateId(),
-                    ResultType = resultType
-                };
-                _currentInstructions.Add(instruction);
-                return instruction;
-            }
-
-            var vecResultType = new ShaderIrType.VectorType(new ShaderIrType.FloatType(), swizzleComponents.Length);
-            var swizzleInstruction = new VectorSwizzleInstruction(vecResultType, obj.ResultId, swizzleComponents)
-            {
-                ResultId = AllocateId(),
-                ResultType = vecResultType
-            };
-            _currentInstructions.Add(swizzleInstruction);
-            return swizzleInstruction;
-        }
-
         if (obj.ResultType is ShaderIrType.StructType structType)
         {
-            for (int i = 0; i < structType.Fields.Count; i++)
+            for (var i = 0; i < structType.Fields.Count; i++)
             {
                 if (structType.Fields[i].Name == node.MemberName)
                 {
@@ -688,7 +667,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         var resourceKind = MapBindingTypeToResourceKind(node.BindingType, varType);
 
         ShaderResourceIr? resource = null;
-        if (node.Group.HasValue && node.Binding.HasValue)
+        if (node is { Group: not null, Binding: not null })
         {
             resource = new ShaderResourceIr(
                 node.Name,
@@ -756,9 +735,25 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return null;
     }
 
+    /// <summary>
+    /// 访问 for-each 循环语句，生成无限循环 IR 结构
+    /// </summary>
     public ShaderIrInstruction? VisitLoopStmt(LoopStmt node)
     {
-        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 for-each 循环");
+        var bodyLabelId = AllocateId();
+        var continueLabelId = AllocateId();
+        var mergeLabelId = AllocateId();
+
+        _currentInstructions.Add(new LoopMergeInstruction(mergeLabelId, continueLabelId));
+        _currentInstructions.Add(new BranchInstruction(bodyLabelId));
+
+        _currentInstructions.Add(new LabelInstruction(bodyLabelId));
+        node.Body.Accept(this);
+
+        _currentInstructions.Add(new LabelInstruction(continueLabelId));
+        _currentInstructions.Add(new BranchInstruction(bodyLabelId));
+
+        _currentInstructions.Add(new LabelInstruction(mergeLabelId));
         return null;
     }
 
@@ -849,7 +844,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
     {
         foreach (var attr in attributes)
         {
-            if (attr.Name == "Location" && attr.Arguments.Count > 0)
+            if (attr is { Name: "Location", Arguments.Count: > 0 })
             {
                 if (uint.TryParse(attr.Arguments[0].Value, out var loc))
                 {
@@ -864,7 +859,7 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
     {
         foreach (var attr in attributes)
         {
-            if (attr.Name == "Builtin" && attr.Arguments.Count > 0)
+            if (attr is { Name: "Builtin", Arguments.Count: > 0 })
             {
                 return attr.Arguments[0].Value;
             }
