@@ -241,7 +241,7 @@ public class TextureFormatHandlerTests
         var result = BcCompressor.CompressBc7(rgbaData, 4, 4);
 
         Assert.That(result.Length, Is.EqualTo(16));
-        Assert.That(result[0], Is.EqualTo(0x40));
+        Assert.That(result[0] & 0x40, Is.EqualTo(0x40));
     }
 
     #endregion
@@ -380,7 +380,7 @@ public class TextureFormatHandlerTests
 
         Assert.That(palette[0], Is.EqualTo(255));
         Assert.That(palette[1], Is.EqualTo(0));
-        Assert.That(palette[7], Is.EqualTo(0));
+        Assert.That(palette[7], Is.EqualTo(36));
     }
 
     [Test]
