@@ -75,8 +75,8 @@ micro shade_pixel(input: ShadingInput) -> vec4<f32> {
 | :--- | :--- | :--- |
 | **传统 Shader** | SPIR-V 字节码 | Vulkan / Metal / D3D12 直接执行 |
 | **光追 Shader** | SPIR-V + `GL_EXT_ray_tracing` 入口标记 | Vulkan Ray Tracing Pipeline 执行 |
-| **神经渲染** | ONNX Runtime 调用序列 / 预编译权重 Blob | RHI `Dispatch` 间接执行 |
-| **扩散模型** | `[External]` 绑定，由引擎扩散模型后端接管 | ONNX 预编译模型执行 |
+| **神经渲染** | Tensor Core 调度序列 / 预编译权重 Blob | RHI `Dispatch` 间接执行 |
+| **扩散模型** | `[External]` 绑定，由引擎扩散模型后端接管 | Tensor Core 预编译模型执行 |
 
 ### Shader 抽象的边界
 
@@ -88,7 +88,7 @@ Shader 抽象并非万能，理解其边界有助于正确使用：
 | **几何形变与顶点变换** | **管线状态切换**（光栅化 vs. 光线发射） |
 | **材质参数响应** | **渲染顺序与合成**（透明物体排序） |
 
-**Stable Diffusion 的特殊性**：虽然计算过程可以用 Compute Shader 实现，但 gg 引擎不会用 `gg-shader` 去编写 UNet 架构代码。而是通过 `[External]` 绑定：`gg-shader` 定义一个黑盒函数 `denoise_step`，其实现由引擎的**扩散模型后端**通过预编译的 ONNX 模型接管：
+**Stable Diffusion 的特殊性**：虽然计算过程可以用 Compute Shader 实现，但 gg 引擎不会用 `gg-shader` 去编写 UNet 架构代码。而是通过 `[External]` 绑定：`gg-shader` 定义一个黑盒函数 `denoise_step`，其实现由引擎的**扩散模型后端**通过 Tensor Core 调度执行：
 
 ```rust
 // gg-shader 只声明接口，实现由引擎后端提供
@@ -99,6 +99,63 @@ micro denoise_step(noise: texture_2d<f32>, step: u32, prompt_hash: u32) -> vec4<
 ## 基础语法
 
 ### 函数定义
+
+gg-shader 使用 `micro` 关键字定义着色器函数：
+
+```rust
+// 顶点着色器
+[Vertex]
+micro vs_main([Builtin(vertex_index)] idx: u32) -> VertexOutput {
+    ...
+}
+
+// 片段着色器
+[Fragment]
+micro ps_main(input: VertexOutput) -> vec4<f32> {
+    ...
+}
+
+// 计算着色器
+[Compute]
+[WorkgroupSize(8, 8, 1)]
+micro cs_main([Builtin(global_invocation_id)] global_id: vec3<u32>) {
+    ...
+}
+```
+
+### 神经层定义
+
+gg-shader 使用 `neural` 关键字定义神经网络层，直接利用 GPU 的 Tensor Core / Matrix Core 执行推理：
+
+```rust
+// 线性层
+neural LinearLayer<in_dim: u32, out_dim: u32> @precision(half) {
+    weight: tensor<f16, [out_dim, in_dim]>,
+    bias: tensor<f16, [out_dim]>,
+
+    forward(input: vec<in_dim, f32>) -> vec<out_dim, f32> {
+        return matmul(weight, input) + bias;
+    }
+}
+
+// 在 micro 函数中调用
+[Fragment]
+micro ps_main(input: VertexOutput) -> vec4<f32> {
+    let features = extract_features(input);
+    let neural_color = LinearLayer<32, 3>.forward(features);
+    return vec4<f32>(neural_color, 1.0);
+}
+```
+
+`neural` 块与 `micro` 函数的核心区别：
+
+| 维度 | `micro` 函数 | `neural` 块 |
+| :--- | :--- | :--- |
+| 执行单元 | CUDA Core / Stream Processor | Tensor Core / Matrix Core |
+| 数据粒度 | 标量、向量 | 矩阵分块、张量 |
+| 典型用途 | 光照、纹理采样 | MLP 推理、卷积、注意力 |
+
+详细的神经着色器编程指南请参考 [gg-neural 指南](gg-neural.md)。
 
 ```rust
 // 使用 using 语句简化泛型
@@ -392,16 +449,16 @@ gg-shader 编译器根据目标渲染后端选择不同的编译路径：
     │
     ├── 光线追踪后端 → SPIR-V + GL_EXT_ray_tracing → Vulkan RT Pipeline
     │
-    ├── 神经渲染后端 → ONNX Runtime 调用序列 / 权重 Blob → RHI Dispatch
+    ├── 神经渲染后端 → Tensor Core 调度序列 / 权重 Blob → RHI Dispatch
     │
-    └── 扩散模型后端 → [External] 绑定 → 引擎预编译 ONNX 模型
+    └── 扩散模型后端 → [External] 绑定 → 引擎 Tensor Core 预编译模型
 ```
 
 | 编译路径 | 输出格式 | 后端选择依据 |
 | :--- | :--- | :--- |
 | **光栅化** | SPIR-V 字节码 | `RENDER_MODE == "RASTER"` |
 | **光线追踪** | SPIR-V + 光追扩展标记 | `RENDER_MODE == "RAY_TRACE"` |
-| **神经渲染** | ONNX 调用序列 + 权重嵌入 | `RENDER_MODE == "NERF"` |
+| **神经渲染** | Tensor Core 调度序列 + 权重嵌入 | `RENDER_MODE == "NERF"` |
 | **扩散模型** | `[External]` 符号绑定 | `RENDER_MODE == "DIFFUSION"` |
 
 编译器在元编程展开阶段根据 `RENDER_MODE` 宏选择对应的代码路径，IR 层之后的后端负责将中间表示翻译为目标格式。对于 `[External]` 绑定的函数，编译器仅生成符号引用，实际实现在运行时由引擎后端注入。
@@ -580,6 +637,7 @@ micro ps_main(input: VertexOutput) -> vec4 {
 
 ## 下一步
 
-- 阅读 [渲染系统](rendering.md) 了解 RHI 抽象层
+- 阅读 [gg-neural 指南](gg-neural.md) 了解神经着色器编程
+- 阅读 [渲染系统](../development/rendering.md) 了解 RHI 抽象层
 - 查看 [示例项目](../../examples/) 了解实际用法
 

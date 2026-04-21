@@ -8,6 +8,7 @@
 | :--- | :--- |
 | [getting-started.md](getting-started.md) | 环境搭建与项目构建指南 |
 | [architecture.md](architecture.md) | 多阶段编程模型与整体架构 |
+| [config-tables.md](config-tables.md) | 配置表系统与数据定义规范 |
 | [rendering.md](rendering.md) | 渲染系统、RHI 抽象与管线优化 |
 | [editor.md](editor.md) | 编辑器架构与 Widget 系统 |
 | [hot-update.md](hot-update.md) | 热重载与热更新机制 |
