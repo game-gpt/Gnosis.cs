@@ -1,5 +1,5 @@
 using Gnosis.Audio.Interface;
-using Gnosis.ECS.Core;
+using Gnosis.Core;
 
 namespace Gnosis.Audio;
 

@@ -1,7 +1,7 @@
 using System.Globalization;
 using Gnosis.Assets.VFS;
 using Gnosis.ECS;
-using Gnosis.ECS.Core;
+using Gnosis.Core;
 using Gnosis.Infrastructure.Events;
 
 namespace Gnosis.Infrastructure;

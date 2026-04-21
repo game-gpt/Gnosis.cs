@@ -1,4 +1,4 @@
-using Gnosis.ECS.Core;
+using Gnosis.Core;
 using Gnosis.Input.Interface;
 
 namespace Gnosis.Input;

@@ -1,5 +1,5 @@
-using Gnosis.ECS.Core;
-using Gnosis.Infrastructure.Events;
+using Gnosis.Core;
+using Gnosis.Core.Events;
 
 namespace Gnosis.Infrastructure;
 

@@ -1,4 +1,4 @@
-using Gnosis.ECS.Core;
+using Gnosis.Core;
 using Gnosis.Infrastructure;
 
 namespace Gnosis.Network;

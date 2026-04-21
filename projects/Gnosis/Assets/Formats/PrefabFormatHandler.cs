@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Gnosis.ECS.Core;
+using Gnosis.Core;
 
 namespace Gnosis.Assets.Formats;
 
