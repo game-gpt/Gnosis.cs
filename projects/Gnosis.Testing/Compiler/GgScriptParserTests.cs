@@ -138,9 +138,9 @@ system MoveSystem {
         var unit = (CompilationUnit)ast;
         var func = (FunctionDecl)unit.Declarations[0];
         var body = func.Body!;
-        Assert.That(body.Statements[0], Is.InstanceOf<IfStmt>());
+        Assert.That(body.Statements[0], Is.InstanceOf<IfStatement>());
 
-        var ifStmt = (IfStmt)body.Statements[0];
+        var ifStmt = (IfStatement)body.Statements[0];
         Assert.That(ifStmt.Condition, Is.InstanceOf<BinaryExpr>());
         Assert.That(ifStmt.ThenBlock, Is.Not.Null);
         Assert.That(ifStmt.ElseBlock, Is.Not.Null);
@@ -255,8 +255,8 @@ scene GameMain {
         var unit = (CompilationUnit)ast;
         var func = (FunctionDecl)unit.Declarations[0];
         var body = func.Body!;
-        var exprStmt = (ExprStmt)body.Statements[0];
-        var call = (CallExpr)exprStmt.Expression;
+        var exprStmt = (TermExpressionStatement)body.Statements[0];
+        var call = (TermCallExpression)exprStmt.Expression;
         var memberAccess = (MemberAccessExpr)call.Callee;
 
         Assert.That(memberAccess.MemberName, Is.EqualTo("get"));
