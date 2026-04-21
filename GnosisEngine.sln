@@ -7,10 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gnosis", "projects\Gnosis\G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gnosis.Testing", "projects\Gnosis.Testing\Gnosis.Testing.csproj", "{E205891D-E45A-44D3-AFB6-B1397F27F5B9}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "projects", "projects", "{17245595-230B-9055-A944-863F0DDDA8E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gnosis.Security.Tests", "projects\Gnosis.Security.Tests\Gnosis.Security.Tests.csproj", "{815FBB3D-D214-4E81-BB23-7EEC9366B0BB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
