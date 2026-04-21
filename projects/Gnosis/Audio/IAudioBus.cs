@@ -1,4 +1,4 @@
-namespace Gnosis.Audio.Interface;
+namespace Gnosis.Audio;
 
 public interface IAudioBus
 {

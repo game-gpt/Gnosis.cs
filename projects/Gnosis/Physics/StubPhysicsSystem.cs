@@ -1,6 +1,4 @@
-using Gnosis.Physics.Interface;
-
-namespace Gnosis.Physics.Implementation;
+namespace Gnosis.Physics;
 
 public class StubPhysicsSystem : IPhysicsSystem
 {

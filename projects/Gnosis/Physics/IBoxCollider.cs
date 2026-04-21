@@ -1,4 +1,4 @@
-namespace Gnosis.Physics.Interface;
+namespace Gnosis.Physics;
 
 public interface IBoxCollider : ICollider
 {

@@ -1,4 +1,3 @@
-using Gnosis.Audio.Interface;
 using Gnosis.Core;
 
 namespace Gnosis.Audio;

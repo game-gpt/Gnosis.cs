@@ -1,5 +1,4 @@
 using Gnosis.Core;
-using Gnosis.Physics.Interface;
 
 namespace Gnosis.Physics;
 

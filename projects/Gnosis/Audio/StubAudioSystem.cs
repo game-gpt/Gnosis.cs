@@ -1,6 +1,4 @@
-using Gnosis.Audio.Interface;
-
-namespace Gnosis.Audio.Implementation;
+namespace Gnosis.Audio;
 
 public class StubAudioSystem : IAudioSystem
 {
