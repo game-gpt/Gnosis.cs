@@ -144,6 +144,11 @@ public static class EdgeCollapser
                 }
             }
 
+            if (currentTriangleCount - sharedTriangles.Count < targetTriangleCount)
+            {
+                continue;
+            }
+
             foreach (int tri in sharedTriangles)
             {
                 activeTriangles.Remove(tri);
