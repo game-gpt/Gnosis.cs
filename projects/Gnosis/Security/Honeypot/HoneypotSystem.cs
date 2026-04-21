@@ -1,6 +1,6 @@
 using Gnosis.Core;
 
-namespace Gnosis.Security;
+namespace Gnosis.Security.Honeypot;
 
 /// <summary>
 /// 蜜罐系统，管理蜜罐字段和蜜罐实体，检测作弊行为

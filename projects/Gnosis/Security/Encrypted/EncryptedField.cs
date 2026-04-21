@@ -1,6 +1,4 @@
-using System;
-
-namespace Gnosis.Security;
+namespace Gnosis.Security.Encrypted;
 
 /// <summary>
 /// 加密字段结构体，在内存中对值类型数据进行混淆保护，防止内存扫描器读取敏感数据

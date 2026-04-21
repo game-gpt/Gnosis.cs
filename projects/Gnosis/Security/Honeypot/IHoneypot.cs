@@ -1,4 +1,4 @@
-namespace Gnosis.Security;
+namespace Gnosis.Security.Honeypot;
 
 public interface IHoneypot
 {

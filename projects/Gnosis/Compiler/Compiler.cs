@@ -2,7 +2,6 @@ using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Backend;
 using Gnosis.Compiler.Cache;
 using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Frontend;
 using Gnosis.Compiler.Lexer;
 using Gnosis.Compiler.Parser;
 using MetaLanguageEvaluator = Gnosis.Compiler.ScriptFrontend.MetaLanguageEvaluator;

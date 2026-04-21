@@ -4,11 +4,11 @@ namespace Gnosis.Rendering.Backends.ShaderIR;
 /// 张量操作指令，用于 Tensor Core / Cooperative Matrix 执行路径
 /// </summary>
 public sealed record TensorInstruction(
-    TensorOpCode OpCode,
+    TensorOpCode TensorOp,
     ShaderIrType? ResultType,
     uint[] OperandIds) : ShaderIrInstruction(ShaderIrOpCode.Nop)
 {
-    public override ShaderIrType? ResultType { get; init; } = ResultType;
+    public new ShaderIrType? ResultType { get; init; } = ResultType;
 }
 
 /// <summary>

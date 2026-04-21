@@ -1,4 +1,4 @@
-namespace Gnosis.Security;
+namespace Gnosis.Security.Honeypot;
 
 [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
 public class HoneypotAttribute : Attribute

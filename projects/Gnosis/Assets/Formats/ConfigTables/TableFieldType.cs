@@ -39,7 +39,12 @@ public abstract record TableFieldType
         return new ReferenceType(targetTable);
     }
 
-    private sealed record PrimitiveType(TableFieldTypeKind Kind) : TableFieldType;
+    private sealed record PrimitiveType : TableFieldType
+    {
+        private readonly TableFieldTypeKind _kind;
+        public PrimitiveType(TableFieldTypeKind kind) => _kind = kind;
+        public override TableFieldTypeKind Kind => _kind;
+    }
 
     private sealed record ListType(TableFieldType Element) : TableFieldType
     {

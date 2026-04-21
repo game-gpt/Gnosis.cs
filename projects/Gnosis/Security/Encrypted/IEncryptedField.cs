@@ -1,4 +1,4 @@
-namespace Gnosis.Security;
+namespace Gnosis.Security.Encrypted;
 
 public interface IEncryptedField<T> where T : struct
 {
