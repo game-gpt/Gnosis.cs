@@ -183,5 +183,20 @@ public enum NodeType
     /// <summary>
     /// Uniform 绑定声明
     /// </summary>
-    UniformBindingDecl
+    UniformBindingDecl,
+
+    /// <summary>
+    /// 神经层声明
+    /// </summary>
+    NeuralDecl,
+
+    /// <summary>
+    /// 张量类型表达式
+    /// </summary>
+    TensorTypeExpr,
+
+    /// <summary>
+    /// 张量维度
+    /// </summary>
+    TensorDimension
 }

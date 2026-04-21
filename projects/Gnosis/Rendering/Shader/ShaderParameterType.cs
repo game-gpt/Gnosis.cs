@@ -1,5 +1,8 @@
 namespace Gnosis.Rendering.Shader;
 
+/// <summary>
+/// 着色器参数类型枚举
+/// </summary>
 public enum ShaderParameterType
 {
     Unknown = 0,
@@ -22,5 +25,10 @@ public enum ShaderParameterType
     UniformBuffer = 17,
     AccelerationStructure = 18,
     NeuralModel = 19,
-    DiffusionModel = 20
+    DiffusionModel = 20,
+    TensorF16 = 21,
+    TensorF32 = 22,
+    TensorBF16 = 23,
+    TensorInt8 = 24,
+    TensorInt4 = 25
 }

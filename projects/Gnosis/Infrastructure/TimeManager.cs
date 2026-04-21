@@ -5,7 +5,7 @@ namespace Gnosis.Infrastructure;
 /// <summary>
 /// 时间管理器，负责帧时间追踪、固定时间步、时间缩放和帧率控制
 /// </summary>
-public class TimeManager
+public class TimeManager : ITimeManager
 {
     #region 字段
 

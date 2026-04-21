@@ -1,5 +1,8 @@
 namespace Gnosis.Rendering.Shader;
 
+/// <summary>
+/// 微函数类型枚举，标识着色器/神经层的执行阶段
+/// </summary>
 public enum MicroFunctionKind
 {
     Vertex = 0,
@@ -14,5 +17,6 @@ public enum MicroFunctionKind
     RayMiss = 9,
     RayIntersection = 10,
     Neural = 11,
-    Diffusion = 12
+    Diffusion = 12,
+    NeuralForward = 13
 }

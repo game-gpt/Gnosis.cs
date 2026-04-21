@@ -768,6 +768,21 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
 
     public ShaderIrInstruction? VisitUsingDecl(UsingDecl node) => null;
 
+    public ShaderIrInstruction? VisitNeuralDecl(NeuralDecl node)
+    {
+        foreach (var weight in node.Weights)
+        {
+            weight.Accept(this);
+        }
+
+        node.ForwardFunction.Accept(this);
+        return null;
+    }
+
+    public ShaderIrInstruction? VisitTensorTypeExpr(TensorTypeExpr node) => null;
+
+    public ShaderIrInstruction? VisitTensorDimension(TensorDimension node) => null;
+
     #endregion
 
     #region Private Methods

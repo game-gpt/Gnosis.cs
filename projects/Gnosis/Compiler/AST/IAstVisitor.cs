@@ -57,4 +57,7 @@ public interface IAstVisitor<out T>
     T VisitSwizzleExpr(SwizzleExpr node);
     T VisitUsingDecl(UsingDecl node);
     T VisitUniformBindingDecl(UniformBindingDecl node);
+    T VisitNeuralDecl(NeuralDecl node);
+    T VisitTensorTypeExpr(TensorTypeExpr node);
+    T VisitTensorDimension(TensorDimension node);
 }

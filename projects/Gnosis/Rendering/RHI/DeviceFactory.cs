@@ -16,9 +16,9 @@ public static class DeviceFactory
         return backend switch
         {
             GraphicsBackend.Software => new SoftwareDevice(),
-            GraphicsBackend.Vulkan => new VulkanDevice(),
-            GraphicsBackend.Metal => new MetalDevice(),
-            GraphicsBackend.D3D12 => new D3D12Device(),
+            GraphicsBackend.Vulkan => throw new NotSupportedException("Vulkan 后端尚未实现"),
+            GraphicsBackend.Metal => throw new NotSupportedException("Metal 后端尚未实现"),
+            GraphicsBackend.D3D12 => throw new NotSupportedException("D3D12 后端尚未实现"),
             _ => throw new NotSupportedException($"不支持的图形后端类型：{backend}")
         };
     }

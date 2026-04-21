@@ -14,5 +14,6 @@ public enum FormatType
     Shader = 9,
     Script = 10,
     Config = 11,
-    Localization = 12
+    Localization = 12,
+    ConfigTable = 13
 }

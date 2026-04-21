@@ -23,4 +23,16 @@
     <PackageReference Include="ZstdNet" Version="1.4.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Editor\EditorWindow.cs" />
+    <Compile Remove="Rendering\Renderer\SoftwareRenderer.cs" />
+    <Compile Remove="Rendering\ShaderGenerator\GnosisShaderSourceGenerator.cs" />
+    <Compile Remove="Compiler\AST\TypeExpressionStatement.cs" />
+    <Compile Remove="Compiler\AST\TypeCallExpression.cs" />
+    <Compile Remove="Assets\Formats\ConfigTables\**\*.cs" />
+    <Compile Remove="ECS\Implementation\ComponentPool.cs" />
+    <Compile Remove="ECS\Implementation\ComponentStorage.cs" />
+    <Compile Remove="Rendering\ShaderCompiler\Backend\ShaderIR\TensorInstruction.cs" />
+  </ItemGroup>
+
 </Project>

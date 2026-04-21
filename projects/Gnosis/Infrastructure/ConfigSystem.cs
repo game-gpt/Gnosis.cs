@@ -1,22 +1,24 @@
 using System.Globalization;
 using Gnosis.Assets.VFS;
-using Gnosis.ECS;
 using Gnosis.Core;
+using Gnosis.Core.Events;
+using Gnosis.ECS;
 using Gnosis.Infrastructure.Events;
+using ECSEntityId = Gnosis.ECS.Core.EntityId;
 
 namespace Gnosis.Infrastructure;
 
 /// <summary>
 /// 配置系统，负责加载、读取和运行时修改配置
 /// </summary>
-public class ConfigSystem : ISystem
+public class ConfigSystem : ISystem, IConfigSystem
 {
     #region Fields
 
     private readonly IVirtualFileSystem _vfs;
     private readonly Dictionary<string, string> _values = new();
     private readonly Dictionary<string, string> _sources = new();
-    private readonly EntityId _aggregateId;
+    private readonly ECSEntityId _aggregateId;
 
     #endregion
 
@@ -34,7 +36,7 @@ public class ConfigSystem : ISystem
     public ConfigSystem(IVirtualFileSystem vfs)
     {
         _vfs = vfs;
-        _aggregateId = EntityId.New();
+        _aggregateId = ECSEntityId.New();
     }
 
     #endregion
