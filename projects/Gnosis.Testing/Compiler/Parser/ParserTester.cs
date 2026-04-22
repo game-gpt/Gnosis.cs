@@ -1,9 +1,11 @@
 using System.Text;
-using Gnosis.Compiler.AST;
-using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Lexer;
+using Gnosis.Toolchain.ScriptCompiler;
+using Gnosis.Toolchain.ScriptCompiler.AST;
+using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Gnosis.Toolchain.ScriptCompiler.Lexer;
+using Gnosis.Toolchain.ScriptCompiler.Parser;
 
-namespace Gnosis.Compiler.Parser;
+namespace Gnosis.Testing.Compiler.Parser;
 
 /// <summary>
 /// Parser 测试工具类，支持基于文件的测试模式

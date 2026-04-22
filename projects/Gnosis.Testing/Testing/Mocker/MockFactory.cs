@@ -1,4 +1,4 @@
-using Gnosis.ECS.Core;
+using Gnosis.ECS.Entity;
 
 namespace Gnosis.Testing.Mocker;
 

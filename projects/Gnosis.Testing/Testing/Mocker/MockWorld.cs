@@ -1,8 +1,11 @@
-using Gnosis.ECS.Core;
+using Gnosis.ECS.Archetype;
+using Gnosis.ECS.Entity;
+using Gnosis.ECS.Query;
+using Gnosis.ECS.World;
 
 namespace Gnosis.Testing.Mocker;
 
-public class MockWorld : ECS.Interface.IWorld
+public class MockWorld : IWorld
 {
     #region Fields
 
@@ -21,7 +24,7 @@ public class MockWorld : ECS.Interface.IWorld
 
     public EntityId CreateEntity()
     {
-        var id = EntityId.New();
+        var id = new EntityId((uint)++_entityCount, 1);
         _components[id] = new Dictionary<Type, object>();
         _entityCount++;
         return id;
@@ -54,6 +57,14 @@ public class MockWorld : ECS.Interface.IWorld
         return default;
     }
 
+    public void SetComponent<T>(EntityId entityId, T component) where T : struct
+    {
+        if (_components.TryGetValue(entityId, out var components))
+        {
+            components[typeof(T)] = component;
+        }
+    }
+
     public bool HasComponent<T>(EntityId entityId) where T : struct
     {
         return _components.TryGetValue(entityId, out var components) &&
@@ -68,12 +79,17 @@ public class MockWorld : ECS.Interface.IWorld
         }
     }
 
-    public ECS.Interface.IQuery CreateQuery()
+    public IQuery CreateQuery()
     {
         throw new NotImplementedException("MockWorld.CreateQuery 未实现");
     }
 
-    public ECS.Interface.IArchetype GetArchetype(params Type[] componentTypes)
+    public IQuery CreateQuery(QueryDescription description)
+    {
+        throw new NotImplementedException("MockWorld.CreateQuery(QueryDescription) 未实现");
+    }
+
+    public IArchetype GetArchetype(params Type[] componentTypes)
     {
         throw new NotImplementedException("MockWorld.GetArchetype 未实现");
     }

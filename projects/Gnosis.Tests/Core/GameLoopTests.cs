@@ -2,6 +2,7 @@ using Gnosis.Core.Diagnostic;
 using Gnosis.Core.Thread;
 using Gnosis.Core.Time;
 using NUnit.Framework;
+using SysThread = System.Threading.Thread;
 
 namespace Gnosis.Core;
 
@@ -28,7 +29,7 @@ public class GameLoopTests
         var gameLoop = new GameLoop(_timeManager, _scheduler, _logger);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(100);
+        SysThread.Sleep(100);
         gameLoop.Stop();
         task.Wait(2000);
 
@@ -43,7 +44,7 @@ public class GameLoopTests
         Assert.That(gameLoop.IsRunning, Is.False);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(50);
+        SysThread.Sleep(50);
 
         Assert.That(gameLoop.IsRunning, Is.True);
 
@@ -57,7 +58,7 @@ public class GameLoopTests
         var gameLoop = new GameLoop(_timeManager, _scheduler, _logger);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(50);
+        SysThread.Sleep(50);
 
         gameLoop.Stop();
         task.Wait(2000);
@@ -71,7 +72,7 @@ public class GameLoopTests
         var gameLoop = new GameLoop(_timeManager, _scheduler, _logger);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(50);
+        SysThread.Sleep(50);
 
         Assert.Throws<InvalidOperationException>(() => gameLoop.Run());
 
@@ -89,13 +90,13 @@ public class GameLoopTests
         var gameLoop = new GameLoop(_timeManager, _scheduler, _logger);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(80);
+        SysThread.Sleep(80);
 
         gameLoop.Pause();
-        Thread.Sleep(80);
+        SysThread.Sleep(80);
 
         var countAfterPause = _scheduler.UpdateCount;
-        Thread.Sleep(80);
+        SysThread.Sleep(80);
 
         var countAfterPauseWait = _scheduler.UpdateCount;
 
@@ -111,14 +112,14 @@ public class GameLoopTests
         var gameLoop = new GameLoop(_timeManager, _scheduler, _logger);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(50);
+        SysThread.Sleep(50);
 
         gameLoop.Pause();
-        Thread.Sleep(50);
+        SysThread.Sleep(50);
 
         var countAtPause = _scheduler.UpdateCount;
         gameLoop.Resume();
-        Thread.Sleep(80);
+        SysThread.Sleep(80);
 
         gameLoop.Stop();
         task.Wait(2000);
@@ -134,15 +135,15 @@ public class GameLoopTests
         Assert.That(gameLoop.IsPaused, Is.False);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(50);
+        SysThread.Sleep(50);
 
         gameLoop.Pause();
-        Thread.Sleep(20);
+        SysThread.Sleep(20);
 
         Assert.That(gameLoop.IsPaused, Is.True);
 
         gameLoop.Resume();
-        Thread.Sleep(20);
+        SysThread.Sleep(20);
 
         Assert.That(gameLoop.IsPaused, Is.False);
 
@@ -160,7 +161,7 @@ public class GameLoopTests
         var gameLoop = new GameLoop(_timeManager, _scheduler, _logger);
 
         var task = Task.Run(() => gameLoop.Run());
-        Thread.Sleep(150);
+        SysThread.Sleep(150);
         gameLoop.Stop();
         task.Wait(2000);
 

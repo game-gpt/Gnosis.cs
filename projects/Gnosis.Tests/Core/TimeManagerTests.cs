@@ -1,5 +1,6 @@
 using Gnosis.Core.Time;
 using NUnit.Framework;
+using SysThread = System.Threading.Thread;
 
 namespace Gnosis.Core;
 
@@ -33,7 +34,7 @@ public class TimeManagerTests
     {
         _timeManager.BeginFrame();
 
-        Thread.Sleep(16);
+        SysThread.Sleep(16);
 
         _timeManager.BeginFrame();
 
@@ -46,7 +47,7 @@ public class TimeManagerTests
     {
         _timeManager.BeginFrame();
 
-        Thread.Sleep(16);
+        SysThread.Sleep(16);
 
         _timeManager.BeginFrame();
 
@@ -61,7 +62,7 @@ public class TimeManagerTests
 
         _timeManager.BeginFrame();
 
-        Thread.Sleep(20);
+        SysThread.Sleep(20);
 
         _timeManager.BeginFrame();
 
@@ -75,9 +76,9 @@ public class TimeManagerTests
         _timeManager.TimeScale = 0.5f;
 
         _timeManager.BeginFrame();
-        Thread.Sleep(20);
+        SysThread.Sleep(20);
         _timeManager.BeginFrame();
-        Thread.Sleep(20);
+        SysThread.Sleep(20);
         _timeManager.BeginFrame();
 
         Assert.That(_timeManager.TotalTime, Is.LessThan(_timeManager.UnscaledTotalTime));
@@ -141,7 +142,7 @@ public class TimeManagerTests
         _timeManager.TimeScale = 0f;
 
         _timeManager.BeginFrame();
-        Thread.Sleep(20);
+        SysThread.Sleep(20);
         _timeManager.BeginFrame();
 
         Assert.That(_timeManager.DeltaTime, Is.EqualTo(0f));
@@ -187,7 +188,7 @@ public class TimeManagerTests
     public void Reset_ClearsAllState()
     {
         _timeManager.BeginFrame();
-        Thread.Sleep(10);
+        SysThread.Sleep(10);
         _timeManager.BeginFrame();
         _timeManager.IncrementFixedFrameCount();
         _timeManager.TimeScale = 2f;

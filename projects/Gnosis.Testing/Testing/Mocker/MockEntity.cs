@@ -1,4 +1,4 @@
-using Gnosis.ECS.Core;
+using Gnosis.ECS.Entity;
 
 namespace Gnosis.Testing.Mocker;
 
@@ -11,7 +11,7 @@ public class MockEntity : IEntity
         Id = id;
     }
 
-    public MockEntity() : this(EntityId.New())
+    public MockEntity() : this(new EntityId(1, 1))
     {
     }
 
