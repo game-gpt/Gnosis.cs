@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.AI</PackageId>
+        <RootNamespace>Gnosis.AI</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis AI - 传统符号 AI，包含行为树、感知系统、GOAP 规划器</Description>
+        <PackageTags>gnosis;game-engine;ai;behavior-tree;perception;goap;planner</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Navigation\Gnosis.Navigation.csproj" />
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
+    </ItemGroup>
+</Project>

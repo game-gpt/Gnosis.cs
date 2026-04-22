@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Neural</PackageId>
+        <RootNamespace>Gnosis.Neural</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Neural - 深度学习推理运行时</Description>
+        <PackageTags>gnosis;game-engine;neural;deep-learning;inference;ai</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
+    </ItemGroup>
+</Project>
