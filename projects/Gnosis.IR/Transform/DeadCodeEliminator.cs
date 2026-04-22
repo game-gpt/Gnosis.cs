@@ -1,3 +1,5 @@
+using Gnosis.IR.Graph;
+
 namespace Gnosis.IR.Transform;
 
 public sealed class DeadCodeEliminator

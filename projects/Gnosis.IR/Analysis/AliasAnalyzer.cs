@@ -1,3 +1,5 @@
+using Gnosis.IR.Graph;
+
 namespace Gnosis.IR.Analysis;
 
 public enum AliasResult

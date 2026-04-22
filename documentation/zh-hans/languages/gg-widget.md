@@ -424,7 +424,7 @@ import { AppStore } from './store.js';
 ### 在 gg 脚本中使用组件
 
 ```tsx
-# main.ggs
+# main.script
 import ui;
 
 micro main() {
@@ -436,7 +436,7 @@ micro main() {
 ### 与 ECS 集成
 
 ```tsx
-# game.ggs
+# game.script
 import ui;
 
 component UI {
@@ -589,7 +589,7 @@ export component WidgetComponent {
 利用 **`gg-shader` 元编程 + 材质参数块**，避免为每种状态创建新材质实例。
 
 - **StyleBox 数据结构**：不是单独的纹理，而是一组描述边框、颜色、内边距的**纯数据**
-- **Uber UI Shader 特化**：在构建时，`gg_compiler` 扫描项目中用到的所有 StyleBox 类型（如 `hover`、`pressed`、`disabled`），并在 `game_ui.ggs` 着色器中生成对应的**静态变体数组**。运行时只需传递一个 `style_id` 整数，GPU 即可通过索引获取绘制参数，**零状态切换开销**
+- **Uber UI Shader 特化**：在构建时，`gg_compiler` 扫描项目中用到的所有 StyleBox 类型（如 `hover`、`pressed`、`disabled`），并在 `game_ui.shader` 着色器中生成对应的**静态变体数组**。运行时只需传递一个 `style_id` 整数，GPU 即可通过索引获取绘制参数，**零状态切换开销**
 
 ### 游戏 UI 专属的"无干扰"输入路由
 

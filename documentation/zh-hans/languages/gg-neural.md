@@ -484,13 +484,13 @@ gg-neural 是 gg-shader 的扩展，不是独立语言：
 
 | 维度 | gg-shader | gg-neural |
 | :--- | :--- | :--- |
-| 文件扩展名 | `.ggs` | `.ggs`（同一文件） |
+| 文件扩展名 | `.shader` | `.shader`（同一文件） |
 | 计算单元 | `micro` 函数 | `neural` 块 |
 | 调用关系 | 可调用 `neural` 块的 `forward()` | 可调用 `micro` 函数 |
 | 编译器 | 同一个编译器 | 同一个编译器 |
 | IR | 同一套 Shader IR | 扩展了 Tensor IR 节点 |
 
-在同一个 `.ggs` 文件中混合使用：
+在同一个 `.shader` 文件中混合使用：
 
 ```rust
 # 混合使用示例

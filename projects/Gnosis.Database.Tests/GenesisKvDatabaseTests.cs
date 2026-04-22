@@ -1,5 +1,8 @@
 using Gnosis.Database.Core;
 using Gnosis.Database.Engine;
+using Gnosis.Database.SHM;
+using Gnosis.Database.Storage;
+using Gnosis.Database.WAL;
 using NUnit.Framework;
 
 namespace Gnosis.Database.Tests;
@@ -19,18 +22,26 @@ public class GenesisKvDatabaseTests
         var options = new DatabaseOptions(
             Path: _testDir,
             Storage: new StorageOptions(
+                EngineType: StorageEngineType.MemoryMappedFile,
                 BasePath: Path.Combine(_testDir, "data.db"),
                 PageSize: 4096,
-                EngineType: StorageEngineType.BTree),
+                InitialSize: 16 * 1024 * 1024,
+                MaxSize: long.MaxValue,
+                UseDirectIO: false,
+                UseSparseFile: true),
             Wal: new WalOptions(
                 Directory: Path.Combine(_testDir, "wal"),
                 MaxFileSize: 64 * 1024 * 1024,
-                BufferSize: 4096,
-                SyncOnCommit: true),
+                SyncOnCommit: true,
+                CompressionEnabled: false,
+                BufferSize: 4096),
             Shm: new ShmOptions(
-                SegmentSize: 64 * 1024 * 1024,
-                MaxSegments: 4,
-                UseSharedMemory: false),
+                Name: "test_shm",
+                MaxSize: 64 * 1024 * 1024,
+                PageSize: 4096,
+                MaxPageCount: 16384,
+                EvictionThreshold: 0.85,
+                EnableCrossProcess: false),
             BTreeOrder: 128,
             ReadOnly: false,
             AutoCheckpoint: true,
@@ -66,7 +77,7 @@ public class GenesisKvDatabaseTests
         var result = await _db.GetAsync(key);
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Value, Is.EqualTo(value));
+        Assert.That(result.Value.CompareTo(value), Is.EqualTo(0));
     }
 
     [Test]
@@ -121,7 +132,7 @@ public class GenesisKvDatabaseTests
 
         var result = await _db.GetAsync(key);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Value, Is.EqualTo(value));
+        Assert.That(result.Value.CompareTo(value), Is.EqualTo(0));
     }
 
     [Test]
@@ -148,7 +159,7 @@ public class GenesisKvDatabaseTests
         var result = await txn.GetAsync(key);
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Value, Is.EqualTo(value));
+        Assert.That(result.Value.CompareTo(value), Is.EqualTo(0));
 
         await txn.CommitAsync();
     }
@@ -171,7 +182,7 @@ public class GenesisKvDatabaseTests
         var result = await snapshot.GetAsync(key);
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Value, Is.EqualTo(value));
+        Assert.That(result.Value.CompareTo(value), Is.EqualTo(0));
     }
 
     [Test]
@@ -183,7 +194,13 @@ public class GenesisKvDatabaseTests
         }
 
         using var cursor = _db.Seek(DatabaseKey.FromUInt64(1));
+
         var keys = new List<ulong>();
+
+        if (!cursor.IsValid)
+        {
+            cursor.SeekToFirst();
+        }
 
         while (cursor.IsValid)
         {

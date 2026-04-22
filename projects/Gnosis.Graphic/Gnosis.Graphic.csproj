@@ -33,5 +33,10 @@
         <Compile Remove="Shader\ShaderFormatHandler.cs" />
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
+        <Compile Remove="RHI\Vulkan\**" />
+        <Compile Remove="RHI\Software\SoftwareDevice.cs" />
+        <Compile Remove="RHI\DeviceFactory.cs" />
+        <Compile Remove="Shader\Spirv\**" />
+        <Compile Remove="Shader\ShaderIrOpCode.cs" />
     </ItemGroup>
 </Project>

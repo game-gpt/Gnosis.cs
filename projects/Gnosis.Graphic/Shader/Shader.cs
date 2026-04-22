@@ -48,8 +48,8 @@ public sealed class DelegateShaderModule : IShaderModule
     public DelegateShaderModule(
         string name,
         IReadOnlyList<IMicroFunction> functions,
-        ShaderLanguage language = ShaderLanguage.GGShader,
-        ShaderTarget target = ShaderTarget.SPIRV)
+        ShaderLanguage language = ShaderLanguage.GgShader,
+        ShaderTarget target = ShaderTarget.Spirv)
     {
         Name = name;
         Functions = functions;

@@ -127,11 +127,19 @@ public sealed class WalManager : IWriteAheadLog
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
+        if (_fileStream is not null)
+        {
+            _writer?.Dispose();
+            _reader?.Dispose();
+            await _fileStream.DisposeAsync().ConfigureAwait(false);
+            _fileStream = null;
+            _writer = null;
+            _reader = null;
+        }
+
         var walFiles = GetWalFiles();
         foreach (var walFile in walFiles)
         {
-            var fileInfo = new FileInfo(walFile);
-
             var tempFile = walFile + ".tmp";
             int copiedCount;
 
@@ -274,7 +282,7 @@ public sealed class WalManager : IWriteAheadLog
         {
             var lastFile = walFiles[^1];
             _currentFileIndex = ExtractFileIndex(lastFile);
-            _fileStream = new FileStream(lastFile, FileMode.Append, FileAccess.Write, FileShare.ReadWrite, _options.BufferSize, FileOptions.Asynchronous);
+            _fileStream = new FileStream(lastFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, _options.BufferSize, FileOptions.Asynchronous);
             _currentFileSize = _fileStream.Length;
 
             if (_currentFileSize < HeaderSize)
@@ -292,7 +300,7 @@ public sealed class WalManager : IWriteAheadLog
         else
         {
             var newFile = Path.Combine(dir, $"wal_{_currentFileIndex:D6}.log");
-            _fileStream = new FileStream(newFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, _options.BufferSize, FileOptions.Asynchronous);
+            _fileStream = new FileStream(newFile, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, _options.BufferSize, FileOptions.Asynchronous);
             _writer = new BinaryWriter(_fileStream);
             WriteHeader(_writer);
             _currentFileSize = _fileStream.Position;
@@ -442,7 +450,7 @@ public sealed class WalManager : IWriteAheadLog
 
         _currentFileIndex++;
         var newFile = Path.Combine(_options.Directory, $"wal_{_currentFileIndex:D6}.log");
-        _fileStream = new FileStream(newFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, _options.BufferSize, FileOptions.Asynchronous);
+        _fileStream = new FileStream(newFile, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, _options.BufferSize, FileOptions.Asynchronous);
         _writer = new BinaryWriter(_fileStream);
         _reader = new BinaryReader(_fileStream);
         WriteHeader(_writer);

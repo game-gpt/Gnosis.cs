@@ -84,24 +84,16 @@ public sealed class GenesisKvDatabase : IKvDatabase
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var txn = _transactionManager.BeginTransaction();
-        try
-        {
-            await txn.PutAsync(key, value, cancellationToken).ConfigureAwait(false);
-            await txn.CommitAsync(cancellationToken).ConfigureAwait(false);
+        using var txn = _transactionManager.BeginTransaction();
+        await txn.PutAsync(key, value, cancellationToken).ConfigureAwait(false);
+        await txn.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-            _rowCache.Put(key, value);
-            _statistics = _statistics with
-            {
-                TotalWrites = _statistics.TotalWrites + 1,
-                TotalKeys = _statistics.TotalKeys + 1
-            };
-        }
-        catch
+        _rowCache.Put(key, value);
+        _statistics = _statistics with
         {
-            txn.Rollback();
-            throw;
-        }
+            TotalWrites = _statistics.TotalWrites + 1,
+            TotalKeys = _statistics.TotalKeys + 1
+        };
     }
 
     public async ValueTask<bool> DeleteAsync(DatabaseKey key, CancellationToken cancellationToken = default)
@@ -114,26 +106,18 @@ public sealed class GenesisKvDatabase : IKvDatabase
             return false;
         }
 
-        var txn = _transactionManager.BeginTransaction();
-        try
-        {
-            var deleted = await txn.DeleteAsync(key, cancellationToken).ConfigureAwait(false);
-            await txn.CommitAsync(cancellationToken).ConfigureAwait(false);
+        using var txn = _transactionManager.BeginTransaction();
+        var deleted = await txn.DeleteAsync(key, cancellationToken).ConfigureAwait(false);
+        await txn.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-            _rowCache.Invalidate(key);
-            _statistics = _statistics with
-            {
-                TotalWrites = _statistics.TotalWrites + 1,
-                TotalKeys = Math.Max(0, _statistics.TotalKeys - 1)
-            };
-
-            return deleted;
-        }
-        catch
+        _rowCache.Invalidate(key);
+        _statistics = _statistics with
         {
-            txn.Rollback();
-            throw;
-        }
+            TotalWrites = _statistics.TotalWrites + 1,
+            TotalKeys = Math.Max(0, _statistics.TotalKeys - 1)
+        };
+
+        return deleted;
     }
 
     public async ValueTask<bool> ExistsAsync(DatabaseKey key, CancellationToken cancellationToken = default)
@@ -154,6 +138,7 @@ public sealed class GenesisKvDatabase : IKvDatabase
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         var btreeCursor = _btree.CreateCursor();
+        btreeCursor.Seek(key);
         return new Query.BTreeCursor(btreeCursor);
     }
 
