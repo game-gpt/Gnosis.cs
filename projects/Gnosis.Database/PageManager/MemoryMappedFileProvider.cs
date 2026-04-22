@@ -1,6 +1,6 @@
 using Gnosis.Database.Storage;
 
-namespace Gnosis.Database;
+namespace Gnosis.Database.PageManager;
 
 public sealed class MemoryMappedFileProvider : IFileProvider
 {

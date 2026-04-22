@@ -1,7 +1,6 @@
 using Gnosis.Database.Core;
-using Gnosis.Database.WAL;
 
-namespace Gnosis.Database;
+namespace Gnosis.Database.WAL;
 
 public sealed class WalManager : IWriteAheadLog
 {

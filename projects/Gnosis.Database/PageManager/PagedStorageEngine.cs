@@ -1,7 +1,7 @@
 using Gnosis.Database.Core;
 using Gnosis.Database.Storage;
 
-namespace Gnosis.Database;
+namespace Gnosis.Database.PageManager;
 
 public sealed class PagedStorageEngine : IStorageEngine
 {

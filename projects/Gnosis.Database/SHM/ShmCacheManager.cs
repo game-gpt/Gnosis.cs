@@ -1,6 +1,4 @@
-using Gnosis.Database.SHM;
-
-namespace Gnosis.Database;
+namespace Gnosis.Database.SHM;
 
 public sealed class ShmCacheManager : ISharedMemory
 {
