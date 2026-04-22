@@ -10,15 +10,7 @@ public class GameShaderLexer
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
     {
         "micro", "struct", "let", "import", "using", "return", "if", "else",
-        "for", "while", "true", "false", "null"
-    };
-
-    private static readonly HashSet<string> AttributeNames = new(StringComparer.Ordinal)
-    {
-        "Vertex", "Fragment", "Compute", "WorkgroupSize",
-        "Group", "Binding", "Builtin", "Location", "PushConstant",
-        "SpecializationConstant", "InputAttachment",
-        "precision", "weights", "layout", "NeuralModel"
+        "for", "while", "loop", "discard", "true", "false", "null"
     };
 
     private string _source = string.Empty;

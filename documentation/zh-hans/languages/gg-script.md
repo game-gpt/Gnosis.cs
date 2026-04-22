@@ -145,10 +145,10 @@ system MoveSystem {
     query = Query.all(Position, Velocity);
 
     on_update(delta: f32) {
-        <% foreach (var (pos, vel) in query) { %>
+        <% loop (pos, vel) in query %>
             pos.x += vel.vx * delta;
             pos.y += vel.vy * delta;
-        <% } %>
+        <% end loop %>
     }
 }
 ```
@@ -215,9 +215,9 @@ system DamageSystem {
     query_enemies = Query.all(EnemyTag).none(PlayerTag);
 
     on_update(delta: f32) {
-        <% foreach (var (health, damage) in query_all) { %>
+        <% loop (health, damage) in query_all %>
             health.current -= damage.value;
-        <% } %>
+        <% end loop %>
     }
 }
 ```

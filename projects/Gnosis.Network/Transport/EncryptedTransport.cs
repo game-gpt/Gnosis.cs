@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using Gnosis.Network.Channel;
+using Gnosis.Security.AntiCheat;
 using Gnosis.Security.Encryption;
 
 namespace Gnosis.Network.Transport;
@@ -24,17 +26,8 @@ public sealed class EncryptedTransport : ITransport
 
     #region 事件
 
-    public event Action<ITransportConnection>? OnConnectionReceived
-    {
-        add => _innerTransport.OnConnectionReceived += value;
-        remove => _innerTransport.OnConnectionReceived -= value;
-    }
-
-    public event Action<TransportState>? OnStateChanged
-    {
-        add => _innerTransport.OnStateChanged += value;
-        remove => _innerTransport.OnStateChanged -= value;
-    }
+    public event Action<ITransportConnection>? OnConnectionReceived;
+    public event Action<TransportState>? OnStateChanged;
 
     #endregion
 
@@ -54,7 +47,12 @@ public sealed class EncryptedTransport : ITransport
         _innerTransport.OnConnectionReceived += connection =>
         {
             var encryptedConnection = new EncryptedConnection(connection, _encryptor, _encryptionKey);
-            OnConnectionReceivedInternal?.Invoke(encryptedConnection);
+            OnConnectionReceived?.Invoke(encryptedConnection);
+        };
+
+        _innerTransport.OnStateChanged += state =>
+        {
+            OnStateChanged?.Invoke(state);
         };
     }
 
@@ -110,12 +108,6 @@ public sealed class EncryptedTransport : ITransport
     }
 
     #endregion
-
-    #region 内部事件
-
-    private event Action<ITransportConnection>? OnConnectionReceivedInternal;
-
-    #endregion
 }
 
 public sealed class EncryptedConnection : ITransportConnection
@@ -165,11 +157,7 @@ public sealed class EncryptedConnection : ITransportConnection
         var plainData = data.ToArray();
         var encryptedData = _encryptor.Encrypt(plainData, _encryptionKey);
 
-        var framed = new byte[1 + encryptedData.Length];
-        framed[0] = channelId.Value;
-        Buffer.BlockCopy(encryptedData, 0, framed, 1, encryptedData.Length);
-
-        _innerConnection.Send(channelId, framed);
+        _innerConnection.Send(channelId, encryptedData);
     }
 
     public IReadOnlyList<TransportEvent> Poll()

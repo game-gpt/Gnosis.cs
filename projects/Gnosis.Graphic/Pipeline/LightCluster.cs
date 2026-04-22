@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Graphic.Pipeline;
 
 public sealed class LightCluster

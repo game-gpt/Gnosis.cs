@@ -1,4 +1,3 @@
-using Gnosis.Core;
 using Gnosis.Core.Event;
 using Gnosis.Core.Time;
 using Gnosis.Security.Encryption;
@@ -7,7 +6,15 @@ namespace Gnosis.Network.Serialization;
 
 public sealed class SignedMessage : INetworkMessage
 {
+    #region 常量
+
     private const int SignatureSize = 32;
+    private const int GuidSize = 16;
+    private const int TimestampSize = 8;
+
+    #endregion
+
+    #region 字段
 
     private readonly int _messageId;
     private readonly PlayerId _senderId;
@@ -16,6 +23,10 @@ public sealed class SignedMessage : INetworkMessage
     private readonly bool _isReliable;
     private readonly byte[] _signature;
 
+    #endregion
+
+    #region 属性
+
     public int MessageId => _messageId;
     public PlayerId SenderId => _senderId;
     public Timestamp Timestamp => _timestamp;
@@ -23,6 +34,10 @@ public sealed class SignedMessage : INetworkMessage
     public bool IsReliable => _isReliable;
     public ReadOnlySpan<byte> Signature => new(_signature);
     public bool IsSigned => _signature.Length == SignatureSize;
+
+    #endregion
+
+    #region 构造函数
 
     private SignedMessage(int messageId, PlayerId senderId, Timestamp timestamp, byte[] payload, bool isReliable, byte[] signature)
     {
@@ -33,6 +48,10 @@ public sealed class SignedMessage : INetworkMessage
         _isReliable = isReliable;
         _signature = signature;
     }
+
+    #endregion
+
+    #region 工厂方法
 
     public static SignedMessage Create(int messageId, PlayerId senderId, byte[] payload, byte[] signingKey, bool reliable = false)
     {
@@ -59,6 +78,10 @@ public sealed class SignedMessage : INetworkMessage
         return new SignedMessage(messageId, senderId, Timestamp.Now, payload, reliable, []);
     }
 
+    #endregion
+
+    #region 公共方法
+
     public bool Verify(byte[] signingKey)
     {
         if (!IsSigned)
@@ -79,15 +102,15 @@ public sealed class SignedMessage : INetworkMessage
 
     public byte[] ToBytes()
     {
-        var headerSize = 4 + 8 + 8 + 1;
+        var headerSize = 4 + GuidSize + TimestampSize + 1;
         var signatureLength = _signature.Length;
         var totalSize = headerSize + 4 + signatureLength + 4 + _payload.Length;
         var buffer = new byte[totalSize];
         var offset = 0;
 
         WriteInt32(buffer, ref offset, _messageId);
-        WriteUInt64(buffer, ref offset, (ulong)_senderId.Value);
-        WriteInt64(buffer, ref offset, _timestamp.Value);
+        WriteGuid(buffer, ref offset, _senderId.Value);
+        WriteInt64(buffer, ref offset, _timestamp.Value.ToUnixTimeMilliseconds());
         buffer[offset++] = (byte)(_isReliable ? 1 : 0);
         WriteInt32(buffer, ref offset, signatureLength);
         Buffer.BlockCopy(_signature, 0, buffer, offset, signatureLength);
@@ -102,8 +125,8 @@ public sealed class SignedMessage : INetworkMessage
     {
         var offset = 0;
         var messageId = ReadInt32(data, ref offset);
-        var senderIdValue = ReadUInt64(data, ref offset);
-        var timestampValue = ReadInt64(data, ref offset);
+        var senderGuid = ReadGuid(data, ref offset);
+        var timestampMs = ReadInt64(data, ref offset);
         var isReliable = data[offset++] != 0;
         var signatureLength = ReadInt32(data, ref offset);
         var signature = new byte[signatureLength];
@@ -115,23 +138,27 @@ public sealed class SignedMessage : INetworkMessage
 
         return new SignedMessage(
             messageId,
-            new PlayerId((long)senderIdValue),
-            new Timestamp(timestampValue),
+            new PlayerId(senderGuid),
+            Timestamp.FromUnixTimeMilliseconds(timestampMs),
             payload,
             isReliable,
             signature
         );
     }
 
+    #endregion
+
+    #region 私有方法
+
     private static byte[] BuildSignData(int messageId, PlayerId senderId, Timestamp timestamp, byte[] payload)
     {
-        var size = 4 + 8 + 8 + payload.Length;
+        var size = 4 + GuidSize + TimestampSize + payload.Length;
         var buffer = new byte[size];
         var offset = 0;
 
         WriteInt32(buffer, ref offset, messageId);
-        WriteUInt64(buffer, ref offset, (ulong)senderId.Value);
-        WriteInt64(buffer, ref offset, timestamp.Value);
+        WriteGuid(buffer, ref offset, senderId.Value);
+        WriteInt64(buffer, ref offset, timestamp.Value.ToUnixTimeMilliseconds());
         Buffer.BlockCopy(payload, 0, buffer, offset, payload.Length);
 
         return buffer;
@@ -157,16 +184,10 @@ public sealed class SignedMessage : INetworkMessage
         buffer[offset++] = (byte)(value >> 56);
     }
 
-    private static void WriteUInt64(byte[] buffer, ref int offset, ulong value)
+    private static void WriteGuid(byte[] buffer, ref int offset, Guid value)
     {
-        buffer[offset++] = (byte)value;
-        buffer[offset++] = (byte)(value >> 8);
-        buffer[offset++] = (byte)(value >> 16);
-        buffer[offset++] = (byte)(value >> 24);
-        buffer[offset++] = (byte)(value >> 32);
-        buffer[offset++] = (byte)(value >> 40);
-        buffer[offset++] = (byte)(value >> 48);
-        buffer[offset++] = (byte)(value >> 56);
+        value.TryWriteBytes(buffer.AsSpan(offset, GuidSize));
+        offset += GuidSize;
     }
 
     private static int ReadInt32(ReadOnlySpan<byte> data, ref int offset)
@@ -184,11 +205,12 @@ public sealed class SignedMessage : INetworkMessage
         return (long)((ulong)high << 32) | low;
     }
 
-    private static ulong ReadUInt64(ReadOnlySpan<byte> data, ref int offset)
+    private static Guid ReadGuid(ReadOnlySpan<byte> data, ref int offset)
     {
-        var low = (uint)(data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24));
-        var high = (uint)(data[offset + 4] | (data[offset + 5] << 8) | (data[offset + 6] << 16) | (data[offset + 7] << 24));
-        offset += 8;
-        return ((ulong)high << 32) | low;
+        var guidBytes = data.Slice(offset, GuidSize);
+        offset += GuidSize;
+        return new Guid(guidBytes);
     }
+
+    #endregion
 }

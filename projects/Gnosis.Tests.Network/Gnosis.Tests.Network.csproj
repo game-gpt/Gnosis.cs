@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <PackageId>Gnosis.Tests.Network</PackageId>
+        <RootNamespace>Gnosis.Tests.Network</RootNamespace>
+        <Description>Gnosis 网络系统测试用例</Description>
+        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0"/>
+        <PackageReference Include="NUnit" Version="4.0.0"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="4.0.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj"/>
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj"/>
+        <ProjectReference Include="..\Gnosis.Network\Gnosis.Network.csproj"/>
+        <ProjectReference Include="..\Gnosis.Security\Gnosis.Security.csproj"/>
+        <ProjectReference Include="..\Gnosis.Testing\Gnosis.Testing.csproj"/>
+    </ItemGroup>
+
+</Project>
