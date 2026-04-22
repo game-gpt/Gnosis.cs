@@ -1,8 +1,8 @@
-using Gnosis.Compiler.AST;
-using Gnosis.Compiler.Diagnostics;
-using Gnosis.Interpreter.IR;
+using Gnosis.Toolchain.ScriptCompiler.AST;
+using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Gnosis.IR.Instruction;
 
-namespace Gnosis.Compiler.Backend;
+namespace Gnosis.Toolchain.ScriptCompiler.Backend;
 
 public sealed class IrGenerator : IAstVisitor<int>
 {

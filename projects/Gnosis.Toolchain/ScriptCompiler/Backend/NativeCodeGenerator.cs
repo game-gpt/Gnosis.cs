@@ -1,7 +1,7 @@
 using System.Text;
-using Gnosis.Interpreter.IR;
+using Gnosis.IR.Instruction;
 
-namespace Gnosis.Compiler.Backend;
+namespace Gnosis.Toolchain.ScriptCompiler.Backend;
 
 public sealed class NativeCodeGenerator
 {

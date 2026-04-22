@@ -1,4 +1,4 @@
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 /// <summary>
 /// Vulkan 命令表实现，封装命令缓冲区录制

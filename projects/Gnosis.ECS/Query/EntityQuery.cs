@@ -4,9 +4,9 @@ using Gnosis.ECS.Entity;
 namespace Gnosis.ECS.Query;
 
 /// <summary>
-/// 实体查询构建器，支持 All/Any/None 链式查询。
+/// 实体查询构建器，支持 All/Any/None/Changed 链式查询。
 /// 集成 ArchetypeManager 实现高效的 Archetype 级别过滤，
-/// 支持查询缓存以避免重复计算。
+/// 支持查询缓存以避免重复计算，支持变更过滤实现响应式查询。
 /// </summary>
 public sealed class EntityQuery : IQuery
 {
@@ -15,12 +15,16 @@ public sealed class EntityQuery : IQuery
     private readonly HashSet<Type> _allTypes;
     private readonly HashSet<Type> _anyTypes;
     private readonly HashSet<Type> _noneTypes;
+    private readonly HashSet<Type> _changedTypes;
     private readonly ArchetypeManager _archetypeManager;
+    private readonly ComponentVersionTracker? _versionTracker;
     private List<Archetype.Archetype>? _cachedArchetypes;
     private int _cacheVersion;
     private int _lastArchetypeCount;
-    private Func<EntityId, bool>? _changeFilter;
+    private uint _lastGlobalVersion;
+    private Func<EntityId, bool>? _customFilter;
     private Comparison<EntityId>? _sortComparison;
+    private readonly Dictionary<Type, uint> _changedSinceVersions;
 
     #endregion
 
@@ -41,6 +45,16 @@ public sealed class EntityQuery : IQuery
     /// </summary>
     public IReadOnlySet<Type> NoneTypes => _noneTypes;
 
+    /// <summary>
+    /// 查询需要检测变更的组件类型
+    /// </summary>
+    public IReadOnlySet<Type> ChangedTypes => _changedTypes;
+
+    /// <summary>
+    /// 是否启用变更过滤
+    /// </summary>
+    public bool HasChangeFilter => _changedTypes.Count > 0;
+
     #endregion
 
     #region 构造函数
@@ -50,9 +64,27 @@ public sealed class EntityQuery : IQuery
         _allTypes = new HashSet<Type>();
         _anyTypes = new HashSet<Type>();
         _noneTypes = new HashSet<Type>();
+        _changedTypes = new HashSet<Type>();
         _archetypeManager = archetypeManager;
+        _versionTracker = null;
         _cacheVersion = 0;
         _lastArchetypeCount = -1;
+        _lastGlobalVersion = 0;
+        _changedSinceVersions = new Dictionary<Type, uint>();
+    }
+
+    public EntityQuery(ArchetypeManager archetypeManager, ComponentVersionTracker versionTracker)
+    {
+        _allTypes = new HashSet<Type>();
+        _anyTypes = new HashSet<Type>();
+        _noneTypes = new HashSet<Type>();
+        _changedTypes = new HashSet<Type>();
+        _archetypeManager = archetypeManager;
+        _versionTracker = versionTracker;
+        _cacheVersion = 0;
+        _lastArchetypeCount = -1;
+        _lastGlobalVersion = 0;
+        _changedSinceVersions = new Dictionary<Type, uint>();
     }
 
     #endregion
@@ -92,16 +124,39 @@ public sealed class EntityQuery : IQuery
         return this;
     }
 
+    /// <summary>
+    /// 只返回自上次查询以来指定组件发生变更的实体。
+    /// 首次调用 Changed 时记录当前版本快照，后续查询只返回版本号大于快照的实体。
+    /// </summary>
+    public IQuery Changed<T>() where T : struct
+    {
+        var type = typeof(T);
+
+        if (!_changedTypes.Contains(type))
+        {
+            _changedTypes.Add(type);
+
+            if (_versionTracker != null)
+            {
+                _changedSinceVersions[type] = _versionTracker.GetVersion<T>(EntityId.Null);
+            }
+        }
+
+        InvalidateCache();
+
+        return this;
+    }
+
     #endregion
 
     #region 过滤与排序
 
     /// <summary>
-    /// 设置变更过滤，只返回满足条件的实体
+    /// 设置自定义过滤条件，只返回满足条件的实体
     /// </summary>
     public EntityQuery WithFilter(Func<EntityId, bool> filter)
     {
-        _changeFilter = filter;
+        _customFilter = filter;
         InvalidateCache();
 
         return this;
@@ -131,9 +186,14 @@ public sealed class EntityQuery : IQuery
 
         IEnumerable<EntityId> entities = archetypes.SelectMany(a => a.GetEntities());
 
-        if (_changeFilter != null)
+        if (_changedTypes.Count > 0 && _versionTracker != null)
         {
-            entities = entities.Where(_changeFilter);
+            entities = ApplyChangeFilter(entities);
+        }
+
+        if (_customFilter != null)
+        {
+            entities = entities.Where(_customFilter);
         }
 
         if (_sortComparison != null)
@@ -153,6 +213,12 @@ public sealed class EntityQuery : IQuery
     public QueryIterator Iterate()
     {
         var archetypes = GetMatchingArchetypes();
+
+        if (_changedTypes.Count > 0 && _versionTracker != null)
+        {
+            var filteredEntities = ApplyChangeFilter(archetypes.SelectMany(a => a.GetEntities()));
+            return new QueryIterator(archetypes, _versionTracker, _changedSinceVersions);
+        }
 
         return new QueryIterator(archetypes);
     }
@@ -175,10 +241,42 @@ public sealed class EntityQuery : IQuery
     /// </summary>
     public bool IsCacheValid()
     {
-        return _cachedArchetypes != null && _lastArchetypeCount == _archetypeManager.ArchetypeCount;
+        if (_cachedArchetypes == null)
+        {
+            return false;
+        }
+
+        if (_lastArchetypeCount != _archetypeManager.ArchetypeCount)
+        {
+            return false;
+        }
+
+        if (_versionTracker != null && _lastGlobalVersion != _versionTracker.GlobalVersion)
+        {
+            return _changedTypes.Count == 0;
+        }
+
+        return true;
     }
 
-    private List<Archetype> GetMatchingArchetypes()
+    /// <summary>
+    /// 更新变更过滤的版本快照，将当前版本记录为"已查看"。
+    /// 下次 Changed 查询将只返回此快照之后变更的实体。
+    /// </summary>
+    public void UpdateChangeSnapshot()
+    {
+        if (_versionTracker == null)
+        {
+            return;
+        }
+
+        foreach (var type in _changedTypes)
+        {
+            _changedSinceVersions[type] = _versionTracker.GlobalVersion;
+        }
+    }
+
+    private List<Archetype.Archetype> GetMatchingArchetypes()
     {
         if (IsCacheValid() && _cachedArchetypes != null)
         {
@@ -188,7 +286,39 @@ public sealed class EntityQuery : IQuery
         _cachedArchetypes = _archetypeManager.QueryArchetypes(_allTypes, _anyTypes, _noneTypes).ToList();
         _lastArchetypeCount = _archetypeManager.ArchetypeCount;
 
+        if (_versionTracker != null)
+        {
+            _lastGlobalVersion = _versionTracker.GlobalVersion;
+        }
+
         return _cachedArchetypes;
+    }
+
+    #endregion
+
+    #region 变更过滤
+
+    private IEnumerable<EntityId> ApplyChangeFilter(IEnumerable<EntityId> entities)
+    {
+        if (_versionTracker == null)
+        {
+            return entities;
+        }
+
+        return entities.Where(entityId =>
+        {
+            foreach (var type in _changedTypes)
+            {
+                var sinceVersion = _changedSinceVersions.GetValueOrDefault(type, 0);
+
+                if (_versionTracker.HasChanged(type, entityId, sinceVersion))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        });
     }
 
     #endregion

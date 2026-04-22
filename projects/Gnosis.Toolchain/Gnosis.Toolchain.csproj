@@ -16,14 +16,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="ScriptCompiler\Backend\BytecodeGenerator.cs" />
-        <Compile Remove="ScriptCompiler\Backend\NativeCodeGenerator.cs" />
-        <Compile Remove="ShaderCompiler\ShaderCompiler.cs" />
         <Compile Remove="ShaderCompiler\ShaderGenerator\**" />
-        <Compile Remove="ScriptCompiler\Compiler.cs" />
         <Compile Remove="ScriptCompiler\AST\TypeExpressionStatement.cs" />
         <Compile Remove="ScriptCompiler\AST\TypeCallExpression.cs" />
-        <Compile Remove="ScriptCompiler\Backend\IrGenerator.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -33,5 +28,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
+        <ProjectReference Include="..\Gnosis.Graphic\Gnosis.Graphic.csproj" />
     </ItemGroup>
 </Project>

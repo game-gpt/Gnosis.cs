@@ -1,14 +1,14 @@
-using Gnosis.Compiler.AST;
-using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Lexer;
-using Gnosis.Compiler.Parser;
-using Gnosis.Compiler.ScriptFrontend;
-using Gnosis.Rendering.Backends;
+using Gnosis.Toolchain.ScriptCompiler.AST;
+using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Gnosis.Toolchain.ScriptCompiler.Lexer;
+using Gnosis.Toolchain.ScriptCompiler.Parser;
+using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
+using Gnosis.Toolchain.ScriptCompiler.Backend;
+using Gnosis.Graphic.Shader;
 using Gnosis.Rendering.Backends.ShaderIR;
 using Gnosis.Rendering.Backends.Spirv;
-using Gnosis.Rendering.Shader;
 
-namespace Gnosis.Compiler.ShaderFrontend;
+namespace Gnosis.Toolchain.ShaderCompiler;
 
 public class ShaderCompiler : IShaderCompiler
 {

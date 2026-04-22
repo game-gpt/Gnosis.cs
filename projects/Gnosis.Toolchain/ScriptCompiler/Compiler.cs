@@ -1,12 +1,12 @@
-using Gnosis.Compiler.AST;
-using Gnosis.Compiler.Backend;
-using Gnosis.Compiler.Cache;
-using Gnosis.Compiler.Diagnostics;
-using Gnosis.Compiler.Lexer;
-using Gnosis.Compiler.Parser;
-using MetaLanguageEvaluator = Gnosis.Compiler.ScriptFrontend.MetaLanguageEvaluator;
+using Gnosis.Toolchain.ScriptCompiler.AST;
+using Gnosis.Toolchain.ScriptCompiler.Backend;
+using Gnosis.Toolchain.ScriptCompiler.Cache;
+using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Gnosis.Toolchain.ScriptCompiler.Lexer;
+using Gnosis.Toolchain.ScriptCompiler.Parser;
+using MetaLanguageEvaluator = Gnosis.Toolchain.ScriptCompiler.ScriptFrontend.MetaLanguageEvaluator;
 
-namespace Gnosis.Compiler;
+namespace Gnosis.Toolchain.ScriptCompiler;
 
 public class Compiler : ICompiler
 {

@@ -1,3 +1,5 @@
+using Gnosis.ECS.Entity;
+
 namespace Gnosis.ECS.Query;
 
 /// <summary>
@@ -19,6 +21,11 @@ public interface IQuery
     /// 排除包含指定组件类型的实体
     /// </summary>
     IQuery None<T>() where T : struct;
+
+    /// <summary>
+    /// 只返回自上次查询以来指定组件发生变更的实体
+    /// </summary>
+    IQuery Changed<T>() where T : struct;
 
     /// <summary>
     /// 执行查询并返回匹配的实体 ID 集合

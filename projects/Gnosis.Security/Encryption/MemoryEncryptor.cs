@@ -27,18 +27,16 @@ public class MemoryEncryptor : IMemoryProtector
 
     public byte[] Encrypt(byte[] data)
     {
-        if (data == null || data.Length == 0)
+        if (data is null || data.Length == 0)
         {
             throw new SecurityException("加密数据不能为 null 或空数组");
         }
 
-        var result = new byte[1 + _encryptionKey.Length + data.Length];
-        result[0] = (byte)_encryptionKey.Length;
-        Buffer.BlockCopy(_encryptionKey, 0, result, 1, _encryptionKey.Length);
+        var result = new byte[data.Length];
 
         for (var i = 0; i < data.Length; i++)
         {
-            result[1 + _encryptionKey.Length + i] = (byte)(data[i] ^ _encryptionKey[i % _encryptionKey.Length]);
+            result[i] = (byte)(data[i] ^ _encryptionKey[i % _encryptionKey.Length]);
         }
 
         return result;
@@ -46,27 +44,16 @@ public class MemoryEncryptor : IMemoryProtector
 
     public byte[] Decrypt(byte[] encryptedData)
     {
-        if (encryptedData == null || encryptedData.Length == 0)
+        if (encryptedData is null || encryptedData.Length == 0)
         {
             throw new SecurityException("解密数据不能为 null 或空数组");
         }
 
-        int keyLength = encryptedData[0];
+        var result = new byte[encryptedData.Length];
 
-        if (encryptedData.Length < 1 + keyLength)
+        for (var i = 0; i < encryptedData.Length; i++)
         {
-            throw new SecurityException("加密数据格式无效：密钥数据不完整");
-        }
-
-        var key = new byte[keyLength];
-        Buffer.BlockCopy(encryptedData, 1, key, 0, keyLength);
-
-        var dataLength = encryptedData.Length - 1 - keyLength;
-        var result = new byte[dataLength];
-
-        for (var i = 0; i < dataLength; i++)
-        {
-            result[i] = (byte)(encryptedData[1 + keyLength + i] ^ key[i % keyLength]);
+            result[i] = (byte)(encryptedData[i] ^ _encryptionKey[i % _encryptionKey.Length]);
         }
 
         return result;

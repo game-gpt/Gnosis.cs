@@ -15,5 +15,7 @@
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
-
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+    </ItemGroup>
 </Project>
