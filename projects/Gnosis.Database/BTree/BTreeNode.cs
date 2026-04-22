@@ -129,18 +129,19 @@ public class BTreeNode : IBTreeNode
 
     internal void CompressInternalKeys()
     {
-        if (IsLeaf || _keyCount < 2)
-        {
-            return;
-        }
-
-        var activeKeys = new DatabaseKey[_keyCount];
-        for (var i = 0; i < _keyCount; i++)
-        {
-            activeKeys[i] = _keys[i];
-        }
-
-        _compressedKeys = PrefixCompressor.CompressKeys(activeKeys);
+        // 暂时禁用前缀压缩，直到稳定性问题解决
+        // if (IsLeaf || _keyCount < 2)
+        // {
+        //     return;
+        // }
+        //
+        // var activeKeys = new DatabaseKey[_keyCount];
+        // for (var i = 0; i < _keyCount; i++)
+        // {
+        //     activeKeys[i] = _keys[i];
+        // }
+        //
+        // _compressedKeys = PrefixCompressor.CompressKeys(activeKeys);
     }
 
     internal void DecompressInternalKeys()
@@ -161,6 +162,8 @@ public class BTreeNode : IBTreeNode
 
     internal void InsertKeyAt(int index, DatabaseKey key, DatabaseValue value)
     {
+        DecompressInternalKeys();
+
         for (var i = _keyCount; i > index; i--)
         {
             _keys[i] = _keys[i - 1];
@@ -199,6 +202,8 @@ public class BTreeNode : IBTreeNode
 
     internal void RemoveKeyAt(int index)
     {
+        DecompressInternalKeys();
+
         for (var i = index; i < _keyCount - 1; i++)
         {
             _keys[i] = _keys[i + 1];
