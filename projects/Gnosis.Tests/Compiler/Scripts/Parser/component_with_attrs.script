@@ -1,0 +1,5 @@
+﻿[Serializable]
+component Health {
+    current: i32 = 100;
+    max: i32 = 100;
+}

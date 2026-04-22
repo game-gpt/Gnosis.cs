@@ -1,0 +1,7 @@
+﻿widget Button {
+    text: string;
+    enabled: bool = true;
+    
+    render() {
+    }
+}

@@ -1,9 +1,8 @@
 using Gnosis.Core;
-using Gnosis.ECS;
 using Gnosis.Testing;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.ECS;
+namespace Gnosis.ECS;
 
 [TestFixture]
 public class ComponentPoolTests : GnosisTester

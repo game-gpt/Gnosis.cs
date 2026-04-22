@@ -1,0 +1,5 @@
+﻿let hex = 0xFF;
+let bin = 0b1010;
+let float = 3.14;
+let exp = 1.5e10;
+let suffix = 42f;

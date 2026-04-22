@@ -1,0 +1,15 @@
+﻿micro test() {
+    if true {
+        let x = 1;
+    } else {
+        let y = 2;
+    }
+    
+    while false {
+        let z = 3;
+    }
+    
+    loop item in items {
+        let w = item;
+    }
+}

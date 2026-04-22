@@ -22,4 +22,8 @@
     <ItemGroup>
         <ProjectReference Include="..\Gnosis\Gnosis.csproj"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Compiler\Lexer\" />
+    </ItemGroup>
 </Project>

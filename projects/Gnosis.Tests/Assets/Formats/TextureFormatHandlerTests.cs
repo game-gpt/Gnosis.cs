@@ -1,10 +1,9 @@
+using Gnosis.Assets.Formats.BcCompression;
 using NUnit.Framework;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Gnosis.Assets.Formats;
-using Gnosis.Assets.Formats.BcCompression;
 
-namespace Gnosis.Tests.Assets.Formats;
+namespace Gnosis.Assets.Formats;
 
 [TestFixture]
 public class TextureFormatHandlerTests

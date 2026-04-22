@@ -1,0 +1,10 @@
+﻿system MoveSystem {
+    query = Query.all(Position, Velocity);
+    
+    init() {
+        let initialized = true;
+    }
+    
+    update(delta: f32) {
+    }
+}

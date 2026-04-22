@@ -1,11 +1,10 @@
-using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Rendering.Backends;
 using Gnosis.Rendering.Backends.ShaderIR;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Compiler;
+namespace Gnosis.Compiler;
 
 [TestFixture]
 public class IrGeneratorTests
