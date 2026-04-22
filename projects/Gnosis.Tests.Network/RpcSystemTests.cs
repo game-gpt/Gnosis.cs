@@ -127,7 +127,7 @@ public class RpcSystemTests : GnosisTester
         var failedMethodId = -1;
         _system.OnRpcFailed += (methodId, _, _) => failedMethodId = methodId;
 
-        var call = new RpcCall { MethodId = 999, RpcType = RpcType.ServerRpc, Arguments = [] };
+        var call = new RpcCall { MethodId = 999, RpcType = RpcType.ServerRpc, Arguments = ReadOnlyMemory<byte>.Empty };
         _system.Execute(new ConnectionId(1), call);
 
         Assert.That(failedMethodId, Is.EqualTo(999));
@@ -150,7 +150,7 @@ public class RpcSystemTests : GnosisTester
     public void SerializeCall_序列化后可正确反序列化()
     {
         var id = _system.Register("Method", (_, _) => { });
-        var original = _system.CreateClientRpc(id, new ConnectionId(42), new ReadOnlyMemory<byte>(new byte[] { 0xAA, 0xBB }));
+        var original = _system.CreateClientRpc(id, new ConnectionId(42), new ReadOnlySpan<byte>(new byte[] { 0xAA, 0xBB }));
 
         var data = _system.SerializeCall(original);
         var deserialized = _system.DeserializeCall(data);

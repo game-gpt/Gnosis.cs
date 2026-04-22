@@ -14,6 +14,7 @@ public class BTreeNode : IBTreeNode
     private BTreeNode? _nextLeaf;
 
     private readonly int _order;
+    private CompressedKeys? _compressedKeys;
 
     public BTreeNode(int order, bool isLeaf)
     {

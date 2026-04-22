@@ -1,3 +1,4 @@
+
 namespace Gnosis.Asset.Format.TextureParsers;
 
 public sealed class KtxParser

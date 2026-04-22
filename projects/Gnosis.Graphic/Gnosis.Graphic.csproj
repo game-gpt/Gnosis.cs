@@ -31,10 +31,7 @@
         <Compile Remove="Shader\NeuralShaderBackend.cs" />
         <Compile Remove="FX\ParticleSystemComponent.cs" />
         <Compile Remove="Shader\ShaderFormatHandler.cs" />
-        <Compile Remove="RHI\Vulkan\**" />
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
-        <Compile Remove="RHI\Software\SoftwareDevice.cs" />
-        <Compile Remove="RHI\DeviceFactory.cs" />
     </ItemGroup>
 </Project>

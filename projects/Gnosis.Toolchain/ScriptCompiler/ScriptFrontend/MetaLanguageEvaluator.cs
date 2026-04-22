@@ -434,23 +434,46 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             bodyStart++;
         }
 
-        if (bodyStart >= content.Length || content[bodyStart] != '{')
+        if (bodyStart >= content.Length)
         {
             return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
         }
 
-        var bodyEnd = FindMatchingBrace(content, bodyStart);
+        string body;
+        int constructEnd;
 
-        if (bodyEnd < 0)
+        if (content[bodyStart] == '{')
+        {
+            var bodyEnd = FindMatchingBrace(content, bodyStart);
+
+            if (bodyEnd < 0)
+            {
+                return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
+            }
+
+            body = content[(bodyStart + 1)..bodyEnd].Trim();
+
+            var endKeyword = "end loop";
+            var endIdx = content.IndexOf(endKeyword, bodyEnd + 1, StringComparison.Ordinal);
+            constructEnd = endIdx >= 0 ? endIdx + endKeyword.Length : bodyEnd + 1;
+        }
+        else if (content[bodyStart] == '%' && bodyStart + 1 < content.Length && content[bodyStart + 1] == '>')
+        {
+            var endTag = "<% end loop %>";
+            var endIdx = content.IndexOf(endTag, bodyStart + 2, StringComparison.Ordinal);
+
+            if (endIdx < 0)
+            {
+                return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
+            }
+
+            body = content[(bodyStart + 2)..endIdx].Trim();
+            constructEnd = endIdx + endTag.Length;
+        }
+        else
         {
             return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
         }
-
-        var body = content[(bodyStart + 1)..bodyEnd].Trim();
-
-        var endKeyword = "end loop";
-        var endIdx = content.IndexOf(endKeyword, bodyEnd + 1, StringComparison.Ordinal);
-        var constructEnd = endIdx >= 0 ? endIdx + endKeyword.Length : bodyEnd + 1;
 
         var expandedBody = ExpandRangeLoop(header, body);
 
@@ -489,10 +512,57 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 
         if (foreachMatch.Success)
         {
-            return body;
+            var variablesStr = foreachMatch.Groups[1].Value;
+            var collectionName = foreachMatch.Groups[2].Value;
+
+            var variables = variablesStr.Split(',')
+                .Select(v => v.Trim())
+                .Where(v => v.Length > 0 && v != "_")
+                .ToList();
+
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"loop _iter in {collectionName} {{");
+
+            for (var i = 0; i < variables.Count; i++)
+            {
+                sb.AppendLine($"    let {variables[i]} = _iter.component_{i};");
+            }
+
+            var indentedBody = IndentBody(body, "    ");
+            sb.Append(indentedBody);
+
+            sb.AppendLine("}");
+
+            return sb.ToString();
         }
 
         return body;
+    }
+
+    private static string IndentBody(string body, string indent)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return body;
+        }
+
+        var lines = body.Split('\n');
+        var sb = new StringBuilder();
+
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                sb.AppendLine();
+            }
+            else
+            {
+                sb.AppendLine($"{indent}{line.TrimStart()}");
+            }
+        }
+
+        return sb.ToString();
     }
 
     private ExpandedResult ExpandConditional(string content, ConstructLocation location)
@@ -504,70 +574,117 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             afterIf++;
         }
 
-        if (afterIf >= content.Length || content[afterIf] != '(')
+        if (afterIf >= content.Length)
         {
             return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
         }
 
-        var parenEnd = FindMatchingParen(content, afterIf);
+        string condition;
+        string body;
+        int constructEnd;
 
-        if (parenEnd < 0)
+        if (content[afterIf] == '(')
         {
-            return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
-        }
+            var parenEnd = FindMatchingParen(content, afterIf);
 
-        var condition = content[(afterIf + 1)..parenEnd].Trim();
-        var bodyStart = parenEnd + 1;
-
-        while (bodyStart < content.Length && char.IsWhiteSpace(content[bodyStart]))
-        {
-            bodyStart++;
-        }
-
-        if (bodyStart >= content.Length || content[bodyStart] != '{')
-        {
-            return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
-        }
-
-        var bodyEnd = FindMatchingBrace(content, bodyStart);
-
-        if (bodyEnd < 0)
-        {
-            return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
-        }
-
-        var body = content[(bodyStart + 1)..bodyEnd].Trim();
-
-        var conditionResult = EvaluateCondition(condition);
-
-        var elseBody = "";
-        var elseIdx = content.IndexOf("else", bodyEnd + 1, StringComparison.Ordinal);
-        var constructEnd = bodyEnd + 1;
-
-        if (elseIdx >= 0)
-        {
-            var elseBraceStart = elseIdx + 4;
-
-            while (elseBraceStart < content.Length && char.IsWhiteSpace(content[elseBraceStart]))
+            if (parenEnd < 0)
             {
-                elseBraceStart++;
+                return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
             }
 
-            if (elseBraceStart < content.Length && content[elseBraceStart] == '{')
-            {
-                var elseBraceEnd = FindMatchingBrace(content, elseBraceStart);
+            condition = content[(afterIf + 1)..parenEnd].Trim();
+            var bodyStart = parenEnd + 1;
 
-                if (elseBraceEnd >= 0)
+            while (bodyStart < content.Length && char.IsWhiteSpace(content[bodyStart]))
+            {
+                bodyStart++;
+            }
+
+            if (bodyStart >= content.Length || content[bodyStart] != '{')
+            {
+                return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
+            }
+
+            var bodyEnd = FindMatchingBrace(content, bodyStart);
+
+            if (bodyEnd < 0)
+            {
+                return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
+            }
+
+            body = content[(bodyStart + 1)..bodyEnd].Trim();
+
+            var conditionResult = EvaluateCondition(condition);
+
+            var elseBody = "";
+            var elseIdx = content.IndexOf("else", bodyEnd + 1, StringComparison.Ordinal);
+            constructEnd = bodyEnd + 1;
+
+            if (elseIdx >= 0)
+            {
+                var elseBraceStart = elseIdx + 4;
+
+                while (elseBraceStart < content.Length && char.IsWhiteSpace(content[elseBraceStart]))
                 {
-                    elseBody = content[(elseBraceStart + 1)..elseBraceEnd].Trim();
-                    constructEnd = elseBraceEnd + 1;
+                    elseBraceStart++;
+                }
+
+                if (elseBraceStart < content.Length && content[elseBraceStart] == '{')
+                {
+                    var elseBraceEnd = FindMatchingBrace(content, elseBraceStart);
+
+                    if (elseBraceEnd >= 0)
+                    {
+                        elseBody = content[(elseBraceStart + 1)..elseBraceEnd].Trim();
+                        constructEnd = elseBraceEnd + 1;
+                    }
                 }
             }
+
+            var result = conditionResult ? body : elseBody;
+
+            return new ExpandedResult(result, constructEnd);
         }
 
-        var result = conditionResult ? body : elseBody;
+        var conditionEnd = afterIf;
 
-        return new ExpandedResult(result, constructEnd);
+        while (conditionEnd < content.Length && content[conditionEnd] != '%' && content[conditionEnd] != '{')
+        {
+            conditionEnd++;
+        }
+
+        condition = content[afterIf..conditionEnd].Trim();
+
+        if (conditionEnd < content.Length && content[conditionEnd] == '%' && conditionEnd + 1 < content.Length && content[conditionEnd + 1] == '>')
+        {
+            var endIfTag = "<% end if %>";
+            var endIfIdx = content.IndexOf(endIfTag, conditionEnd + 2, StringComparison.Ordinal);
+
+            if (endIfIdx < 0)
+            {
+                return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
+            }
+
+            body = content[(conditionEnd + 2)..endIfIdx].Trim();
+            constructEnd = endIfIdx + endIfTag.Length;
+
+            var elseTag = "<% else %>";
+            var elseIdx = body.IndexOf(elseTag, StringComparison.Ordinal);
+
+            if (elseIdx >= 0)
+            {
+                var ifBody = body[..elseIdx].Trim();
+                var elseBody = body[(elseIdx + elseTag.Length)..].Trim();
+
+                var conditionResult = EvaluateCondition(condition);
+                return new ExpandedResult(conditionResult ? ifBody : elseBody, constructEnd);
+            }
+
+            var condResult = EvaluateCondition(condition);
+            return new ExpandedResult(condResult ? body : "", constructEnd);
+        }
+
+        return new ExpandedResult(content[location.Start..location.NameEnd], location.NameEnd);
     }
 
     private ExpandedResult ExpandMatch(string content, ConstructLocation location)

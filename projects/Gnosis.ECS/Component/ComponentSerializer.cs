@@ -66,6 +66,22 @@ public class ComponentSerializer
         return dataProperty.GetValue(wrapper)!;
     }
 
+    /// <summary>
+    /// 序列化组件为 JSON 字符串（运行时类型）
+    /// </summary>
+    public string Serialize(object component, Type componentType)
+    {
+        var wrapperType = typeof(ComponentWrapper<>).MakeGenericType(componentType);
+        var wrapper = Activator.CreateInstance(wrapperType)!;
+        var typeProperty = wrapperType.GetProperty("Type")!;
+        var dataProperty = wrapperType.GetProperty("Data")!;
+
+        typeProperty.SetValue(wrapper, componentType.AssemblyQualifiedName);
+        dataProperty.SetValue(wrapper, component);
+
+        return JsonSerializer.Serialize(wrapper, wrapperType, _options);
+    }
+
     private class ComponentWrapper<T>
     {
         [JsonPropertyName("$type")]

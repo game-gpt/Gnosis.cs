@@ -28,7 +28,8 @@ public enum VkResult
     ErrorUnknown = -13,
     ErrorOutOfPoolMemory = -1000069000,
     ErrorInvalidExternalHandle = -1000072003,
-    SuboptimalKHR = 1000001003
+    SuboptimalKHR = 1000001003,
+    ErrorOutOfDateKHR = -1000001004
 }
 
 /// <summary>
@@ -262,7 +263,15 @@ public enum VkStructureType
     FramebufferCreateInfo = 36,
     CommandPoolCreateInfo = 39,
     SemaphoreCreateInfo = 55,
-    FenceCreateInfo = 56
+    FenceCreateInfo = 56,
+    BufferCreateInfo = 33,
+    ImageCreateInfo = 34,
+    PipelineLayoutCreateInfo = 30,
+    CommandBufferAllocateInfo = 40,
+    DescriptorSetLayoutCreateInfo = 41,
+    DescriptorPoolCreateInfo = 42,
+    WriteDescriptorSet = 35,
+    SamplerCreateInfo = 57
 }
 
 /// <summary>

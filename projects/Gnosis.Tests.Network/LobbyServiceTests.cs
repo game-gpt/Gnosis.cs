@@ -43,10 +43,11 @@ public class LobbyServiceTests : GnosisTester
     public void JoinRoom_加入后当前房间不为空()
     {
         var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        _service.JoinRoom(room.RoomId);
+        var otherService = new LobbyService("local2", "玩家二");
+        otherService.JoinRoom(room.RoomId);
 
-        Assert.That(_service.CurrentRoom, Is.Not.Null);
-        Assert.That(_service.IsConnected, Is.True);
+        Assert.That(otherService.CurrentRoom, Is.Not.Null);
+        Assert.That(otherService.IsConnected, Is.True);
     }
 
     [Test]
@@ -57,7 +58,8 @@ public class LobbyServiceTests : GnosisTester
         LobbyMember? joinedMember = null;
         _service.OnMemberJoined += (_, member) => joinedMember = member;
 
-        _service.JoinRoom(room.RoomId);
+        var otherService = new LobbyService("local2", "玩家二");
+        otherService.JoinRoom(room.RoomId);
 
         Assert.That(joinedMember, Is.Not.Null);
     }
@@ -65,8 +67,7 @@ public class LobbyServiceTests : GnosisTester
     [Test]
     public void LeaveRoom_离开后当前房间为空()
     {
-        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        _service.JoinRoom(room.RoomId);
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
         _service.LeaveRoom();
 
         Assert.That(_service.CurrentRoom, Is.Null);
@@ -115,7 +116,8 @@ public class LobbyServiceTests : GnosisTester
     public void SearchRooms_返回房间列表()
     {
         _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
+        var otherService = new LobbyService("local2", "玩家二");
+        otherService.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
 
         var results = _service.SearchRooms();
 
@@ -143,7 +145,8 @@ public class LobbyServiceTests : GnosisTester
     public void GetAllRooms_返回所有房间()
     {
         _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
+        var otherService = new LobbyService("local2", "玩家二");
+        otherService.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
 
         var rooms = _service.GetAllRooms();
 

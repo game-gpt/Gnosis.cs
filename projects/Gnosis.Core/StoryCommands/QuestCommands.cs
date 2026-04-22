@@ -1,7 +1,3 @@
-using Gnosis.Core.StoryCommands;
-using Gnosis.Runtime.Interop;
-using Gnosis.Runtime.VM;
-
 namespace Gnosis.Core.StoryCommands;
 
 public sealed class QuestCommands
@@ -22,13 +18,7 @@ public sealed class QuestCommands
 
     #region Quest 命令
 
-    /// <summary>
-    /// 开始任务
-    /// Story 语法: %quest::start("main_quest_1", "寻找失落的宝藏")
-    /// 参数: args[0] = 任务 ID, args[1] = 任务描述 (可选)
-    /// </summary>
-    [NativeFunctionBinding(StoryCommandNames.QuestStart, StoryCommandIds.QuestStart)]
-    public object? StoryQuestStart(IVMState vm, object?[] args)
+    public object? StoryQuestStart(object?[] args)
     {
         var questId = args.ElementAtOrDefault(0)?.ToString();
 
@@ -47,13 +37,7 @@ public sealed class QuestCommands
         return null;
     }
 
-    /// <summary>
-    /// 完成任务
-    /// Story 语法: %quest::complete("main_quest_1")
-    /// 参数: args[0] = 任务 ID
-    /// </summary>
-    [NativeFunctionBinding(StoryCommandNames.QuestComplete, StoryCommandIds.QuestComplete)]
-    public object? StoryQuestComplete(IVMState vm, object?[] args)
+    public object? StoryQuestComplete(object?[] args)
     {
         var questId = args.ElementAtOrDefault(0)?.ToString();
 
@@ -71,13 +55,7 @@ public sealed class QuestCommands
         return null;
     }
 
-    /// <summary>
-    /// 更新任务进度
-    /// Story 语法: %quest::update("main_quest_1", 50)
-    /// 参数: args[0] = 任务 ID, args[1] = 进度值 (可选, 默认 +1)
-    /// </summary>
-    [NativeFunctionBinding(StoryCommandNames.QuestUpdate, StoryCommandIds.QuestUpdate)]
-    public object? StoryQuestUpdate(IVMState vm, object?[] args)
+    public object? StoryQuestUpdate(object?[] args)
     {
         var questId = args.ElementAtOrDefault(0)?.ToString();
 

@@ -129,7 +129,15 @@ public sealed class ComponentManager
     /// </summary>
     public IComponentPool? GetPool<T>() where T : struct
     {
-        return _pools.GetValueOrDefault(typeof(T));
+        return _pools.TryGetValue(typeof(T), out var pool) ? pool : null;
+    }
+
+    /// <summary>
+    /// 获取指定类型的组件池（非泛型），不存在返回 null
+    /// </summary>
+    public IComponentPool? GetPool(Type componentType)
+    {
+        return _pools.TryGetValue(componentType, out var pool) ? pool : null;
     }
 
     /// <summary>
