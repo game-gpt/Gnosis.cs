@@ -1,4 +1,6 @@
-namespace Gnosis.Audio;
+using Gnosis.Audio.Clip;
+
+namespace Gnosis.Audio.Source;
 
 public interface IAudioSource
 {
