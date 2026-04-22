@@ -19,7 +19,7 @@ namespace Gnosis.Compiler.AST;
 ///     active: bool = true
 /// }
 /// 
-/// # 带属性的结构体
+/// # 带 GGShader 特性标注的结构体
 /// [packed]
 /// struct Vertex {
 ///     position: vec3

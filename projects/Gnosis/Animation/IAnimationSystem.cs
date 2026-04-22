@@ -1,0 +1,13 @@
+namespace Gnosis.Animation;
+
+public interface IAnimationSystem
+{
+    IAnimator CreateAnimator(ISkeleton skeleton);
+    ISkeleton CreateSkeleton(string name, int boneCount);
+    IAnimationStateMachine CreateStateMachine(string name);
+    IAnimationBlendTree CreateBlendTree(string name, BlendTreeType type);
+    IAnimationLayer CreateLayer(string name, float weight);
+    IIKSolver CreateIKSolver(string name, IKConstraintType type);
+    void RegisterEventReceiver(IAnimator animator, IAnimationEventReceiver receiver);
+    void Update(float delta);
+}

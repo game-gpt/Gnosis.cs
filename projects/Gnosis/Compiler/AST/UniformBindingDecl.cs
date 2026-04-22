@@ -18,7 +18,7 @@ namespace Gnosis.Compiler.AST;
 /// # 数组类型的 uniform
 /// uniform lights: Light[] @ (1, 0)
 /// 
-/// # 带属性的 uniform
+/// # 带 GGShader 特性标注的 uniform
 /// [readonly]
 /// uniform textures: Texture2D @ (2, 0)
 /// </code>

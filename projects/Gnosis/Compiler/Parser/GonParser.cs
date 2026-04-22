@@ -76,27 +76,41 @@ public class GonParser
 
     private void SkipComment()
     {
-        if (Peek() == '/' && _position + 1 < _source.Length)
+        if (Peek() == '#')
         {
-            if (_source[_position + 1] == '/')
+            if (_position + 1 < _source.Length && _source[_position + 1] == '>')
             {
-                while (!IsAtEnd() && Peek() != '\n')
+                return;
+            }
+
+            while (!IsAtEnd() && Peek() != '\n')
+            {
+                Advance();
+            }
+        }
+        else if (Peek() == '<' && _position + 1 < _source.Length && _source[_position + 1] == '#')
+        {
+            Advance();
+            Advance();
+
+            var depth = 1;
+
+            while (!IsAtEnd() && depth > 0)
+            {
+                if (Peek() == '<' && _position + 1 < _source.Length && _source[_position + 1] == '#')
                 {
                     Advance();
+                    Advance();
+                    depth++;
                 }
-            }
-            else if (_source[_position + 1] == '*')
-            {
-                Advance();
-                Advance();
-                while (!IsAtEnd())
+                else if (Peek() == '#' && _position + 1 < _source.Length && _source[_position + 1] == '>')
                 {
-                    if (Peek() == '*' && _position + 1 < _source.Length && _source[_position + 1] == '/')
-                    {
-                        Advance();
-                        Advance();
-                        break;
-                    }
+                    Advance();
+                    Advance();
+                    depth--;
+                }
+                else
+                {
                     Advance();
                 }
             }
@@ -111,7 +125,7 @@ public class GonParser
             {
                 SkipWhitespace();
             }
-            else if (Peek() == '/')
+            else if (Peek() == '#' || Peek() == '<')
             {
                 SkipComment();
             }

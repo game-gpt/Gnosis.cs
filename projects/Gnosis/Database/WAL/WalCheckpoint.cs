@@ -1,10 +1,11 @@
+using Gnosis.Core;
 using Gnosis.Database.Core;
 
 namespace Gnosis.Database.WAL;
 
 public readonly record struct WalCheckpoint(
     SequenceNumber Sequence,
-    Infrastructure.Timestamp Timestamp,
+    Timestamp CheckpointTimestamp,
     long DataFileOffset,
     int DirtyPageCount)
 {

@@ -26,11 +26,6 @@ public enum NodeType
     WidgetDecl,
 
     /// <summary>
-    /// 场景声明
-    /// </summary>
-    SceneDecl,
-
-    /// <summary>
     /// 插件声明
     /// </summary>
     PluginDecl,
@@ -66,7 +61,7 @@ public enum NodeType
     TypeAnnotation,
 
     /// <summary>
-    /// 特性声明
+    /// GG 特性标注声明（非 C# System.Attribute）
     /// </summary>
     AttributeDecl,
 

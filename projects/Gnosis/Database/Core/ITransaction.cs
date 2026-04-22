@@ -1,3 +1,4 @@
+using Gnosis.Core;
 using Gnosis.Infrastructure;
 
 namespace Gnosis.Database.Core;

@@ -1,7 +1,6 @@
-using Gnosis.Editor.Widget;
 using Gnosis.Rendering.Widget;
-using UiColor = Gnosis.Editor.Widget.Color;
-using UiDock = Gnosis.Editor.Widget.Dock;
+using UiColor = Gnosis.Rendering.Widget.Color;
+using UiDock = Gnosis.Rendering.Widget.Dock;
 
 namespace Gnosis.Editor;
 

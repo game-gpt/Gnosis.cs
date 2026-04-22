@@ -372,7 +372,7 @@ public class GameShaderParser : IParser
                     _filePath,
                     SourceSpan.FromToken(Peek()),
                     "GG3001",
-                    $"属性标注后应为声明，但遇到 '{Peek().Value}'");
+                    $"GGShader 特性标注后应为声明，但遇到 '{Peek().Value}'");
 
                 return null;
             }
@@ -1389,6 +1389,7 @@ public class GameShaderParser : IParser
             SourceSpan.FromToken(nameToken),
             nameToken.Value,
             type,
+            null,
             fieldAttrs);
     }
 

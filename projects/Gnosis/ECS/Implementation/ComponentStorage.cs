@@ -1,18 +1,17 @@
-using Gnosis.ECS.Core;
-using Gnosis.ECS.Interface;
+using Gnosis.Core;
 
 namespace Gnosis.ECS.Implementation;
 
-public class ComponentStorage : IComponentStorage
+public class ComponentStorage : ECS.IComponentStorage
 {
-    private readonly Dictionary<Type, IComponentPool> _pools;
+    private readonly Dictionary<Type, ECS.IComponentPool> _pools;
 
     public ComponentStorage()
     {
-        _pools = new Dictionary<Type, IComponentPool>();
+        _pools = new Dictionary<Type, ECS.IComponentPool>();
     }
 
-    public IComponentPool GetPool<T>() where T : struct
+    public ECS.IComponentPool GetPool<T>() where T : struct
     {
         var type = typeof(T);
         if (!_pools.TryGetValue(type, out var pool))
@@ -23,7 +22,7 @@ public class ComponentStorage : IComponentStorage
         return pool;
     }
 
-    public IArchetype GetArchetypeStorage(params Type[] componentTypes)
+    public ECS.IArchetype GetArchetypeStorage(params Type[] componentTypes)
     {
         if (componentTypes == null || componentTypes.Length == 0)
         {
@@ -74,7 +73,7 @@ public class ComponentStorage : IComponentStorage
         return candidates.ToList();
     }
 
-    private class SimpleArchetype : IArchetype
+    private class SimpleArchetype : ECS.IArchetype
     {
         private readonly HashSet<Type> _componentTypes;
         private readonly IReadOnlyList<EntityId> _entities;

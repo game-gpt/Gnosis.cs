@@ -22,7 +22,7 @@ namespace Gnosis.Compiler.AST;
 ///     micro on_destroy { }
 /// }
 /// 
-/// # 带属性的系统
+/// # 带 GGScript 特性标注的系统
 /// [priority(100)]
 /// system RenderSystem {
 ///     query all(Position, Sprite)

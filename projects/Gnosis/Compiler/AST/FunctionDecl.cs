@@ -21,7 +21,7 @@ namespace Gnosis.Compiler.AST;
 ///     run()
 /// }
 /// 
-/// # 带属性的函数
+/// # 带 GGScript/GGShader 特性标注的函数
 /// [inline]
 /// micro fast_add(a: int, b: int): int {
 ///     return a + b

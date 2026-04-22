@@ -9,7 +9,7 @@ public class GameScriptLexer : ILexer
 
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
     {
-        "let", "mut", "micro", "component", "system", "query", "widget", "scene",
+        "let", "mut", "micro", "component", "system", "query", "widget",
         "plugin", "import", "export", "return", "if", "else", "loop", "while",
         "create_entity", "destroy_entity", "struct", "true", "false", "null",
         "new", "in", "foreach", "match", "case", "end", "as"
@@ -163,12 +163,8 @@ public class GameScriptLexer : ILexer
                 case '#':
                     SkipLineComment();
                     break;
-                case '/':
-                    if (PeekNext() == '/')
-                    {
-                        SkipLineComment();
-                    }
-                    else if (PeekNext() == '*')
+                case '<':
+                    if (PeekNext() == '#')
                     {
                         SkipBlockComment();
                     }
@@ -200,13 +196,13 @@ public class GameScriptLexer : ILexer
 
         while (!IsAtEnd() && depth > 0)
         {
-            if (Peek() == '/' && PeekNext() == '*')
+            if (Peek() == '<' && PeekNext() == '#')
             {
                 Advance();
                 Advance();
                 depth++;
             }
-            else if (Peek() == '*' && PeekNext() == '/')
+            else if (Peek() == '#' && PeekNext() == '>')
             {
                 Advance();
                 Advance();

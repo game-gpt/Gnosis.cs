@@ -51,7 +51,6 @@ AST（Abstract Syntax Tree）模块定义了 gg-script 语言的抽象语法树�
 | `ComponentDecl` | `component Pos { }` | ECS 组件声明 |
 | `SystemDecl` | `system Move { }` | ECS 系统声明 |
 | `WidgetDecl` | `widget Button { }` | UI 组件声明 |
-| `SceneDecl` | `scene Level { }` | 场景声明 |
 | `PluginDecl` | `plugin Audio { }` | 插件声明 |
 
 ## 🔧 使用示例

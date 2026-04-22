@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
         <PackageId>Gnosis</PackageId>
         <RootNamespace>Gnosis</RootNamespace>
-        <Version>0.0.0</Version>
+        <Version>0.0.1</Version>
         <Authors>Gnosis Engine Team</Authors>
         <Description>Gnosis Engine Core Library - A multi-stage programming game engine with bytecode VM, ECS runtime, and compiler infrastructure</Description>
         <PackageTags>game-engine;gnosis;bytecode-vm;ecs;multi-stage-programming;hot-reload;cross-platform;compiler</PackageTags>
@@ -23,11 +23,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="Editor\**\*.cs"/>
+        <Compile Remove="Editor\EditorWindow.cs"/>
         <Compile Remove="Rendering\ShaderGenerator\**\*.cs"/>
-        <Compile Remove="Database\**\*.cs"/>
-        <Compile Remove="ECS\Core\**\*.cs"/>
-        <Compile Remove="ECS\Interface\**\*.cs"/>
-        <Compile Remove="ECS\Implementation\**\*.cs"/>
+        <Compile Remove="Compiler\AST\TypeExpressionStatement.cs"/>
+        <Compile Remove="Compiler\AST\TypeCallExpression.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="Rendering\ShaderGenerator\**\*"/>
+        <None Remove="Rendering\ShaderGenerator\**\*"/>
     </ItemGroup>
 </Project>

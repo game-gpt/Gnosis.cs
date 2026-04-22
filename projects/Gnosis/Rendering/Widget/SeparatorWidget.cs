@@ -49,11 +49,24 @@ public sealed class SeparatorWidget : Widget
 
     public override void Paint(UiRenderer renderer)
     {
-        renderer.DrawRect(
-            LayoutRect.X, LayoutRect.Y,
-            LayoutRect.Width, LayoutRect.Height,
-            SeparatorColor.R, SeparatorColor.G, SeparatorColor.B, SeparatorColor.A
-        );
+        if (Orientation == SeparatorOrientation.Horizontal)
+        {
+            renderer.DrawLine(
+                LayoutRect.X, LayoutRect.Y + LayoutRect.Height * 0.5f,
+                LayoutRect.X + LayoutRect.Width, LayoutRect.Y + LayoutRect.Height * 0.5f,
+                SeparatorColor.R, SeparatorColor.G, SeparatorColor.B, SeparatorColor.A,
+                Thickness
+            );
+        }
+        else
+        {
+            renderer.DrawLine(
+                LayoutRect.X + LayoutRect.Width * 0.5f, LayoutRect.Y,
+                LayoutRect.X + LayoutRect.Width * 0.5f, LayoutRect.Y + LayoutRect.Height,
+                SeparatorColor.R, SeparatorColor.G, SeparatorColor.B, SeparatorColor.A,
+                Thickness
+            );
+        }
     }
 
     #endregion

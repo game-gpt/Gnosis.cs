@@ -1,9 +1,8 @@
-using Gnosis.ECS.Core;
-using Gnosis.ECS.Interface;
+using Gnosis.Core;
 
 namespace Gnosis.ECS.Implementation;
 
-public class ComponentPool<T> : IComponentPool where T : struct
+public class ComponentPool<T> : ECS.IComponentPool where T : struct
 {
     private readonly Dictionary<EntityId, int> _sparse;
     private readonly List<T> _dense;

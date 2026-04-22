@@ -30,7 +30,7 @@ public sealed class GnosisShaderSourceGenerator : ISourceGenerator
     }
 
     /// <summary>
-    /// 执行源生成，扫描 .ggs 文件并编译为 C# 源代码
+    /// 执行源生成，扫描 .ggs 文件并将 GGShader 编译为 SPIR-V 字节码，再生成 C# 包装代码
     /// </summary>
     public void Execute(GeneratorExecutionContext context)
     {
@@ -54,7 +54,8 @@ public sealed class GnosisShaderSourceGenerator : ISourceGenerator
     #region 着色器处理
 
     /// <summary>
-    /// 处理单个着色器文件，编译为 SPIR-V 字节码并生成 C# 包装类
+    /// 处理单个 GGShader 着色器文件，编译为 SPIR-V 字节码并生成 C# 包装类
+    /// <para>注意：GGShader 是独立的游戏着色器语言，此处生成的 C# 包装类仅作为引擎侧承载 SPIR-V 字节码的方式。</para>
     /// </summary>
     private void ProcessShaderFile(GeneratorExecutionContext context, AdditionalText shaderFile)
     {
@@ -111,7 +112,7 @@ public sealed class GnosisShaderSourceGenerator : ISourceGenerator
     #region 编译方法
 
     /// <summary>
-    /// 使用 GgShaderCompiler 将着色器源码编译为 SPIR-V 字节码
+    /// 使用 ShaderCompiler 将 GGShader 着色器源码编译为 SPIR-V 字节码
     /// </summary>
     private static byte[] CompileShaderToSpirV(string source)
     {

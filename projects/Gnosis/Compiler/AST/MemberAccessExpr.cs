@@ -15,7 +15,7 @@ namespace Gnosis.Compiler.AST;
 /// # 静态成员访问
 /// Math.PI
 /// 
-/// # 属性访问
+/// # 成员访问
 /// person.name
 /// 
 /// # 向量分量访问

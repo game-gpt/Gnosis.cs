@@ -1,4 +1,4 @@
-﻿using Gnosis.Compiler.Diagnostics;
+using Gnosis.Compiler.Diagnostics;
 
 namespace Gnosis.Compiler.Lexer;
 
@@ -110,31 +110,53 @@ public class GameShaderLexer
             {
                 Advance();
             }
-            else if (c == '/' && PeekNext() == '/')
+            else if (c == '#')
             {
-                while (!IsAtEnd() && Peek() != '\n')
-                {
-                    Advance();
-                }
+                SkipLineComment();
             }
-            else if (c == '/' && PeekNext() == '*')
+            else if (c == '<' && PeekNext() == '#')
             {
-                Advance();
-                Advance();
-                while (!IsAtEnd())
-                {
-                    if (Peek() == '*' && PeekNext() == '/')
-                    {
-                        Advance();
-                        Advance();
-                        break;
-                    }
-                    Advance();
-                }
+                SkipBlockComment();
             }
             else
             {
                 break;
+            }
+        }
+    }
+
+    private void SkipLineComment()
+    {
+        while (!IsAtEnd() && Peek() != '\n')
+        {
+            Advance();
+        }
+    }
+
+    private void SkipBlockComment()
+    {
+        Advance();
+        Advance();
+
+        var depth = 1;
+
+        while (!IsAtEnd() && depth > 0)
+        {
+            if (Peek() == '<' && PeekNext() == '#')
+            {
+                Advance();
+                Advance();
+                depth++;
+            }
+            else if (Peek() == '#' && PeekNext() == '>')
+            {
+                Advance();
+                Advance();
+                depth--;
+            }
+            else
+            {
+                Advance();
             }
         }
     }

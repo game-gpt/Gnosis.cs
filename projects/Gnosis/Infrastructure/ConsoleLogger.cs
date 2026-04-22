@@ -3,15 +3,13 @@ using System.Linq;
 namespace Gnosis.Infrastructure;
 
 /// <summary>
-/// 控制台日志器，支持控制台输出和文件日志
+/// 控制台日志器，将日志输出到控制台
 /// </summary>
 public class ConsoleLogger : ILogger
 {
     #region 字段
 
     private LogLevel _level = LogLevel.Info;
-    private StreamWriter? _fileWriter;
-    private readonly object _lock = new();
 
     #endregion
 
@@ -21,42 +19,6 @@ public class ConsoleLogger : ILogger
     /// 日志器是否启用
     /// </summary>
     public bool IsEnabled { get; private set; } = true;
-
-    /// <summary>
-    /// 日志文件路径，为 null 时不输出文件日志
-    /// </summary>
-    public string? LogFilePath { get; }
-
-    #endregion
-
-    #region 构造函数
-
-    /// <summary>
-    /// 初始化控制台日志器
-    /// </summary>
-    public ConsoleLogger()
-    {
-    }
-
-    /// <summary>
-    /// 初始化控制台日志器并指定日志文件路径
-    /// </summary>
-    /// <param name="logFilePath">日志文件路径</param>
-    public ConsoleLogger(string logFilePath)
-    {
-        LogFilePath = logFilePath;
-
-        var directory = Path.GetDirectoryName(logFilePath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        _fileWriter = new StreamWriter(logFilePath, append: true)
-        {
-            AutoFlush = true
-        };
-    }
 
     #endregion
 
@@ -69,7 +31,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Debug)
         {
-            WriteLog("DEBUG", message);
+            Console.WriteLine($"[DEBUG] {message}");
         }
     }
 
@@ -80,7 +42,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Info)
         {
-            WriteLog("INFO", message);
+            Console.WriteLine($"[INFO] {message}");
         }
     }
 
@@ -91,7 +53,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Warning)
         {
-            WriteLog("WARN", message);
+            Console.WriteLine($"[WARN] {message}");
         }
     }
 
@@ -102,7 +64,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Error)
         {
-            WriteLog("ERROR", message);
+            Console.WriteLine($"[ERROR] {message}");
         }
     }
 
@@ -115,10 +77,10 @@ public class ConsoleLogger : ILogger
         {
             if (message != null)
             {
-                WriteLog("ERROR", message);
+                Console.WriteLine($"[ERROR] {message}");
             }
-            WriteLog("ERROR", $"{exception.GetType().Name}: {exception.Message}");
-            WriteLog("ERROR", exception.StackTrace ?? string.Empty);
+            Console.WriteLine($"[ERROR] {exception.GetType().Name}: {exception.Message}");
+            Console.WriteLine(exception.StackTrace);
         }
     }
 
@@ -129,7 +91,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Debug)
         {
-            WriteLog("DEBUG", FormatProperties(message, properties));
+            Console.WriteLine($"[DEBUG] {FormatProperties(message, properties)}");
         }
     }
 
@@ -140,7 +102,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Info)
         {
-            WriteLog("INFO", FormatProperties(message, properties));
+            Console.WriteLine($"[INFO] {FormatProperties(message, properties)}");
         }
     }
 
@@ -151,7 +113,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Warning)
         {
-            WriteLog("WARN", FormatProperties(message, properties));
+            Console.WriteLine($"[WARN] {FormatProperties(message, properties)}");
         }
     }
 
@@ -162,7 +124,7 @@ public class ConsoleLogger : ILogger
     {
         if (IsEnabled && _level <= LogLevel.Error)
         {
-            WriteLog("ERROR", FormatProperties(message, properties));
+            Console.WriteLine($"[ERROR] {FormatProperties(message, properties)}");
         }
     }
 
@@ -176,36 +138,7 @@ public class ConsoleLogger : ILogger
 
     #endregion
 
-    #region 公开方法
-
-    /// <summary>
-    /// 关闭文件日志流
-    /// </summary>
-    public void Dispose()
-    {
-        lock (_lock)
-        {
-            _fileWriter?.Close();
-            _fileWriter = null;
-        }
-    }
-
-    #endregion
-
     #region 私有方法
-
-    private void WriteLog(string level, string message)
-    {
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        var line = $"[{timestamp}] [{level}] {message}";
-
-        Console.WriteLine(line);
-
-        lock (_lock)
-        {
-            _fileWriter?.WriteLine(line);
-        }
-    }
 
     private static string FormatProperties(string message, (string Key, object Value)[] properties)
     {

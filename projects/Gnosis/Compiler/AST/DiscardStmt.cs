@@ -9,8 +9,8 @@ namespace Gnosis.Compiler.AST;
 /// # 丢弃函数返回值
 /// _ = foo()
 /// 
-/// # 丢弃属性值
-/// _ = obj.property
+/// # 丢弃成员值
+/// _ = obj.member
 /// 
 /// # 解构时丢弃部分值
 /// let (_, b) = tuple

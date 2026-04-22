@@ -742,12 +742,6 @@ public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
         return null;
     }
 
-    public ShaderIrInstruction? VisitSceneDecl(SceneDecl node)
-    {
-        _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 SceneDecl");
-        return null;
-    }
-
     public ShaderIrInstruction? VisitPluginDecl(PluginDecl node)
     {
         _diagnostics.AddWarning(_currentFilePath, null, "SHD001", "着色器中不支持 PluginDecl");

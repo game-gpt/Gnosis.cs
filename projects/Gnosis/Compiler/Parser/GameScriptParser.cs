@@ -177,7 +177,6 @@ public class GameScriptParser : IParser
                     case "component":
                     case "system":
                     case "widget":
-                    case "scene":
                     case "plugin":
                     case "micro":
                     case "let":
@@ -212,11 +211,6 @@ public class GameScriptParser : IParser
             if (Check(TokenType.Keyword, "widget"))
             {
                 return ParseWidgetDecl();
-            }
-
-            if (Check(TokenType.Keyword, "scene"))
-            {
-                return ParseSceneDecl();
             }
 
             if (Check(TokenType.Keyword, "plugin"))
@@ -262,7 +256,7 @@ public class GameScriptParser : IParser
                     _filePath,
                     SourceSpan.FromToken(Peek()),
                     "GG0101",
-                    $"属性标注后应为声明，但遇到 '{Peek().Value}'");
+                    $"GGScript 特性标注后应为声明，但遇到 '{Peek().Value}'");
 
                 return null;
             }
@@ -579,35 +573,6 @@ public class GameScriptParser : IParser
         Consume(TokenType.Delimiter, "}", "GG0137", "期望 '}'");
 
         return new WidgetDecl(SourceSpan.FromToken(startToken), name, properties, renderMethod);
-    }
-
-    private SceneDecl ParseSceneDecl()
-    {
-        var startToken = ConsumeKeyword("scene", "GG0138", "期望 'scene' 关键字");
-
-        var name = Consume(TokenType.Identifier, "GG0139", "期望场景名").Value;
-
-        Consume(TokenType.Delimiter, "{", "GG0140", "期望 '{'");
-
-        var variables = new List<VariableDecl>();
-        var methods = new List<FunctionDecl>();
-
-        while (!Check(TokenType.Delimiter, "}") && !IsAtEnd())
-        {
-            if (Check(TokenType.Keyword, "let"))
-            {
-                variables.Add(ParseVariableDecl());
-            }
-            else
-            {
-                var methodAttrs = ParseAttributes();
-                methods.Add(ParseLifecycleMethod(methodAttrs));
-            }
-        }
-
-        Consume(TokenType.Delimiter, "}", "GG0141", "期望 '}'");
-
-        return new SceneDecl(SourceSpan.FromToken(startToken), name, variables, methods);
     }
 
     private PluginDecl ParsePluginDecl()

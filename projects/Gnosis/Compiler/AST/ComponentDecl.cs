@@ -18,7 +18,7 @@ namespace Gnosis.Compiler.AST;
 ///     dy: float = 0.0
 /// }
 /// 
-/// # 带属性的组件
+/// # 带 GGScript 特性标注的组件
 /// [serialize]
 /// component Health {
 ///     current: int

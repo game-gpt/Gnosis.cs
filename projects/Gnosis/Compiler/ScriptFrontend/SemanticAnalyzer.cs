@@ -10,7 +10,6 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
     private readonly Dictionary<string, ComponentDecl> _components = new(StringComparer.Ordinal);
     private readonly Dictionary<string, SystemDecl> _systems = new(StringComparer.Ordinal);
     private readonly Dictionary<string, WidgetDecl> _widgets = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, SceneDecl> _scenes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PluginDecl> _plugins = new(StringComparer.Ordinal);
     private readonly Dictionary<string, StructDecl> _structs = new(StringComparer.Ordinal);
 
@@ -86,11 +85,6 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                     _widgets[widget.Name] = widget;
                     break;
 
-                case NodeType.SceneDecl:
-                    var scene = (SceneDecl)decl;
-                    _scenes[scene.Name] = scene;
-                    break;
-
                 case NodeType.PluginDecl:
                     var plugin = (PluginDecl)decl;
                     _plugins[plugin.Name] = plugin;
@@ -153,9 +147,6 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
             case NodeType.FunctionDecl:
                 ValidateFunctionDecl((FunctionDecl)decl);
                 break;
-            case NodeType.SceneDecl:
-                ValidateSceneDecl((SceneDecl)decl);
-                break;
             case NodeType.PluginDecl:
                 ValidatePluginDecl((PluginDecl)decl);
                 break;
@@ -178,8 +169,8 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                     string.Empty,
                     attr.Span,
                     "GG0410",
-                    $"组件不支持属性标注 '{attr.Name}'",
-                    "组件支持的属性标注: Encrypted, Replicated");
+                    $"组件不支持 GGScript 特性标注 '{attr.Name}'",
+                    "组件支持的 GGScript 特性标注: Encrypted, Replicated");
             }
         }
 
@@ -195,8 +186,8 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                         string.Empty,
                         attr.Span,
                         "GG0411",
-                        $"[Honeypot] 属性标注应在 [Encrypted] 组件内使用",
-                        "在组件上添加 [Encrypted] 属性标注");
+                        $"[Honeypot] GGScript 特性标注应在 [Encrypted] 组件内使用",
+                        "在组件上添加 [Encrypted] GGScript 特性标注");
                 }
             }
         }
@@ -289,14 +280,6 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
         }
 
         PopScope();
-    }
-
-    private void ValidateSceneDecl(SceneDecl decl)
-    {
-        foreach (var method in decl.LifecycleMethods)
-        {
-            ValidateLifecycleMethod(method);
-        }
     }
 
     private void ValidatePluginDecl(PluginDecl decl)

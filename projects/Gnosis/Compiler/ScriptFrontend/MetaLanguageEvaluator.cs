@@ -50,7 +50,6 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             NodeType.ComponentDecl => node,
             NodeType.SystemDecl => EvaluateSystemDecl((SystemDecl)node),
             NodeType.WidgetDecl => EvaluateWidgetDecl((WidgetDecl)node),
-            NodeType.SceneDecl => EvaluateSceneDecl((SceneDecl)node),
             NodeType.PluginDecl => node,
             NodeType.FunctionDecl => EvaluateFunctionDecl((FunctionDecl)node),
             NodeType.BlockStmt => EvaluateBlockStmt((BlockStmt)node),
@@ -100,12 +99,6 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             ? EvaluateFunctionDecl(node.RenderMethod)
             : null;
         return node with { RenderMethod = renderMethod };
-    }
-
-    private AstNode EvaluateSceneDecl(SceneDecl node)
-    {
-        var methods = node.LifecycleMethods.Select(EvaluateFunctionDecl).ToList();
-        return node with { LifecycleMethods = methods };
     }
 
     private FunctionDecl EvaluateFunctionDecl(FunctionDecl node)

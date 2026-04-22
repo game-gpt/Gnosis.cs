@@ -15,7 +15,7 @@ namespace Gnosis.Compiler.AST;
 /// # 数组类型参数
 /// micro baz(data: vec3[]) { }
 /// 
-/// # 带属性的参数
+/// # 带 GGShader 特性标注的参数
 /// micro qux([range(0, 10)] value: int) { }
 /// </code>
 /// </remarks>

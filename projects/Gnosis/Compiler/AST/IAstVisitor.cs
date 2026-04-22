@@ -25,7 +25,6 @@ public interface IAstVisitor<out T>
     T VisitComponentDecl(ComponentDecl node);
     T VisitSystemDecl(SystemDecl node);
     T VisitWidgetDecl(WidgetDecl node);
-    T VisitSceneDecl(SceneDecl node);
     T VisitPluginDecl(PluginDecl node);
     T VisitFunctionDecl(FunctionDecl node);
     T VisitVariableDecl(VariableDecl node);

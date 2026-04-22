@@ -13,7 +13,7 @@ namespace Gnosis.Compiler.AST;
 ///     # 带默认值的字段
 ///     name: string = "default"
 ///     
-///     # 带属性的字段
+///     # 带 GGScript/GGShader 特性标注的字段
 ///     [range(0, 100)]
 ///     value: float = 0.0
 ///     

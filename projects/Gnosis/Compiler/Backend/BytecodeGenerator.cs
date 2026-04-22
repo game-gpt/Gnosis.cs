@@ -123,9 +123,6 @@ public class BytecodeGenerator : IBytecodeGenerator
             case NodeType.VariableDecl:
                 GenerateVariableDecl((VariableDecl)decl);
                 break;
-            case NodeType.SceneDecl:
-                GenerateSceneDecl((SceneDecl)decl);
-                break;
             case NodeType.PluginDecl:
                 GeneratePluginDecl((PluginDecl)decl);
                 break;
@@ -254,26 +251,6 @@ public class BytecodeGenerator : IBytecodeGenerator
         _localVariables[decl.Name] = _localCount++;
         Emit(OpCode.StoreLocal);
         EmitInt(_localVariables[decl.Name]);
-    }
-
-    #endregion
-
-    #region Private Methods - Scene
-
-    private void GenerateSceneDecl(SceneDecl decl)
-    {
-        var nameIdx = AddConstant(decl.Name);
-        _exportedSymbols[decl.Name] = nameIdx;
-
-        foreach (var variable in decl.Variables)
-        {
-            GenerateVariableDecl(variable);
-        }
-
-        foreach (var method in decl.LifecycleMethods)
-        {
-            GenerateFunctionDecl(method);
-        }
     }
 
     #endregion
