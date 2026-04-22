@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Graphic.RHI;
 using Gnosis.XR.Session;
 using Gnosis.XR.Tracking;
@@ -465,15 +466,15 @@ public sealed class XrRenderer : IXrRenderer
     /// <returns>16 元素行主序视图矩阵</returns>
     private static float[] CreateViewMatrix(Vector3 position, Vector3 forward, Vector3 up)
     {
-        var f = new Vector3(forward.X, forward.Y, forward.Z).Normalize();
-        var r = new Vector3(up.X, up.Y, up.Z).Cross(f).Normalize();
-        var u = f.Cross(r);
+        var f = forward.Normalize();
+        var r = Vector3.Cross(up, f).Normalize();
+        var u = Vector3.Cross(f, r);
 
         return
         [
-            r.X, r.Y, r.Z, -r.Dot(position),
-            u.X, u.Y, u.Z, -u.Dot(position),
-            f.X, f.Y, f.Z, -f.Dot(position),
+            r.X, r.Y, r.Z, -Vector3.Dot(r, position),
+            u.X, u.Y, u.Z, -Vector3.Dot(u, position),
+            f.X, f.Y, f.Z, -Vector3.Dot(f, position),
             0, 0, 0, 1
         ];
     }

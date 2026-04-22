@@ -2,9 +2,9 @@ using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Meta;
-using Gnosis.Rendering.Backends.ShaderIR;
+using Gnosis.Graphic.Shader;
 
-namespace Gnosis.Rendering.Backends;
+namespace Gnosis.Graphic.Shader;
 
 public sealed class IrGenerator : IAstVisitor<ShaderIrInstruction?>
 {

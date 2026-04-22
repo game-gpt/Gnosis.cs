@@ -77,7 +77,6 @@ public sealed class GltfParser
 
     private static GltfParseResult BuildMeshData(GltfDocument gltf, byte[]? glbBinChunk, string? basePath)
     {
-        var result = new GltfParseResult();
         var allVertices = new List<MeshVertex>();
         var allIndices = new List<int>();
         var subMeshes = new List<MeshSubMesh>();
@@ -93,38 +92,44 @@ public sealed class GltfParser
                 var normalData = GetAccessorData(gltf, glbBinChunk, basePath, primitive.Attributes?.Normal);
                 var uvData = GetAccessorData(gltf, glbBinChunk, basePath, primitive.Attributes?.TexCoord0);
 
-                var vertexCount = positionData.Length / 3;
+                var vertexCount = positionData.Length / 12;
 
                 for (var i = 0; i < vertexCount; i++)
                 {
-                    var vertex = new MeshVertex
-                    {
-                        Position = new float[3]
-                    };
+                    var position = new float[3];
 
-                    if (i * 3 + 2 < positionData.Length)
+                    if (i * 12 + 8 <= positionData.Length)
                     {
-                        vertex.Position[0] = positionData[i * 3];
-                        vertex.Position[1] = positionData[i * 3 + 1];
-                        vertex.Position[2] = positionData[i * 3 + 2];
+                        position[0] = BitConverter.ToSingle(positionData, i * 12);
+                        position[1] = BitConverter.ToSingle(positionData, i * 12 + 4);
+                        position[2] = BitConverter.ToSingle(positionData, i * 12 + 8);
                     }
 
-                    if (normalData.Length > 0 && i * 3 + 2 < normalData.Length)
+                    float[]? normal = null;
+
+                    if (normalData.Length > 0 && i * 12 + 8 <= normalData.Length)
                     {
-                        vertex.Normal = new float[3];
-                        vertex.Normal[0] = normalData[i * 3];
-                        vertex.Normal[1] = normalData[i * 3 + 1];
-                        vertex.Normal[2] = normalData[i * 3 + 2];
+                        normal = new float[3];
+                        normal[0] = BitConverter.ToSingle(normalData, i * 12);
+                        normal[1] = BitConverter.ToSingle(normalData, i * 12 + 4);
+                        normal[2] = BitConverter.ToSingle(normalData, i * 12 + 8);
                     }
 
-                    if (uvData.Length > 0 && i * 2 + 1 < uvData.Length)
+                    float[]? uv = null;
+
+                    if (uvData.Length > 0 && i * 8 + 4 <= uvData.Length)
                     {
-                        vertex.Uv = new float[2];
-                        vertex.Uv[0] = uvData[i * 2];
-                        vertex.Uv[1] = uvData[i * 2 + 1];
+                        uv = new float[2];
+                        uv[0] = BitConverter.ToSingle(uvData, i * 8);
+                        uv[1] = BitConverter.ToSingle(uvData, i * 8 + 4);
                     }
 
-                    allVertices.Add(vertex);
+                    allVertices.Add(new MeshVertex
+                    {
+                        Position = position,
+                        Normal = normal ?? [],
+                        Uv = uv ?? []
+                    });
                 }
 
                 if (primitive.Indices.HasValue)
@@ -178,12 +183,13 @@ public sealed class GltfParser
 
         var bounds = ComputeBounds(allVertices);
 
-        result.Vertices = allVertices;
-        result.Indices = allIndices;
-        result.SubMeshes = subMeshes;
-        result.Bounds = bounds;
-
-        return result;
+        return new GltfParseResult
+        {
+            Vertices = allVertices,
+            Indices = allIndices,
+            SubMeshes = subMeshes,
+            Bounds = bounds
+        };
     }
 
     private static byte[] GetAccessorData(GltfDocument gltf, byte[]? glbBinChunk, string? basePath, int? accessorIndex)
@@ -197,7 +203,7 @@ public sealed class GltfParser
         var bufferView = gltf.BufferViews[accessor.BufferView];
 
         var bufferData = GetBufferData(gltf, glbBinChunk, basePath, bufferView.Buffer);
-        var offset = (accessor.ByteOffset ?? 0) + (bufferView.ByteOffset ?? 0);
+        var offset = accessor.ByteOffset + bufferView.ByteOffset;
         var length = accessor.Count * GetComponentSize(accessor.ComponentType) * GetNumComponents(accessor.Type);
 
         if (offset + length > bufferData.Length)

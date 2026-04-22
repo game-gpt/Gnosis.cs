@@ -133,7 +133,7 @@ public sealed class TransactionManager
     internal ValueTask<bool> DeleteAsync(DatabaseTransaction transaction, DatabaseKey key, CancellationToken cancellationToken = default)
     {
         transaction.AddPendingDelete(key);
-        return ValueTask.CompletedTask;
+        return ValueTask.FromResult(true);
     }
 
     #endregion

@@ -17,6 +17,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Remove="Capture\CameraControllerComponent.cs" />
         <Compile Remove="Shader\DiffusionShaderBackend.cs" />
         <Compile Remove="RHI\IrGenerator.cs" />
@@ -26,9 +30,6 @@
         <Compile Remove="Shader\NeuralShaderBackend.cs" />
         <Compile Remove="FX\ParticleSystemComponent.cs" />
         <Compile Remove="Shader\ShaderFormatHandler.cs" />
-        <Compile Remove="Shader\ShaderFunctionIr.cs" />
-        <Compile Remove="Shader\ShaderModuleIr.cs" />
-        <Compile Remove="Shader\Spirv\**" />
         <Compile Remove="RHI\Vulkan\**" />
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />

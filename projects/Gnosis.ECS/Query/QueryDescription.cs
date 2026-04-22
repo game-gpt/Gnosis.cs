@@ -1,3 +1,5 @@
+using ArchetypeEntity = Gnosis.ECS.Archetype.Archetype;
+
 namespace Gnosis.ECS.Query;
 
 /// <summary>
@@ -81,7 +83,7 @@ public sealed class QueryDescription
     /// <summary>
     /// 检查给定 Archetype 是否匹配此查询描述符
     /// </summary>
-    public bool Matches(Archetype.Archetype archetype)
+    public bool Matches(ArchetypeEntity archetype)
     {
         if (AllTypes.Count > 0 && !AllTypes.IsSubsetOf(archetype.ComponentTypes))
         {

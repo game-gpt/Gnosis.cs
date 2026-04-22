@@ -1,6 +1,6 @@
-using Gnosis.Core;
+using Gnosis.Core.Event;
 
-namespace Gnosis.Rendering.RHI;
+namespace Gnosis.Graphic.RHI;
 
 public interface ITransform
 {

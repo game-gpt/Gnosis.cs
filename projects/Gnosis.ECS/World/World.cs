@@ -107,7 +107,7 @@ public sealed class World : IWorld
         {
             foreach (var type in componentTypes)
             {
-                _observer.NotifyRemoved(entityId, type);
+                _observer.NotifyRemoved(type, entityId);
             }
         }
 

@@ -1,6 +1,6 @@
 using Gnosis.ECS.Core;
 
-namespace Gnosis.Rendering.Particles;
+namespace Gnosis.Graphic.FX;
 
 public struct ParticleSystemComponent : IComponent
 {

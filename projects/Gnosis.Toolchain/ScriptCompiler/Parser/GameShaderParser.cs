@@ -1,3 +1,4 @@
+using Gnosis.Core.Diagnostic;
 using Gnosis.Toolchain.ScriptCompiler.AST;
 using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
 using Gnosis.Toolchain.ScriptCompiler.Lexer;
@@ -621,7 +622,7 @@ public class GameShaderParser : IParser
 
         {
 
-            Consume(TokenType.Identifier, "GG3004", "GG3004", "期望 'let' 关键字").Value;
+            modulePath += "." + Consume(TokenType.Identifier, "GG3004", "GG3004", "期望标识符").Value;
 
         }
 
@@ -631,7 +632,7 @@ public class GameShaderParser : IParser
 
         {
 
-            Consume(TokenType.Identifier, "GG3005", "GG3005", "期望 'micro' 关键字").Value;
+            alias = Consume(TokenType.Identifier, "GG3005", "GG3005", "期望别名标识符").Value;
 
         }
 
@@ -645,15 +646,16 @@ public class GameShaderParser : IParser
 
     {
 
-        var startToken = ConsumeKeyword("using", "GG3006", "期望 'struct' 关键字");
+        var startToken = ConsumeKeyword("using", "GG3006", "期望 'using' 关键字");
 
-        var namespacePath = Consume(TokenType.Identifier, "GG3007", "GG3007", "期望 'using' 关键字").Value;
+        var namespacePath = Consume(TokenType.Identifier, "GG3007", "GG3007", "期望命名空间标识符").Value;
 
         while (MatchDoubleColon() || MatchDot())
 
         {
 
-            Consume(TokenType.Identifier, "GG3008", "GG3008", "期望标识符").Value;
+            var separator = _tokens[_current - 1].Value == "::" ? "::" : ".";
+            namespacePath += separator + Consume(TokenType.Identifier, "GG3008", "GG3008", "期望标识符").Value;
 
         }
 
@@ -663,13 +665,13 @@ public class GameShaderParser : IParser
 
         {
 
-            Consume(TokenType.Identifier, "GG3009", "GG3009", "期望标识符").Value;
+            selections.Add(Consume(TokenType.Identifier, "GG3009", "GG3009", "期望标识符").Value);
 
             while (Match(TokenType.Delimiter, ","))
 
             {
 
-                Consume(TokenType.Identifier, "GG3010", "GG3010", "期望 'return' 关键字").Value;
+                selections.Add(Consume(TokenType.Identifier, "GG3010", "GG3010", "期望标识符").Value);
 
             }
 
@@ -1143,7 +1145,7 @@ public class GameShaderParser : IParser
 
     {
 
-        Consume(TokenType.Identifier, "GG3041", "GG3041", "期望类型名").Value;
+        return Consume(TokenType.Identifier, "GG3041", "GG3041", "期望类型名").Value;
 
     }
 
@@ -1791,7 +1793,7 @@ public class GameShaderParser : IParser
 
             var token = Advance();
 
-            return new LiteralExpr(LiteralType.Number, token.Value, Span: startToken.ToSourceSpan());
+            return new LiteralExpr(LiteralType.Number, token.Value, Span: token.ToSourceSpan());
 
         }
 
@@ -1801,7 +1803,7 @@ public class GameShaderParser : IParser
 
             var token = Advance();
 
-            return new LiteralExpr(LiteralType.String, token.Value, Span: startToken.ToSourceSpan());
+            return new LiteralExpr(LiteralType.String, token.Value, Span: token.ToSourceSpan());
 
         }
 
@@ -1823,7 +1825,7 @@ public class GameShaderParser : IParser
 
             };
 
-            return new LiteralExpr(kind, token.Value, Span: startToken.ToSourceSpan());
+            return new LiteralExpr(kind, token.Value, Span: token.ToSourceSpan());
 
         }
 
@@ -1833,7 +1835,7 @@ public class GameShaderParser : IParser
 
             var token = Advance();
 
-            return new IdentifierNode(token.Value, Span: startToken.ToSourceSpan());
+            return new IdentifierNode(token.Value, Span: token.ToSourceSpan());
 
         }
 
@@ -1867,7 +1869,7 @@ public class GameShaderParser : IParser
 
             var token = Advance();
 
-            return new MetaBlock(token.Value, token.TokenType == TokenType.MetaExpression, Span: startToken.ToSourceSpan());
+            return new MetaBlock(token.Value, token.TokenType == TokenType.MetaExpression, Span: token.ToSourceSpan());
 
         }
 
@@ -1877,13 +1879,13 @@ public class GameShaderParser : IParser
 
             _filePath,
 
-            token.ToSourceSpan(),
+            errorToken.ToSourceSpan(),
 
             "GG3064",
 
             $"无法解析表达式 '{errorToken.Value}'");
 
-        throw new ParseException($"諢丞､也噪譬・ｮｰ '{errorToken.Value}'");
+        throw new ParseException($"无法解析表达式 '{errorToken.Value}'");
 
     }
 
@@ -2043,11 +2045,11 @@ public class GameShaderParser : IParser
 
                 _filePath,
 
-                token.ToSourceSpan(),
+                startToken.ToSourceSpan(),
 
                 "GG3077",
 
-                $"逾樒ｻ丞ｱ・'{name}' 郛ｺ蟆・forward 蜃ｽ謨ｰ");
+                $"神经网络 '{name}' 缺少 forward 函数");
 
             forwardFunc = new FunctionDecl("forward", [], null, null, []);
 
@@ -2155,9 +2157,9 @@ public class GameShaderParser : IParser
 
         }
 
-        var nameToken = Consume(TokenType.Identifier, "GG3082", "譛滓悍譚・㍾蟄玲ｮｵ蜷咲ｧｰ");
+        var nameToken = Consume(TokenType.Identifier, "GG3082", "期望权重字段名");
 
-        Consume(TokenType.Punctuation, ":", "GG3083", "譛滓悍 ':'");
+        Consume(TokenType.Punctuation, ":", "GG3083", "期望 ':'");
 
         var type = ParseTypeAnnotation();
 
@@ -2171,7 +2173,7 @@ public class GameShaderParser : IParser
 
             fieldAttrs,
 
-            Span: startToken.ToSourceSpan());
+            Span: nameToken.ToSourceSpan());
 
     }
 

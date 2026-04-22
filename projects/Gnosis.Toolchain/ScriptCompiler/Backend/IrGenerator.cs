@@ -1,5 +1,6 @@
 using Gnosis.Toolchain.ScriptCompiler.AST;
 using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Gnosis.Core.Diagnostic;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;

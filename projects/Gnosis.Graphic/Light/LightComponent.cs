@@ -1,6 +1,6 @@
 using Gnosis.ECS.Core;
 
-namespace Gnosis.Rendering.Lighting;
+namespace Gnosis.Graphic.Light;
 
 public struct LightComponent : IComponent
 {

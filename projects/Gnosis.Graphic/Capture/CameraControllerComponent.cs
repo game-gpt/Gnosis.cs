@@ -1,6 +1,6 @@
 using Gnosis.ECS.Core;
 
-namespace Gnosis.Camera;
+namespace Gnosis.Graphic.Capture;
 
 public struct CameraControllerComponent : IComponent
 {

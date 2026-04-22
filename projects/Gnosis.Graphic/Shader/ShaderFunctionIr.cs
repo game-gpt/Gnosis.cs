@@ -1,6 +1,4 @@
-using Gnosis.Compiler.AST;
-
-namespace Gnosis.Rendering.Backends.ShaderIR;
+namespace Gnosis.Graphic.Shader;
 
 public enum ShaderExecutionModel
 {
@@ -21,7 +19,7 @@ public sealed record ShaderFunctionIr(
     ShaderIrType ReturnType,
     IReadOnlyList<ShaderIrInstruction> Instructions,
     IReadOnlyList<LocalVariableInstruction> LocalVariables,
-    IReadOnlyList<AttributeDecl> Attributes,
+    IReadOnlyList<ShaderAttributeIr> Attributes,
     bool IsEntryPoint)
 {
     public uint ResultId { get; set; }

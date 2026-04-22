@@ -1,6 +1,6 @@
-using Gnosis.Rendering.Backends.ShaderIR;
+using Gnosis.Graphic.Shader;
 
-namespace Gnosis.Rendering.Backends.Spirv;
+namespace Gnosis.Graphic.Shader.Spirv;
 
 public sealed class SpirvGenerator
 {
@@ -597,15 +597,15 @@ public sealed class SpirvGenerator
         _ => _typeCache.GetVoidType()
     };
 
-    private uint MapStorageClass(ShaderIR.StorageClass storage) => storage switch
+    private uint MapStorageClass(StorageClass storage) => storage switch
     {
-        ShaderIR.StorageClass.UniformConstant => SpirvConstants.StorageClass.UniformConstant,
-        ShaderIR.StorageClass.Input => SpirvConstants.StorageClass.Input,
-        ShaderIR.StorageClass.Uniform => SpirvConstants.StorageClass.Uniform,
-        ShaderIR.StorageClass.Output => SpirvConstants.StorageClass.Output,
-        ShaderIR.StorageClass.Function => SpirvConstants.StorageClass.Function,
-        ShaderIR.StorageClass.PushConstant => SpirvConstants.StorageClass.PushConstant,
-        ShaderIR.StorageClass.StorageBuffer => SpirvConstants.StorageClass.StorageBuffer,
+        StorageClass.UniformConstant => SpirvConstants.StorageClass.UniformConstant,
+        StorageClass.Input => SpirvConstants.StorageClass.Input,
+        StorageClass.Uniform => SpirvConstants.StorageClass.Uniform,
+        StorageClass.Output => SpirvConstants.StorageClass.Output,
+        StorageClass.Function => SpirvConstants.StorageClass.Function,
+        StorageClass.PushConstant => SpirvConstants.StorageClass.PushConstant,
+        StorageClass.StorageBuffer => SpirvConstants.StorageClass.StorageBuffer,
         _ => SpirvConstants.StorageClass.Function
     };
 

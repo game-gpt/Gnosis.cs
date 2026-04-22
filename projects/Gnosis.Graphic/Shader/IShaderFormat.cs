@@ -1,6 +1,4 @@
-using Gnosis.Asset.Format;
-
-namespace Gnosis.Rendering.Shader;
+namespace Gnosis.Graphic.Shader;
 
 public interface IShaderFormat : IFormatHandler
 {

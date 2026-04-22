@@ -1,3 +1,4 @@
+using Gnosis.Core.Diagnostic;
 using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Lexer;

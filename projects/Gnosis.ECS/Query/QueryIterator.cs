@@ -1,6 +1,37 @@
+using ArchetypeEntity = Gnosis.ECS.Archetype.Archetype;
+using Gnosis.ECS.Archetype;
 using Gnosis.ECS.Entity;
 
 namespace Gnosis.ECS.Query;
+
+/// <summary>
+/// 带引用参数的组件迭代回调委托（单组件）
+/// </summary>
+public delegate void RefAction<T1>(EntityId entityId, ref T1 comp1) where T1 : struct;
+
+/// <summary>
+/// 带引用参数的组件迭代回调委托（双组件）
+/// </summary>
+public delegate void RefAction<T1, T2>(EntityId entityId, ref T1 comp1, ref T2 comp2)
+    where T1 : struct
+    where T2 : struct;
+
+/// <summary>
+/// 带引用参数的组件迭代回调委托（三组件）
+/// </summary>
+public delegate void RefAction<T1, T2, T3>(EntityId entityId, ref T1 comp1, ref T2 comp2, ref T3 comp3)
+    where T1 : struct
+    where T2 : struct
+    where T3 : struct;
+
+/// <summary>
+/// 带引用参数的组件迭代回调委托（四组件）
+/// </summary>
+public delegate void RefAction<T1, T2, T3, T4>(EntityId entityId, ref T1 comp1, ref T2 comp2, ref T3 comp3, ref T4 comp4)
+    where T1 : struct
+    where T2 : struct
+    where T3 : struct
+    where T4 : struct;
 
 /// <summary>
 /// 查询迭代器，高效遍历匹配查询条件的实体和组件。
@@ -11,7 +42,7 @@ public sealed class QueryIterator
 {
     #region 字段
 
-    private readonly List<Archetype.Archetype> _matchingArchetypes;
+    private readonly List<ArchetypeEntity> _matchingArchetypes;
     private readonly ComponentVersionTracker? _versionTracker;
     private readonly Dictionary<Type, uint>? _changedSinceVersions;
 
@@ -28,19 +59,19 @@ public sealed class QueryIterator
 
     #region 构造函数
 
-    public QueryIterator(IEnumerable<Archetype.Archetype> archetypes)
+    public QueryIterator(IEnumerable<ArchetypeEntity> archetypes)
     {
-        _matchingArchetypes = new List<Archetype.Archetype>(archetypes);
+        _matchingArchetypes = new List<ArchetypeEntity>(archetypes);
         _versionTracker = null;
         _changedSinceVersions = null;
     }
 
     public QueryIterator(
-        IEnumerable<Archetype.Archetype> archetypes,
+        IEnumerable<ArchetypeEntity> archetypes,
         ComponentVersionTracker versionTracker,
         Dictionary<Type, uint> changedSinceVersions)
     {
-        _matchingArchetypes = new List<Archetype.Archetype>(archetypes);
+        _matchingArchetypes = new List<ArchetypeEntity>(archetypes);
         _versionTracker = versionTracker;
         _changedSinceVersions = new Dictionary<Type, uint>(changedSinceVersions);
     }
@@ -106,7 +137,7 @@ public sealed class QueryIterator
     /// <summary>
     /// 遍历匹配实体及其单个组件（引用返回，支持原地修改）
     /// </summary>
-    public void EntitiesWithRef<T1>(Action<EntityId, ref T1> action) where T1 : struct
+    public void EntitiesWithRef<T1>(RefAction<T1> action) where T1 : struct
     {
         foreach (var archetype in _matchingArchetypes)
         {
@@ -174,7 +205,7 @@ public sealed class QueryIterator
     /// <summary>
     /// 遍历匹配实体及其两个组件（引用返回，支持原地修改）
     /// </summary>
-    public void EntitiesWithRef<T1, T2>(Action<EntityId, ref T1, ref T2> action)
+    public void EntitiesWithRef<T1, T2>(RefAction<T1, T2> action)
         where T1 : struct
         where T2 : struct
     {
@@ -242,7 +273,7 @@ public sealed class QueryIterator
     /// <summary>
     /// 遍历匹配实体及其三个组件（引用返回，支持原地修改）
     /// </summary>
-    public void EntitiesWithRef<T1, T2, T3>(Action<EntityId, ref T1, ref T2, ref T3> action)
+    public void EntitiesWithRef<T1, T2, T3>(RefAction<T1, T2, T3> action)
         where T1 : struct
         where T2 : struct
         where T3 : struct
@@ -315,7 +346,7 @@ public sealed class QueryIterator
     /// <summary>
     /// 遍历匹配实体及其四个组件（引用返回，支持原地修改）
     /// </summary>
-    public void EntitiesWithRef<T1, T2, T3, T4>(Action<EntityId, ref T1, ref T2, ref T3, ref T4> action)
+    public void EntitiesWithRef<T1, T2, T3, T4>(RefAction<T1, T2, T3, T4> action)
         where T1 : struct
         where T2 : struct
         where T3 : struct
@@ -369,7 +400,7 @@ public sealed class QueryIterator
     /// <summary>
     /// 遍历所有匹配的 Archetype，用于 Archetype 级别的批量操作
     /// </summary>
-    public IEnumerable<Archetype.Archetype> Archetypes()
+    public IEnumerable<ArchetypeEntity> Archetypes()
     {
         return _matchingArchetypes;
     }

@@ -66,6 +66,7 @@ public sealed class XrActionSet : IXrActionSet
     public IXrAction? GetAction(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ThrowIfDisposed();
 
         return _actions.GetValueOrDefault(name);
     }
@@ -79,6 +80,7 @@ public sealed class XrActionSet : IXrActionSet
     public IXrAction CreateAction(string name, XrActionType actionType)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ThrowIfDisposed();
 
         if (_actions.ContainsKey(name))
         {
@@ -97,6 +99,7 @@ public sealed class XrActionSet : IXrActionSet
     public void RemoveAction(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ThrowIfDisposed();
 
         _actions.Remove(name);
     }
@@ -106,6 +109,8 @@ public sealed class XrActionSet : IXrActionSet
     /// </summary>
     public void Sync()
     {
+        ThrowIfDisposed();
+
         if (!IsEnabled)
         {
             return;
@@ -117,6 +122,21 @@ public sealed class XrActionSet : IXrActionSet
             {
                 action.Update();
             }
+        }
+    }
+
+    #endregion
+
+    #region 私有方法
+
+    /// <summary>
+    /// 若已释放则抛出异常
+    /// </summary>
+    private void ThrowIfDisposed()
+    {
+        if (_isDisposed)
+        {
+            throw new ObjectDisposedException(nameof(XrActionSet));
         }
     }
 

@@ -4,6 +4,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using Gnosis.Asset.Format.BcCompression;
+using Gnosis.Asset.Format.TextureParsers;
 
 namespace Gnosis.Asset.Format;
 
@@ -72,7 +73,7 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
     #region 加载纹理
 
     /// <summary>
-    /// 从文件加载纹理，支持引擎格式和标准图像格式
+    /// 从文件加载纹理，支持引擎格式、标准图像格式和 KTX 格式
     /// </summary>
     public async Task<TextureData> LoadTextureAsync(string path, CancellationToken cancellationToken = default)
     {
@@ -86,6 +87,21 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
         if (extension == EngineExtension)
         {
             return await LoadEngineFormatAsync(path, cancellationToken);
+        }
+
+        if (extension is ".ktx" or ".ktx2")
+        {
+            return await LoadKtxFormatAsync(path, cancellationToken);
+        }
+
+        if (extension == ".dds")
+        {
+            throw new NotSupportedException("DDS 格式暂不支持加载，建议转换为 KTX 或标准图像格式");
+        }
+
+        if (extension is ".hdr" or ".exr")
+        {
+            throw new NotSupportedException("HDR/EXR 格式暂不支持加载，建议转换为 KTX 格式");
         }
 
         if (ImageSharpSupportedExtensions.Contains(extension))
@@ -129,6 +145,32 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
                 RawData = rawData
             };
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// 加载 KTX/KTX2 格式纹理
+    /// </summary>
+    private async Task<TextureData> LoadKtxFormatAsync(string path, CancellationToken cancellationToken)
+    {
+        var data = await ReadAsync(path, cancellationToken);
+        var fileName = Path.GetFileNameWithoutExtension(path);
+
+        var parser = new KtxParser();
+        var result = parser.Parse(data);
+
+        return new TextureData
+        {
+            Name = fileName,
+            Width = result.Width,
+            Height = result.Height,
+            Depth = result.Depth,
+            MipLevels = result.MipLevels,
+            ArrayLayers = result.ArrayLayers,
+            Format = result.Format,
+            Dimension = result.Dimension,
+            RawData = result.RawData,
+            MipData = result.MipData
+        };
     }
 
     #endregion
@@ -325,6 +367,12 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
         }
 
         var extension = Path.GetExtension(path).ToLowerInvariant();
+
+        if (extension is ".ktx" or ".ktx2")
+        {
+            return await ValidateKtxAsync(path, cancellationToken);
+        }
+
         var magicBytes = GetMagicBytesForExtension(extension);
 
         if (magicBytes == null)
@@ -349,6 +397,28 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
             }
 
             return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 验证 KTX 文件格式
+    /// </summary>
+    private async Task<bool> ValidateKtxAsync(string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var data = await ReadAsync(path, cancellationToken);
+
+            if (data.Length < 12)
+            {
+                return false;
+            }
+
+            return KtxParser.IsKtxFile(data);
         }
         catch (IOException)
         {
@@ -428,7 +498,7 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
         return new List<string>
         {
             EngineExtension, ".png", ".jpg", ".jpeg", ".tga", ".bmp",
-            ".hdr", ".exr", ".dds", ".ktx", ".scirpttexture"
+            ".hdr", ".exr", ".dds", ".ktx", ".ktx2", ".scirpttexture"
         };
     }
 

@@ -2,7 +2,7 @@ using System.Text.Json;
 using Gnosis.Asset.Format;
 using Gnosis.Compiler.ShaderFrontend;
 
-namespace Gnosis.Rendering.Shader;
+namespace Gnosis.Graphic.Shader;
 
 public class ShaderFormatHandler : FormatHandlerBase, IShaderFormat
 {

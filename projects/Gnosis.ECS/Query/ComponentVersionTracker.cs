@@ -99,7 +99,7 @@ public sealed class ComponentVersionTracker
     {
         if (_versions.TryGetValue(typeof(T), out var entityVersions))
         {
-            return entityVersions.GetValueOrDefault(entityId, 0);
+            return entityVersions.TryGetValue(entityId, out var version) ? version : 0;
         }
 
         return 0;
@@ -112,7 +112,7 @@ public sealed class ComponentVersionTracker
     {
         if (_versions.TryGetValue(componentType, out var entityVersions))
         {
-            return entityVersions.GetValueOrDefault(entityId, 0);
+            return entityVersions.TryGetValue(entityId, out var version) ? version : 0;
         }
 
         return 0;

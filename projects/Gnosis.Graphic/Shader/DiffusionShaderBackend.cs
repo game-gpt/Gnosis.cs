@@ -1,8 +1,8 @@
 using Gnosis.Compiler.AST;
-using Gnosis.Rendering.Backends.ShaderIR;
-using Gnosis.Rendering.Backends.Spirv;
+using Gnosis.Graphic.Shader;
+using Gnosis.Graphic.Shader.Spirv;
 
-namespace Gnosis.Rendering.Shader;
+namespace Gnosis.Graphic.Shader;
 
 public sealed class DiffusionShaderBackend : IShaderBackend
 {

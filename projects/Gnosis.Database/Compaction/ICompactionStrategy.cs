@@ -1,6 +1,10 @@
+using Gnosis.Database.Core;
+
 namespace Gnosis.Database.Compaction;
 
-/// <summary>
-/// 压缩策略接口占位
-/// </summary>
-public interface ICompactionStrategy;
+public interface ICompactionStrategy
+{
+    CompactionMode Mode { get; }
+
+    ValueTask CompactAsync(ICompactionContext context, CancellationToken cancellationToken = default);
+}

@@ -1,4 +1,4 @@
-namespace Gnosis.Rendering.Backends.Spirv;
+namespace Gnosis.Graphic.Shader.Spirv;
 
 public sealed class SpirvBuilder
 {

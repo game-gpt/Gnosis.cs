@@ -1,3 +1,4 @@
+using ArchetypeEntity = Gnosis.ECS.Archetype.Archetype;
 using Gnosis.ECS.Archetype;
 using Gnosis.ECS.Entity;
 
@@ -18,7 +19,7 @@ public sealed class EntityQuery : IQuery
     private readonly HashSet<Type> _changedTypes;
     private readonly ArchetypeManager _archetypeManager;
     private readonly ComponentVersionTracker? _versionTracker;
-    private List<Archetype.Archetype>? _cachedArchetypes;
+    private List<ArchetypeEntity>? _cachedArchetypes;
     private int _cacheVersion;
     private int _lastArchetypeCount;
     private uint _lastGlobalVersion;
@@ -320,7 +321,7 @@ public sealed class EntityQuery : IQuery
         }
     }
 
-    private List<Archetype.Archetype> GetMatchingArchetypes()
+    private List<ArchetypeEntity> GetMatchingArchetypes()
     {
         if (IsCacheValid() && _cachedArchetypes != null)
         {
@@ -353,7 +354,7 @@ public sealed class EntityQuery : IQuery
         {
             foreach (var type in _changedTypes)
             {
-                var sinceVersion = _changedSinceVersions.GetValueOrDefault(type, 0);
+                var sinceVersion = _changedSinceVersions.TryGetValue(type, out var v) ? v : 0;
 
                 if (_versionTracker.HasChanged(type, entityId, sinceVersion))
                 {
