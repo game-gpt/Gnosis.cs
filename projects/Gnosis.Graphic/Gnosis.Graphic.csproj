@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Graphic</PackageId>
+        <RootNamespace>Gnosis.Graphic</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Graphic - 跨平台渲染系统，包含 RHI、着色器、材质、光照、视觉特效</Description>
+        <PackageTags>gnosis;game-engine;graphic;rendering;rhi;shader;material;lighting;vfx</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="Capture\CameraControllerComponent.cs" />
+        <Compile Remove="Shader\DiffusionShaderBackend.cs" />
+        <Compile Remove="RHI\IrGenerator.cs" />
+        <Compile Remove="Shader\IShaderFormat.cs" />
+        <Compile Remove="RHI\ITransform.cs" />
+        <Compile Remove="Light\LightComponent.cs" />
+        <Compile Remove="Shader\NeuralShaderBackend.cs" />
+        <Compile Remove="FX\ParticleSystemComponent.cs" />
+        <Compile Remove="Shader\ShaderFormatHandler.cs" />
+        <Compile Remove="Shader\ShaderFunctionIr.cs" />
+        <Compile Remove="Shader\ShaderModuleIr.cs" />
+        <Compile Remove="Shader\Spirv\**" />
+        <Compile Remove="RHI\Vulkan\**" />
+        <Compile Remove="RHI\D3D12\**" />
+        <Compile Remove="RHI\Metal\**" />
+        <Compile Remove="RHI\Software\SoftwareDevice.cs" />
+        <Compile Remove="RHI\DeviceFactory.cs" />
+    </ItemGroup>
+</Project>

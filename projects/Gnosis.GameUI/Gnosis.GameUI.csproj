@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.GameUI</PackageId>
+        <RootNamespace>Gnosis.GameUI</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis GameUI - 游戏运行时 UI，世界空间与屏幕空间画布</Description>
+        <PackageTags>gnosis;game-engine;gameui;ui;canvas;world-space;screen-space</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+</Project>

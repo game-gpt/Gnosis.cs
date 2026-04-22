@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0-windows</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UseWPF>true</UseWPF>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Widget.WPF</PackageId>
+        <RootNamespace>Gnosis.Widget.WPF</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Widget WPF 适配层 - Windows 平台宿主</Description>
+        <PackageTags>gnosis;game-engine;widget;wpf;windows</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Widget\Gnosis.Widget.csproj" />
+    </ItemGroup>
+</Project>

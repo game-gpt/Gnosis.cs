@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Widget.SDL</PackageId>
+        <RootNamespace>Gnosis.Widget.SDL</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Widget SDL 适配层 - 跨平台窗口宿主</Description>
+        <PackageTags>gnosis;game-engine;widget;sdl;cross-platform</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Silk.NET.SDL" Version="2.22.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Widget\Gnosis.Widget.csproj" />
+    </ItemGroup>
+</Project>

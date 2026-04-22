@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Geometry</PackageId>
+        <RootNamespace>Gnosis.Geometry</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Geometry - 虚拟几何系统，支持 Nanite 风格的网格着色器管线</Description>
+        <PackageTags>gnosis;game-engine;geometry;mesh;virtual-geometry;nanite</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+</Project>
