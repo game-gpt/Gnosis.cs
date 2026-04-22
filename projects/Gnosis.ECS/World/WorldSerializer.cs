@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Gnosis.ECS.Component;
 using Gnosis.ECS.Entity;
 
@@ -88,10 +89,10 @@ public sealed class WorldSerializer : IWorldSerializer
 
     public WorldSerializer()
     {
-        _jsonOptions = new global::System.Text.Json.JsonSerializerOptions
+        _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
-            PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
     }
 

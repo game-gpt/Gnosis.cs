@@ -1,3 +1,4 @@
+using Gnosis.Graphic.Shader;
 using Gnosis.IR.Shader;
 
 namespace Gnosis.Graphic.RHI;

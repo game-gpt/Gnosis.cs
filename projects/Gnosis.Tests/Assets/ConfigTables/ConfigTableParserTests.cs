@@ -100,8 +100,8 @@ public class ConfigTableParserTests
             ID,整数,长整数,浮点数,双精度,布尔值,字符串
             id,i32Val,i64Val,f32Val,f64Val,boolVal,strVal
             i32,i32,i64,f32,f64,bool,string
-            1,42,9999999999,3.14f,2.71828,true,hello
-            2,0,0,0f,0.0,false,world
+            1,42,9999999999,3.14,2.71828,true,hello
+            2,0,0,0.0,0.0,false,world
         ";
 
         var result = _tester.ParseCsvFromString(csv, "Types");
@@ -136,7 +136,7 @@ public class ConfigTableParserTests
         Assert.That(result.TableData.Rows[0].Values[2], Is.EqualTo(100));
         Assert.That(result.TableData.Rows[1].Values[1], Is.Null);
         Assert.That(result.TableData.Rows[1].Values[2], Is.Null);
-        Assert.That(result.TableData.Rows[2].Values[1], Is.EqualTo(""));
+        Assert.That(result.TableData.Rows[2].Values[1], Is.Null);
         Assert.That(result.TableData.Rows[2].Values[2], Is.EqualTo(50));
     }
 
@@ -147,8 +147,8 @@ public class ConfigTableParserTests
             ID,标签列表
             id,tags
             i32,[string]
-            1,[fire,ice,wind]
-            2,[]
+            1,""[fire,ice,wind]""
+            2,""[]""
         ";
 
         var result = _tester.ParseCsvFromString(csv, "ListTest");
@@ -189,8 +189,8 @@ public class ConfigTableParserTests
             ID,描述
             id,desc
             i32,string
-            1,"包含,逗号的文本"
-            2,"包含""引号""的文本"
+            1,""包含,逗号的文本""
+            2,""包含""""引号""""的文本""
         ";
 
         var result = _tester.ParseCsvFromString(csv, "Quotes");

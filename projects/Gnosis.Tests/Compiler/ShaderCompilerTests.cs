@@ -1,4 +1,4 @@
-using Gnosis.Graphic.Shader;
+using Gnosis.IR.Shader;
 using Gnosis.Toolchain.ScriptCompiler;
 using Gnosis.Toolchain.ShaderCompiler;
 using NUnit.Framework;

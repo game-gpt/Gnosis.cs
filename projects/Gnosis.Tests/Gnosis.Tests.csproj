@@ -34,7 +34,6 @@
     <ItemGroup>
         <Compile Remove="Network\**\*.cs"/>
         <Compile Remove="Compiler\**\*.cs"/>
-        <Compile Remove="Assets\**\*.cs"/>
     </ItemGroup>
 
     <ItemGroup>

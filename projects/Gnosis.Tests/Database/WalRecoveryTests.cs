@@ -36,8 +36,9 @@ public class WalRecoveryTests
         return new WalOptions(
             Directory: _walDir,
             MaxFileSize: 64 * 1024 * 1024,
-            BufferSize: 4096,
-            SyncOnCommit: true);
+            SyncOnCommit: true,
+            CompressionEnabled: false,
+            BufferSize: 4096);
     }
 
     [Test]
@@ -138,8 +139,9 @@ public class WalRecoveryTests
         var options = new WalOptions(
             Directory: _walDir,
             MaxFileSize: 1024,
-            BufferSize: 4096,
-            SyncOnCommit: false);
+            SyncOnCommit: false,
+            CompressionEnabled: false,
+            BufferSize: 4096);
 
         using var wal = new WalManager(options);
 

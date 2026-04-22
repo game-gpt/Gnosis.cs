@@ -1,0 +1,23 @@
+# Gnosis ConfigTable Expected Output
+# 生成时间: 2026-04-22 20:00:08
+# 表名: player_levels
+
+# === Schema ===
+TableName: player_levels
+FieldCount: 5
+RowCount: 5
+PrimaryKey: null
+
+# === Fields ===
+Field: level|I32|等级|False
+Field: expNeeded|I32|所需经验|False
+Field: hpBonus|I32|生命值加成|False
+Field: atkBonus|I32|攻击力加成|False
+Field: unlockSkill|String|解锁技能|False
+
+# === Rows ===
+1	0	100	10	基础攻击
+2	100	120	12	重击
+3	300	150	15	连斩
+4	600	180	18	旋风斩
+5	1000	220	22	破甲击

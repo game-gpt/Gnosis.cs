@@ -1,5 +1,8 @@
 using Gnosis.Database.Core;
 using Gnosis.Database.Engine;
+using Gnosis.Database.Storage;
+using Gnosis.Database.SHM;
+using Gnosis.Database.WAL;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Database;
@@ -21,16 +24,24 @@ public class GenesisKvDatabaseTests
             Storage: new StorageOptions(
                 BasePath: Path.Combine(_testDir, "data.db"),
                 PageSize: 4096,
-                EngineType: StorageEngineType.BTree),
+                EngineType: StorageEngineType.MemoryMappedFile,
+                InitialSize: 16 * 1024 * 1024,
+                MaxSize: long.MaxValue,
+                UseDirectIO: false,
+                UseSparseFile: true),
             Wal: new WalOptions(
                 Directory: Path.Combine(_testDir, "wal"),
                 MaxFileSize: 64 * 1024 * 1024,
-                BufferSize: 4096,
-                SyncOnCommit: true),
+                SyncOnCommit: true,
+                CompressionEnabled: false,
+                BufferSize: 4096),
             Shm: new ShmOptions(
-                SegmentSize: 64 * 1024 * 1024,
-                MaxSegments: 4,
-                UseSharedMemory: false),
+                Name: "genesis_db_shm",
+                MaxSize: 64 * 1024 * 1024,
+                PageSize: 4096,
+                MaxPageCount: 65536,
+                EvictionThreshold: 0.85,
+                EnableCrossProcess: false),
             BTreeOrder: 128,
             ReadOnly: false,
             AutoCheckpoint: true,

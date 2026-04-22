@@ -1,0 +1,24 @@
+# Gnosis ConfigTable Expected Output
+# 生成时间: 2026-04-22 20:00:08
+# 表名: basic_items
+
+# === Schema ===
+TableName: basic_items
+FieldCount: 6
+RowCount: 5
+PrimaryKey: id
+
+# === Fields ===
+Field: id|I32|道具ID|True
+Field: name|String|道具名称|False
+Field: type|String|道具类型|False
+Field: value|I32|数值|False
+Field: isUsable|Bool|是否可用|False
+Field: desc|String|描述|False
+
+# === Rows ===
+1	生命药水	consumable	100	true	恢复100点生命值
+2	魔法药水	consumable	50	true	恢复50点魔法值
+3	铁剑	equipment	15	false	新手战士的基础武器
+4	皮甲	equipment	8	true	提供基础防护
+5	经验卷轴	scroll	200	true	获得200点经验值

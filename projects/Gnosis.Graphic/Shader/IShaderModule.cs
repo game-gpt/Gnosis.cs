@@ -1,3 +1,5 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
 public interface IShaderModule : IDisposable

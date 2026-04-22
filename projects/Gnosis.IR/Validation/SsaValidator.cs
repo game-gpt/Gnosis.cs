@@ -7,7 +7,7 @@ public sealed class SsaValidator
 {
     #region Properties
 
-    public IrModule Module { get; }
+    public Graph.IrModule Module { get; }
 
     public IReadOnlyList<ValidationError> Errors => _errors;
 
@@ -26,7 +26,7 @@ public sealed class SsaValidator
 
     #region Constructors
 
-    public SsaValidator(IrModule module)
+    public SsaValidator(Graph.IrModule module)
     {
         Module = module;
     }
@@ -52,7 +52,7 @@ public sealed class SsaValidator
 
     #region Private Methods
 
-    private void ValidateFunction(IrFunction function)
+    private void ValidateFunction(Graph.IrFunction function)
     {
         ValidateSingleDefinition(function);
         ValidateDominanceProperty(function);
@@ -60,9 +60,9 @@ public sealed class SsaValidator
         ValidateOperandDominance(function);
     }
 
-    private void ValidateSingleDefinition(IrFunction function)
+    private void ValidateSingleDefinition(Graph.IrFunction function)
     {
-        var definitions = new Dictionary<IrValue, (IrFunction Function, BasicBlock Block, IrInstruction Instruction)>();
+        var definitions = new Dictionary<Graph.IrValue, (Graph.IrFunction Function, Graph.BasicBlock Block, Graph.IrInstruction Instruction)>();
 
         foreach (var block in function.Blocks)
         {
@@ -88,10 +88,10 @@ public sealed class SsaValidator
         }
     }
 
-    private void ValidateDominanceProperty(IrFunction function)
+    private void ValidateDominanceProperty(Graph.IrFunction function)
     {
         var domTree = new DominatorTree(function);
-        var definitions = new Dictionary<IrValue, BasicBlock>();
+        var definitions = new Dictionary<Graph.IrValue, Graph.BasicBlock>();
 
         foreach (var block in function.Blocks)
         {
@@ -108,7 +108,7 @@ public sealed class SsaValidator
         {
             foreach (var instruction in block.Instructions)
             {
-                if (instruction.Opcode == IrOpcode.Phi)
+                if (instruction.Opcode == Graph.IrOpcode.Phi)
                 {
                     continue;
                 }
@@ -131,7 +131,7 @@ public sealed class SsaValidator
         }
     }
 
-    private void ValidatePhiCompleteness(IrFunction function)
+    private void ValidatePhiCompleteness(Graph.IrFunction function)
     {
         foreach (var block in function.Blocks)
         {
@@ -140,7 +140,7 @@ public sealed class SsaValidator
                 continue;
             }
 
-            var phiValues = new HashSet<IrValue>();
+            var phiValues = new HashSet<Graph.IrValue>();
             foreach (var instruction in block.GetPhiNodes())
             {
                 if (instruction.Result is not null)
@@ -149,13 +149,13 @@ public sealed class SsaValidator
                 }
             }
 
-            var incomingValues = new Dictionary<IrValue, HashSet<BasicBlock>>();
+            var incomingValues = new Dictionary<Graph.IrValue, HashSet<Graph.BasicBlock>>();
             foreach (var instruction in block.GetPhiNodes())
             {
-                var incomingBlocks = new HashSet<BasicBlock>();
+                var incomingBlocks = new HashSet<Graph.BasicBlock>();
                 foreach (var arg in instruction.Arguments)
                 {
-                    if (arg is BasicBlock b)
+                    if (arg is Graph.BasicBlock b)
                     {
                         incomingBlocks.Add(b);
                     }
@@ -166,7 +166,7 @@ public sealed class SsaValidator
                     incomingValues[instruction.Result] = incomingBlocks;
                 }
 
-                var expectedBlocks = new HashSet<BasicBlock>(block.Predecessors);
+                var expectedBlocks = new HashSet<Graph.BasicBlock>(block.Predecessors);
                 if (!incomingBlocks.SetEquals(expectedBlocks))
                 {
                     var missing = expectedBlocks.Except(incomingBlocks).Select(b => b.Label);
@@ -189,10 +189,10 @@ public sealed class SsaValidator
         }
     }
 
-    private void ValidateOperandDominance(IrFunction function)
+    private void ValidateOperandDominance(Graph.IrFunction function)
     {
         var domTree = new DominatorTree(function);
-        var definitions = new Dictionary<IrValue, BasicBlock>();
+        var definitions = new Dictionary<Graph.IrValue, Graph.BasicBlock>();
 
         foreach (var block in function.Blocks)
         {
@@ -212,7 +212,7 @@ public sealed class SsaValidator
                 for (int i = 0; i < phiInstruction.Operands.Count && i < phiInstruction.Arguments.Count; i++)
                 {
                     var operand = phiInstruction.Operands[i];
-                    var incomingBlock = phiInstruction.Arguments[i] as BasicBlock;
+                    var incomingBlock = phiInstruction.Arguments[i] as Graph.BasicBlock;
 
                     if (!definitions.TryGetValue(operand, out var defBlock))
                     {

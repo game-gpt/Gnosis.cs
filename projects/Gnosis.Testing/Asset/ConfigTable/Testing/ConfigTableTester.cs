@@ -373,7 +373,12 @@ public class ConfigTableTester
         {
             var trimmed = line.Trim();
 
-            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
+            if (string.IsNullOrEmpty(trimmed))
+            {
+                continue;
+            }
+
+            if (trimmed.StartsWith("#"))
             {
                 if (trimmed.StartsWith("# === Schema ==="))
                 {
@@ -393,15 +398,17 @@ public class ConfigTableTester
                     inFields = false;
                     inRows = true;
                 }
-                else if (trimmed.StartsWith("TableName: "))
-                {
-                    tableName = trimmed["TableName: ".Length..];
-                }
 
                 continue;
             }
 
-            if (inFields)
+            if (trimmed.StartsWith("TableName: "))
+            {
+                tableName = trimmed["TableName: ".Length..];
+                continue;
+            }
+
+            if (inFields && trimmed.StartsWith("Field: "))
             {
                 var parts = trimmed.Split('|');
                 if (parts.Length >= 4)

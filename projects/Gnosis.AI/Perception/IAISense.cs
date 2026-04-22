@@ -13,4 +13,5 @@ public interface IAIStimulusSource
     float[] Position { get; }
     float Strength { get; }
     AISenseType SenseType { get; }
+    bool IsActive { get; }
 }

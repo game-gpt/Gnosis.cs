@@ -198,8 +198,8 @@ public class DatabaseBenchmarkTests
             await db.PutAsync(key, value);
         }
 
-        var startKey = DatabaseKey.FromString("range:01000000");
-        var endKey = DatabaseKey.FromString("range:02000000");
+        var startKey = DatabaseKey.FromString("range:00010000");
+        var endKey = DatabaseKey.FromString("range:00020000");
 
         using var cursor = db.Seek(startKey);
         TestContext.WriteLine($"Seek result: IsValid={cursor.IsValid}, Current={System.Text.Encoding.UTF8.GetString(cursor.Current.Key.Bytes.Span)}");

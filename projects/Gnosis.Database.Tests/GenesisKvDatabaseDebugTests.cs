@@ -48,10 +48,10 @@ public class GenesisKvDatabaseDebugTests
                 UseSparseFile: true),
             Wal: new WalOptions(
                 Directory: Path.Combine(_testDir, "wal"),
-                MaxFileSize: 256 * 1024 * 1024,
-                SyncOnCommit: false,
+                MaxFileSize: 64 * 1024 * 1024,
+                SyncOnCommit: true,
                 CompressionEnabled: false,
-                BufferSize: 65536),
+                BufferSize: 4096),
             Shm: new ShmOptions(
                 Name: "debug_shm",
                 MaxSize: 64 * 1024 * 1024,
@@ -80,7 +80,7 @@ public class GenesisKvDatabaseDebugTests
             await db.PutAsync(key, value);
         }
 
-        var startKey = DatabaseKey.FromString("range:01000000");
+        var startKey = DatabaseKey.FromString("range:00010000");
         var result = await db.GetAsync(startKey);
 
         TestContext.WriteLine($"GetAsync result: {result is not null}");
@@ -101,24 +101,49 @@ public class GenesisKvDatabaseDebugTests
         var firstResult = await db.GetAsync(firstKey);
         TestContext.WriteLine($"First key result: {firstResult is not null}");
 
-        var lastKey = DatabaseKey.FromString("range:00000010");
-        var lastResult = await db.GetAsync(lastKey);
-        TestContext.WriteLine($"Last key result: {lastResult is not null}");
+        var earlyKey = DatabaseKey.FromString("range:00000010");
+        var earlyResult = await db.GetAsync(earlyKey);
+        TestContext.WriteLine($"Early key result: {earlyResult is not null}");
 
-        var midKey = DatabaseKey.FromString("range:00000050");
+        var midKey = DatabaseKey.FromString("range:00002500");
         var midResult = await db.GetAsync(midKey);
         TestContext.WriteLine($"Mid key result: {midResult is not null}");
 
-        var manyKey = DatabaseKey.FromString("range:00001000");
+        var manyKey = DatabaseKey.FromString("range:00004999");
         var manyResult = await db.GetAsync(manyKey);
-        TestContext.WriteLine($"Many key result: {manyResult is not null}");
+        TestContext.WriteLine($"Last key result: {manyResult is not null}");
 
-        // 使用反射检查 BTreeIndex 的 Count
+        // 直接测试 BTreeIndex
         var btreeField = typeof(GenesisKvDatabase).GetField("_btree", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var btree = btreeField?.GetValue(db);
+        TestContext.WriteLine($"BTree type: {btree?.GetType().FullName}");
+
         var countProperty = btree?.GetType().GetProperty("Count");
         var btreeCount = countProperty?.GetValue(btree);
-        TestContext.WriteLine($"BTreeIndex.Count: {btreeCount}");
+        var heightProperty = btree?.GetType().GetProperty("Height");
+        var btreeHeight = heightProperty?.GetValue(btree);
+        TestContext.WriteLine($"BTreeIndex.Count: {btreeCount}, Height: {btreeHeight}");
+
+        // 使用 BTreeIndex 的 SearchAsync 直接搜索
+        var searchMethod = btree?.GetType().GetMethod("SearchAsync", new[] { typeof(DatabaseKey), typeof(CancellationToken) });
+        var searchResultObj = searchMethod?.Invoke(btree, new object[] { startKey, default(CancellationToken) });
+        TestContext.WriteLine($"SearchAsync returned: {searchResultObj?.GetType().FullName}");
+
+        if (searchResultObj is not null)
+        {
+            var asTaskMethod = searchResultObj.GetType().GetMethod("AsTask");
+            if (asTaskMethod is not null)
+            {
+                var task = asTaskMethod.Invoke(searchResultObj, null) as System.Threading.Tasks.Task;
+                if (task is not null)
+                {
+                    await task;
+                    var resultProperty = task.GetType().GetProperty("Result");
+                    var searchResult = resultProperty?.GetValue(task);
+                    TestContext.WriteLine($"Direct SearchAsync result: {searchResult is not null}");
+                }
+            }
+        }
 
         Assert.That(result, Is.Not.Null);
     }

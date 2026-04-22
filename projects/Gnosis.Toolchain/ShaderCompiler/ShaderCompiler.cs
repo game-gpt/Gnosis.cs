@@ -4,7 +4,7 @@ using Gnosis.Toolchain.ScriptCompiler.Lexer;
 using Gnosis.Toolchain.ScriptCompiler.Parser;
 using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 using Gnosis.Toolchain.ScriptCompiler.Backend;
-using Gnosis.Graphic.Shader;
+using Gnosis.IR.Shader;
 using Gnosis.Rendering.Backends.ShaderIR;
 using Gnosis.Rendering.Backends.Spirv;
 

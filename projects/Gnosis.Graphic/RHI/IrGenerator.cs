@@ -2,7 +2,7 @@ using Gnosis.Compiler;
 using Gnosis.Compiler.AST;
 using Gnosis.Compiler.Diagnostics;
 using Gnosis.Compiler.Meta;
-using Gnosis.Graphic.Shader;
+using Gnosis.IR.Shader;
 
 namespace Gnosis.Graphic.Shader;
 
