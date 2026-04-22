@@ -588,7 +588,7 @@ public class GameShaderParser : IParser
 
                     "GG3001",
 
-                    $"GGShader 迚ｹ諤ｧ譬・ｳｨ蜷主ｺ比ｸｺ螢ｰ譏趣ｼ御ｽ・∞蛻ｰ '{Peek().Value}'");
+                    $"GGShader 解析错误：意外的标记 '{Peek().Value}'");
 
                 return null;
 
@@ -771,7 +771,7 @@ public class GameShaderParser : IParser
 
         var name = Consume(TokenType.Identifier, "GG3074", "GG3074", "期望标识符").Value;
 
-        ConsumeColon("GG3075", "譛滓悍 ':'");
+        ConsumeColon("GG3075", "期望 ':'");
 
         var typeAnnotation = ParseTypeAnnotation();
 
@@ -863,7 +863,7 @@ public class GameShaderParser : IParser
 
         var name = Consume(TokenType.Identifier, "GG3017", "GG3017", "期望 '('").Value;
 
-        ConsumeColon("GG3018", "譛滓悍 ':'");
+        ConsumeColon("GG3018", "期望 ':'");
 
         var fieldType = ParseTypeAnnotation();
 
@@ -997,7 +997,7 @@ public class GameShaderParser : IParser
 
         var name = Consume(TokenType.Identifier, "GG3031", "GG3031", "期望标识符").Value;
 
-        ConsumeColon("GG3032", "譛滓悍 ':'");
+        ConsumeColon("GG3032", "期望 ':'");
 
         var paramType = ParseTypeAnnotation();
 
@@ -2103,7 +2103,7 @@ public class GameShaderParser : IParser
 
         }
 
-        Consume(TokenType.Delimiter, ")", "GG3081", "譛滓悍 ')'");
+        Consume(TokenType.Delimiter, ")", "GG3081", "期望 ')'");
 
         TypeAnnotation? returnType = null;
 

@@ -1,6 +1,6 @@
 using Gnosis.Core.Diagnostic;
 
-namespace Gnosis.Compiler.AST;
+namespace Gnosis.Toolchain.ScriptCompiler.AST;
 
 public sealed record TypeCallExpression(
     AstNode Callee,

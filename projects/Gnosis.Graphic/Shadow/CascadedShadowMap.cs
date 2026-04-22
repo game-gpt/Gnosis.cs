@@ -55,9 +55,6 @@ public sealed class CascadedShadowMap : IDisposable
     {
         var cascadeSplits = ComputeCascadeSplits(nearPlane, farPlane);
 
-        var cameraInvViewProj = Matrix4x4.CreateFromQuaternion(new Quaternion())
-            * Matrix4x4.Identity;
-
         var lightDir = new Vector3(
             light.Direction[0],
             light.Direction[1],
@@ -197,33 +194,44 @@ public sealed class CascadedShadowMap : IDisposable
         in Matrix4x4 cameraView,
         in Matrix4x4 cameraProjection)
     {
-        var invViewProj = cameraView * cameraProjection;
+        var viewProj = cameraProjection * cameraView;
+        var invViewProj = viewProj.Invert();
 
         var corners = new Vector3[8];
 
-        var nearOffsets = new (float x, float y)[]
-        {
-            (-1, -1), (1, -1), (1, 1), (-1, 1)
-        };
-
-        var farOffsets = new (float x, float y)[]
+        var ndcOffsets = new (float x, float y)[]
         {
             (-1, -1), (1, -1), (1, 1), (-1, 1)
         };
 
         for (int i = 0; i < 4; i++)
         {
-            var nearPoint = new Vector3(nearOffsets[i].x, nearOffsets[i].y, nearPlane);
-            corners[i] = nearPoint;
+            var nearPoint = new Vector4(ndcOffsets[i].x, ndcOffsets[i].y, 0.0f, 1.0f);
+            corners[i] = TransformHomogeneous(invViewProj, nearPoint);
         }
 
         for (int i = 0; i < 4; i++)
         {
-            var farPoint = new Vector3(farOffsets[i].x, farOffsets[i].y, farPlane);
-            corners[i + 4] = farPoint;
+            var farPoint = new Vector4(ndcOffsets[i].x, ndcOffsets[i].y, 1.0f, 1.0f);
+            corners[i + 4] = TransformHomogeneous(invViewProj, farPoint);
         }
 
         return corners;
+    }
+
+    private static Vector3 TransformHomogeneous(in Matrix4x4 matrix, in Vector4 point)
+    {
+        var x = matrix.M11 * point.X + matrix.M12 * point.Y + matrix.M13 * point.Z + matrix.M14 * point.W;
+        var y = matrix.M21 * point.X + matrix.M22 * point.Y + matrix.M23 * point.Z + matrix.M24 * point.W;
+        var z = matrix.M31 * point.X + matrix.M32 * point.Y + matrix.M33 * point.Z + matrix.M34 * point.W;
+        var w = matrix.M41 * point.X + matrix.M42 * point.Y + matrix.M43 * point.Z + matrix.M44 * point.W;
+
+        if (MathF.Abs(w) > MathHelper.Epsilon)
+        {
+            return new Vector3(x / w, y / w, z / w);
+        }
+
+        return new Vector3(x, y, z);
     }
 
     private IResource CreateDepthTextureArray()

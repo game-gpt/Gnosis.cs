@@ -24,6 +24,26 @@ public sealed class ShadowSystem : IShadowSystem, IDisposable
     public IReadOnlyDictionary<string, ShadowMap> PointShadowMaps => _pointShadowMaps;
     public IReadOnlyDictionary<string, ShadowMap> SpotShadowMaps => _spotShadowMaps;
 
+    /// <summary>
+    /// 当前相机视图矩阵
+    /// </summary>
+    public Matrix4x4 CameraView { get; set; }
+
+    /// <summary>
+    /// 当前相机投影矩阵
+    /// </summary>
+    public Matrix4x4 CameraProjection { get; set; }
+
+    /// <summary>
+    /// 相机近裁面
+    /// </summary>
+    public float CameraNearPlane { get; set; }
+
+    /// <summary>
+    /// 相机远裁面
+    /// </summary>
+    public float CameraFarPlane { get; set; }
+
     #endregion
 
     #region 构造函数
@@ -35,6 +55,10 @@ public sealed class ShadowSystem : IShadowSystem, IDisposable
         _pointShadowMaps = [];
         _spotShadowMaps = [];
         Settings = settings ?? new ShadowSettings();
+        CameraView = Matrix4x4.Identity;
+        CameraProjection = Matrix4x4.Identity;
+        CameraNearPlane = 0.1f;
+        CameraFarPlane = 100.0f;
     }
 
     #endregion
@@ -85,10 +109,10 @@ public sealed class ShadowSystem : IShadowSystem, IDisposable
     {
         _cascadedShadowMap?.UpdateCascades(
             light,
-            Matrix4x4.Identity,
-            Matrix4x4.Identity,
-            0.1f,
-            Settings.Distance);
+            CameraView,
+            CameraProjection,
+            CameraNearPlane,
+            CameraFarPlane);
     }
 
     public void OnLightAdded(ILight light)
