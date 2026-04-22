@@ -568,7 +568,7 @@ public class ParserTester
     {
         var lines = text.Split('\n').Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
         var index = 0;
-        return ParseNode(lines, ref index, 0) ?? new CompilationUnit(null, [], "");
+        return ParseNode(lines, ref index, 0) ?? new CompilationUnit([], "");
     }
 
     private static AstNode? ParseNode(List<string> lines, ref int index, int expectedIndent)
@@ -600,14 +600,14 @@ public class ParserTester
                     declarations.Add(decl);
                 }
             }
-            return new CompilationUnit(null, declarations, "");
+            return new CompilationUnit(declarations, "");
         }
 
         if (content.StartsWith("ImportDecl:"))
         {
             var modulePath = ParseFieldValue(lines, ref index, currentIndent, "ModulePath");
             var alias = ParseFieldValue(lines, ref index, currentIndent, "Alias");
-            return new ImportDecl(null, modulePath ?? "", alias);
+            return new ImportDecl(modulePath ?? "", alias);
         }
 
         if (content.StartsWith("VariableDecl:"))
@@ -616,38 +616,38 @@ public class ParserTester
             var isMutable = ParseFieldValue(lines, ref index, currentIndent, "IsMutable") == "True";
             var typeStr = ParseFieldValue(lines, ref index, currentIndent, "Type");
             var type = typeStr != null ? ParseTypeAnnotation(typeStr) : null;
-            return new VariableDecl(null, name, type, null, isMutable);
+            return new VariableDecl(name, type, null, isMutable);
         }
 
         if (content.StartsWith("ComponentDecl:"))
         {
             var name = ParseFieldValue(lines, ref index, currentIndent, "Name") ?? "";
-            return new ComponentDecl(null, name, [], []);
+            return new ComponentDecl(name, [], []);
         }
 
         if (content.StartsWith("SystemDecl:"))
         {
             var name = ParseFieldValue(lines, ref index, currentIndent, "Name") ?? "";
-            return new SystemDecl(null, name, [], [], []);
+            return new SystemDecl(name, [], [], []);
         }
 
         if (content.StartsWith("FunctionDecl:"))
         {
             var name = ParseFieldValue(lines, ref index, currentIndent, "Name") ?? "";
-            return new FunctionDecl(null, name, [], null, new BlockStmt(null, []), []);
+            return new FunctionDecl(name, [], null, new BlockStmt([]), []);
         }
 
         if (content.StartsWith("Identifier:"))
         {
             var value = content["Identifier:".Length..].Trim();
-            return new IdentifierNode(null, value);
+            return new IdentifierNode(value);
         }
 
         if (content.StartsWith("Literal:"))
         {
             var parts = content["Literal:".Length..].Trim().Split(" = ", 2);
             var litType = Enum.Parse<LiteralType>(parts[0]);
-            return new LiteralExpr(null, litType, parts.Length > 1 ? parts[1] : "");
+            return new LiteralExpr(litType, parts.Length > 1 ? parts[1] : "");
         }
 
         return null;
@@ -689,13 +689,13 @@ public class ParserTester
         var ltIndex = typeStr.IndexOf('<');
         if (ltIndex < 0)
         {
-            return new TypeAnnotation(null, typeStr, []);
+            return new TypeAnnotation(typeStr, []);
         }
 
         var name = typeStr[..ltIndex];
         var inner = typeStr[(ltIndex + 1)..^1];
         var args = inner.Split(", ").Select(ParseTypeAnnotation).ToList();
-        return new TypeAnnotation(null, name, args);
+        return new TypeAnnotation(name, args);
     }
 
     private static int CountLeadingSpaces(string line)

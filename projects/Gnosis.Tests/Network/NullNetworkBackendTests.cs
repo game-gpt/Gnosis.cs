@@ -1,6 +1,6 @@
 using Gnosis.Core;
-using Gnosis.Network.Backends;
-using Gnosis.Network.Core;
+using Gnosis.Network.Channel;
+using Gnosis.Network.Transport;
 using Gnosis.Testing;
 using NUnit.Framework;
 

@@ -1,5 +1,8 @@
-using Gnosis.Network.Core;
-using Gnosis.Network.Sync;
+using Gnosis.Network.Channel;
+using Gnosis.Network.Prediction;
+using Gnosis.Network.RPC;
+using Gnosis.Network.Serialization;
+using Gnosis.Network.Transport;
 using Gnosis.Testing;
 using NUnit.Framework;
 

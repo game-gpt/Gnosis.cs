@@ -1,9 +1,7 @@
-using Gnosis.Core;
-using Gnosis.ECS;
-using Gnosis.Infrastructure;
+using Gnosis.ECS.System;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.Core;
+namespace Gnosis.core;
 
 [TestFixture]
 public class GameLoopTests

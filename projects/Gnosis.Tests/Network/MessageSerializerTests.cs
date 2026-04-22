@@ -1,3 +1,4 @@
+using Gnosis.Network.Serialization;
 using Gnosis.Testing;
 using NUnit.Framework;
 

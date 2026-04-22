@@ -1,9 +1,6 @@
-using Gnosis.Assets.VFS;
-using Gnosis.Core;
-using Gnosis.Core.Events;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.Core;
+namespace Gnosis.core;
 
 [TestFixture]
 public class ConfigSystemTests

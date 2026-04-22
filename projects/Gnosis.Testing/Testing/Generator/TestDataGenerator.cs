@@ -1,4 +1,5 @@
 using Gnosis.Core;
+using Gnosis.Core.Event;
 using Gnosis.Infrastructure;
 
 namespace Gnosis.Testing.Generator;

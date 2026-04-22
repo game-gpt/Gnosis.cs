@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.XR</PackageId>
+        <RootNamespace>Gnosis.XR</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis XR - 扩展现实（VR/AR/MR）的独立支持包</Description>
+        <PackageTags>gnosis;game-engine;xr;vr;ar;mr;virtual-reality;augmented-reality</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\Gnosis.Graphic\Gnosis.Graphic.csproj" />
+        <ProjectReference Include="..\Gnosis.Input\Gnosis.Input.csproj" />
+    </ItemGroup>
+</Project>

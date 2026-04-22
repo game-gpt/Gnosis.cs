@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Toolchain</PackageId>
+        <RootNamespace>Gnosis.Toolchain</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Toolchain - 构建与打包工具链</Description>
+        <PackageTags>gnosis;game-engine;toolchain;build;packaging</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="ScriptCompiler\Backend\BytecodeGenerator.cs" />
+        <Compile Remove="ScriptCompiler\Backend\NativeCodeGenerator.cs" />
+        <Compile Remove="ShaderCompiler\ShaderCompiler.cs" />
+        <Compile Remove="ShaderCompiler\ShaderGenerator\**" />
+        <Compile Remove="ScriptCompiler\Compiler.cs" />
+        <Compile Remove="ScriptCompiler\AST\TypeExpressionStatement.cs" />
+        <Compile Remove="ScriptCompiler\AST\TypeCallExpression.cs" />
+        <Compile Remove="ScriptCompiler\Backend\IrGenerator.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="ShaderCompiler\ShaderGenerator\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
+    </ItemGroup>
+</Project>

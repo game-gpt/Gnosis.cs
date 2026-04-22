@@ -1,3 +1,4 @@
+using Gnosis.Network.Prediction;
 using Gnosis.Testing;
 using NUnit.Framework;
 
