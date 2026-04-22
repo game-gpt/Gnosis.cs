@@ -68,6 +68,11 @@ public class BTreeNode : IBTreeNode
 
     internal int FindKeyIndex(DatabaseKey key)
     {
+        if (_compressedKeys.HasValue && !IsLeaf)
+        {
+            return FindKeyIndexCompressed(key);
+        }
+
         var low = 0;
         var high = _keyCount - 1;
 
@@ -91,6 +96,67 @@ public class BTreeNode : IBTreeNode
         }
 
         return low;
+    }
+
+    private int FindKeyIndexCompressed(DatabaseKey key)
+    {
+        var compressed = _compressedKeys!.Value;
+        var low = 0;
+        var high = _keyCount - 1;
+
+        while (low <= high)
+        {
+            var mid = low + (high - low) / 2;
+            var reconstructed = PrefixCompressor.ReconstructKey(compressed, mid);
+            var cmp = reconstructed.CompareTo(key);
+            if (cmp == 0)
+            {
+                return mid;
+            }
+
+            if (cmp < 0)
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid - 1;
+            }
+        }
+
+        return low;
+    }
+
+    internal void CompressInternalKeys()
+    {
+        if (IsLeaf || _keyCount < 2)
+        {
+            return;
+        }
+
+        var activeKeys = new DatabaseKey[_keyCount];
+        for (var i = 0; i < _keyCount; i++)
+        {
+            activeKeys[i] = _keys[i];
+        }
+
+        _compressedKeys = PrefixCompressor.CompressKeys(activeKeys);
+    }
+
+    internal void DecompressInternalKeys()
+    {
+        if (!_compressedKeys.HasValue || IsLeaf)
+        {
+            return;
+        }
+
+        var decompressed = PrefixCompressor.DecompressKeys(_compressedKeys.Value);
+        for (var i = 0; i < decompressed.Length && i < _keys.Length; i++)
+        {
+            _keys[i] = decompressed[i];
+        }
+
+        _compressedKeys = null;
     }
 
     internal void InsertKeyAt(int index, DatabaseKey key, DatabaseValue value)

@@ -28,10 +28,17 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Asset\Gnosis.Asset.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Remove="Network\**\*.cs"/>
-        <Compile Remove="Assets\**\*.cs"/>
         <Compile Remove="Compiler\**\*.cs"/>
-        <Compile Remove="Database\**\*.cs"/>
+        <Compile Remove="Assets\**\*.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Database\Gnosis.Database.csproj"/>
     </ItemGroup>
 
 </Project>

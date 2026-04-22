@@ -39,26 +39,45 @@ public class ChannelTests : GnosisTester
     }
 
     [Test]
-    public void ReliableChannel_ProcessOutgoing_返回带帧头的数据()
+    public void ReliableChannel_GetPendingFrames_返回已发送的帧()
     {
         var channel = new ReliableChannel(new ChannelId(1));
         channel.Send(new byte[] { 0x01, 0x02, 0x03 });
 
-        var outgoing = channel.ProcessOutgoing(new byte[] { 0x00 });
-        Assert.That(outgoing.Length, Is.GreaterThan(0));
+        var frames = channel.GetPendingFrames();
+        Assert.That(frames.Count, Is.EqualTo(1));
     }
 
     [Test]
-    public void ReliableChannel_ProcessIncoming_返回投递的消息()
+    public void ReliableChannel_ProcessIncoming_接收发送窗口中的帧()
     {
         var sender = new ReliableChannel(new ChannelId(1));
         var receiver = new ReliableChannel(new ChannelId(1));
 
         sender.Send(new byte[] { 0x01, 0x02, 0x03 });
-        var outgoing = sender.ProcessOutgoing(new byte[] { 0x00 });
+        var frames = sender.GetPendingFrames();
 
-        var delivered = receiver.ProcessIncoming(outgoing);
+        var delivered = receiver.ProcessIncoming(frames[0]);
         Assert.That(delivered.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ReliableChannel_ProcessIncoming_按序接收多条消息()
+    {
+        var sender = new ReliableChannel(new ChannelId(1));
+        var receiver = new ReliableChannel(new ChannelId(1));
+
+        sender.Send(new byte[] { 0x01 });
+        sender.Send(new byte[] { 0x02 });
+        sender.Send(new byte[] { 0x03 });
+
+        var frames = sender.GetPendingFrames();
+
+        var d1 = receiver.ProcessIncoming(frames[0]);
+        var d2 = receiver.ProcessIncoming(frames[1]);
+        var d3 = receiver.ProcessIncoming(frames[2]);
+
+        Assert.That(d1.Count + d2.Count + d3.Count, Is.EqualTo(3));
     }
 
     [Test]
@@ -106,16 +125,6 @@ public class ChannelTests : GnosisTester
         channel.Send(new byte[] { 0x02 });
 
         Assert.That(channel.SendSequence, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void UnreliableChannel_ProcessOutgoing_返回带帧头的数据()
-    {
-        var channel = new UnreliableChannel(new ChannelId(2));
-        channel.Send(new byte[] { 0x01, 0x02 });
-
-        var outgoing = channel.ProcessOutgoing(new byte[] { 0x00 });
-        Assert.That(outgoing.Length, Is.GreaterThan(0));
     }
 
     [Test]

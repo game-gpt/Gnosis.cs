@@ -1,9 +1,21 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
-public sealed record ExternalFunctionRef(
-    string SymbolName,
-    IReadOnlyList<ShaderIrType> ParameterTypes,
-    ShaderIrType ReturnType)
+/// <summary>
+/// 外部函数引用定义（已迁移至 Gnosis.IR.Shader）
+/// </summary>
+public sealed class ExternalFunctionRef
 {
-    public uint ResultId { get; set; }
+    #region Properties
+
+    public string Name { get; set; } = string.Empty;
+
+    public string Library { get; set; } = string.Empty;
+
+    public ShaderIrType ReturnType { get; set; }
+
+    public List<ShaderIrType> ParameterTypes { get; } = [];
+
+    #endregion
 }

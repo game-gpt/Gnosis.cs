@@ -1,0 +1,8 @@
+道具ID,道具名称,道具类型,数值,是否可用,描述
+id,name,type,value,isUsable,desc
+i32,string,string,i32,bool,string
+1,生命药水,consumable,100,true,恢复100点生命值
+2,魔法药水,consumable,50,true,恢复50点魔法值
+3,铁剑,equipment,15,false,新手战士的基础武器
+4,皮甲,equipment,8,true,提供基础防护
+5,经验卷轴,scroll,200,true,获得200点经验值

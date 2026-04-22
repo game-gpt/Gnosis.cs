@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Gnosis.ECS.Archetype;
 using Gnosis.ECS.Component;
 using Gnosis.ECS.Entity;
 
@@ -64,15 +62,25 @@ public sealed class ComponentSnapshot
 }
 
 /// <summary>
-/// 世界序列化器，支持世界状态的保存和恢复。
+/// 世界序列化器接口，支持世界状态的保存和恢复。
 /// 序列化包含所有实体及其组件数据，不包含系统和查询状态。
 /// </summary>
-public sealed class WorldSerializer
+public interface IWorldSerializer
+{
+    WorldSnapshot Serialize(World world);
+    void Deserialize(World world, WorldSnapshot snapshot);
+}
+
+/// <summary>
+/// 世界序列化器，支持世界状态的保存和恢复。
+/// 序列化包含所有实体及其组件数据，不包含系统和查询状态。
+/// 实际组件序列化/反序列化由 IComponentSerializer 插件处理。
+/// </summary>
+public sealed class WorldSerializer : IWorldSerializer
 {
     #region 字段
 
-    private readonly ComponentSerializer _componentSerializer;
-    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly global::System.Text.Json.JsonSerializerOptions _jsonOptions;
 
     #endregion
 
@@ -80,11 +88,10 @@ public sealed class WorldSerializer
 
     public WorldSerializer()
     {
-        _componentSerializer = new ComponentSerializer();
-        _jsonOptions = new JsonSerializerOptions
+        _jsonOptions = new global::System.Text.Json.JsonSerializerOptions
         {
             WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = global::System.Text.Json.JsonNamingPolicy.CamelCase
         };
     }
 
@@ -93,7 +100,8 @@ public sealed class WorldSerializer
     #region 序列化
 
     /// <summary>
-    /// 将世界序列化为快照对象
+    /// 将世界序列化为快照对象。
+    /// 组件数据通过 IComponentSerializer 接口委托给具体实现。
     /// </summary>
     public WorldSnapshot Serialize(World world)
     {
@@ -121,7 +129,7 @@ public sealed class WorldSerializer
 
                 foreach (var componentType in archetype.ComponentTypes)
                 {
-                    var componentData = SerializeComponent(world, entityId, componentType);
+                    var componentData = TrySerializeComponent(world, entityId, componentType);
 
                     if (componentData != null)
                     {
@@ -142,7 +150,7 @@ public sealed class WorldSerializer
     public string SerializeToJson(World world)
     {
         var snapshot = Serialize(world);
-        return JsonSerializer.Serialize(snapshot, _jsonOptions);
+        return global::System.Text.Json.JsonSerializer.Serialize(snapshot, _jsonOptions);
     }
 
     #endregion
@@ -152,20 +160,19 @@ public sealed class WorldSerializer
     /// <summary>
     /// 从快照恢复世界状态。
     /// 注意：这会清空世界中现有的所有实体。
+    /// 组件反序列化通过 IComponentSerializer 接口委托给具体实现。
     /// </summary>
     public void Deserialize(World world, WorldSnapshot snapshot)
     {
-        // 清空现有实体
         var existingEntities = world.Entities.CreateEntities(0);
 
-        // 重新创建实体和组件
         foreach (var entitySnapshot in snapshot.Entities)
         {
             var entityId = world.CreateEntity();
 
             foreach (var componentSnapshot in entitySnapshot.Components)
             {
-                DeserializeComponent(world, entityId, componentSnapshot);
+                TryDeserializeComponent(world, entityId, componentSnapshot);
             }
         }
     }
@@ -175,7 +182,7 @@ public sealed class WorldSerializer
     /// </summary>
     public void DeserializeFromJson(World world, string json)
     {
-        var snapshot = JsonSerializer.Deserialize<WorldSnapshot>(json, _jsonOptions);
+        var snapshot = global::System.Text.Json.JsonSerializer.Deserialize<WorldSnapshot>(json, _jsonOptions);
 
         if (snapshot == null)
         {
@@ -189,7 +196,7 @@ public sealed class WorldSerializer
 
     #region 私有方法
 
-    private ComponentSnapshot? SerializeComponent(World world, EntityId entityId, Type componentType)
+    private ComponentSnapshot? TrySerializeComponent(World world, EntityId entityId, Type componentType)
     {
         try
         {
@@ -200,21 +207,14 @@ public sealed class WorldSerializer
                 return null;
             }
 
-            var getMethod = pool.GetType().GetMethod("Get", new[] { typeof(EntityId) });
-
-            if (getMethod == null)
-            {
-                return null;
-            }
-
-            var component = getMethod.Invoke(pool, new object[] { entityId });
+            var component = pool.GetComponentData(entityId);
 
             if (component == null)
             {
                 return null;
             }
 
-            var json = _componentSerializer.Serialize(component, componentType);
+            var json = global::System.Text.Json.JsonSerializer.Serialize(component, componentType, _jsonOptions);
 
             return new ComponentSnapshot
             {
@@ -228,7 +228,7 @@ public sealed class WorldSerializer
         }
     }
 
-    private void DeserializeComponent(World world, EntityId entityId, ComponentSnapshot componentSnapshot)
+    private void TryDeserializeComponent(World world, EntityId entityId, ComponentSnapshot componentSnapshot)
     {
         try
         {
@@ -239,17 +239,24 @@ public sealed class WorldSerializer
                 return;
             }
 
-            var component = _componentSerializer.Deserialize(componentSnapshot.JsonData, componentType);
-            var addMethod = typeof(World).GetMethod("AddComponent")?.MakeGenericMethod(componentType);
+            var component = global::System.Text.Json.JsonSerializer.Deserialize(componentSnapshot.JsonData, componentType, _jsonOptions);
 
-            if (addMethod != null)
+            if (component == null)
             {
-                addMethod.Invoke(world, new[] { entityId, component });
+                return;
             }
+
+            var pool = world.Components.GetPool(componentType);
+
+            if (pool == null)
+            {
+                pool = world.Components.GetOrCreatePool(componentType);
+            }
+
+            pool.AddComponentData(entityId, component);
         }
         catch
         {
-            // 跳过无法反序列化的组件
         }
     }
 

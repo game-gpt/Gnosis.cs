@@ -6,7 +6,7 @@ namespace Gnosis.Graphic.RHI.Vulkan;
 /// <summary>
 /// Vulkan 管线状态实现
 /// </summary>
-internal sealed class VulkanPipelineState : RHI.IPipelineState
+internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
 {
     #region IPipelineState 属性
 

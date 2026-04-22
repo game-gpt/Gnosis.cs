@@ -1,31 +1,33 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
-public sealed record ShaderModuleIr(
-    string Name,
-    IReadOnlyList<ShaderFunctionIr> Functions,
-    IReadOnlyList<ShaderStructIr> Structs,
-    IReadOnlyList<ShaderGlobalVariableIr> GlobalVariables,
-    IReadOnlyList<ShaderEntryPointIr> EntryPoints,
-    IReadOnlyList<ExternalFunctionRef> ExternalFunctions)
+/// <summary>
+/// Shader 模块 IR 定义（已迁移至 Gnosis.IR.Shader）
+/// </summary>
+public sealed class ShaderModuleIr
 {
-    public IReadOnlyList<ShaderResourceIr> Resources => GlobalVariables
-        .Where(v => v.Resource != null)
-        .Select(v => v.Resource!)
-        .ToList();
-}
+    #region Properties
 
-public sealed record ShaderGlobalVariableIr(
-    string Name,
-    ShaderIrType Type,
-    StorageClass Storage,
-    ShaderResourceIr? Resource = null,
-    string? Builtin = null,
-    uint? Location = null)
-{
-    public uint ResultId { get; set; }
-}
+    public string Name { get; set; } = string.Empty;
 
-public sealed record ShaderEntryPointIr(
-    string FunctionName,
-    ShaderExecutionModel ExecutionModel,
-    IReadOnlyList<string> InterfaceVariables);
+    public ShaderLanguage Language { get; set; }
+
+    public ShaderTarget Target { get; set; }
+
+    public List<ShaderStructIr> Structs { get; } = [];
+
+    public List<ShaderResourceIr> Resources { get; } = [];
+
+    public List<ShaderFunctionIr> Functions { get; } = [];
+
+    public List<ShaderEntryPointIr> EntryPoints { get; } = [];
+
+    public List<ShaderGlobalVariableIr> GlobalVariables { get; } = [];
+
+    public List<TensorInstruction> TensorInstructions { get; } = [];
+
+    public List<ExternalFunctionRef> ExternalFunctions { get; } = [];
+
+    #endregion
+}

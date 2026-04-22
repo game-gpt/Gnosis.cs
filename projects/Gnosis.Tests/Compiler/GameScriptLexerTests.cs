@@ -1,5 +1,5 @@
-using Gnosis.Compiler.Lexer;
-using Gnosis.Compiler.Lexer.Testing;
+using Gnosis.Testing.Compiler.Lexer;
+using Gnosis.Toolchain.ScriptCompiler.Lexer;
 using NUnit.Framework;
 
 namespace Gnosis.Tests.Compiler;

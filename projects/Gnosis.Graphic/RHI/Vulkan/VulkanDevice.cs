@@ -1322,7 +1322,7 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
             {
                 fixed (byte* pSrc = desc.InitialData)
                 {
-                    Buffer.MemoryCopy(pSrc, pData, desc.Size, desc.InitialData.Length);
+                    Buffer.MemoryCopy(pSrc, pData, (long)desc.Size, desc.InitialData.Length);
                 }
 
                 VulkanNative.vkUnmapMemory(LogicalDevice, memory);

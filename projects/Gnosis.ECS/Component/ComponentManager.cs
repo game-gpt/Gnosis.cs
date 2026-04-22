@@ -141,6 +141,22 @@ public sealed class ComponentManager
     }
 
     /// <summary>
+    /// 获取或创建指定类型的组件池（非泛型）
+    /// </summary>
+    public IComponentPool GetOrCreatePool(Type componentType)
+    {
+        if (!_pools.TryGetValue(componentType, out var pool))
+        {
+            var poolType = typeof(ComponentPool<>).MakeGenericType(componentType);
+            pool = (IComponentPool)Activator.CreateInstance(poolType)!;
+            _pools[componentType] = pool;
+            _typeIdRegistry.GetOrRegister(componentType);
+        }
+
+        return pool;
+    }
+
+    /// <summary>
     /// 实体销毁时清理其所有组件
     /// </summary>
     public void OnEntityDestroyed(EntityId entityId)

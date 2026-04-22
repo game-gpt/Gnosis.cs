@@ -1,11 +1,18 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
+/// <summary>
+/// Shader 编译目标枚举（已迁移至 Gnosis.IR.Shader）
+/// </summary>
 public enum ShaderTarget
 {
-    SPIRV = 0,
-    DXIL = 1,
-    MSL = 2,
-    WGSL = 3,
-    GLSL = 4,
-    HLSL = 5
+    Spirv,
+    Glsl,
+    Hlsl,
+    Msl,
+    Wgsl,
+    Dxil,
+    Neural,
+    Diffusion
 }

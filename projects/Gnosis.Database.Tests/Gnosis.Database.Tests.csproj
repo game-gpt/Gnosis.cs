@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <PackageId>Gnosis.Database.Tests</PackageId>
+        <RootNamespace>Gnosis.Database.Tests</RootNamespace>
+        <Description>Gnosis Database 测试用例</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0"/>
+        <PackageReference Include="NUnit" Version="4.0.0"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="4.0.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Database\Gnosis.Database.csproj"/>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj"/>
+    </ItemGroup>
+
+</Project>

@@ -392,7 +392,7 @@ let sampler: sampler;
 ### 导出
 
 ```rust
-# math.ggs
+# math.shader
 micro lerp(a: f32, b: f32, t: f32) -> f32 {
     return a + (b - a) * t;
 }
@@ -443,7 +443,7 @@ micro ps_main(uv: vec2<f32>) -> vec4<f32> {
 ### 单后端编译流程（传统光栅化）
 
 ```
-.ggs 源码
+.shader 源码
     ↓
 前端 (C#)
     ↓
@@ -463,7 +463,7 @@ SPIR-V 字节码
 gg-shader 编译器根据目标渲染后端选择不同的编译路径：
 
 ```
-.ggs 源码
+.shader 源码
     ↓
 前端 (C#) → AST → 元编程展开 → IR
     ↓
@@ -491,8 +491,8 @@ gg-shader 编译器根据目标渲染后端选择不同的编译路径：
 
 ```tsx
 material PBRMaterial {
-    vertex_shader: "shaders/pbr_vertex.ggs";
-    fragment_shader: "shaders/pbr_fragment.ggs";
+    vertex_shader: "shaders/pbr_vertex.shader";
+    fragment_shader: "shaders/pbr_fragment.shader";
     
     properties: {
         albedo: texture_2d;
@@ -520,7 +520,7 @@ entity.add(Transform { position: vec3(0, 0, 0) });
 神经渲染材质通过 `gg-shader` 定义推理接口，实际计算由引擎神经渲染后端执行：
 
 ```rust
-# nerf_shade.ggs
+# nerf_shade.shader
 struct NeRFInput {
     ray_pos: vec3<f32>,
     ray_dir: vec3<f32>,
@@ -543,7 +543,7 @@ micro evaluate_nerf_network(pos: vec3<f32>, dir: vec3<f32>) -> vec4<f32>;
 ```tsx
 # 材质定义
 material NeRFMaterial {
-    compute_shader: "shaders/nerf_shade.ggs";
+    compute_shader: "shaders/nerf_shade.shader";
     
     properties: {
         model: Handle<NeRFModel>;
@@ -557,7 +557,7 @@ material NeRFMaterial {
 扩散模型材质定义去噪步骤的接口，UNet 推理由引擎扩散模型后端接管：
 
 ```rust
-# diffusion_shade.ggs
+# diffusion_shade.shader
 [Compute]
 [WorkgroupSize(8, 8, 1)]
 micro diffusion_render([Builtin(global_invocation_id)] global_id: vec3<u32>) {
@@ -576,7 +576,7 @@ micro denoise_step(pixel: vec2<f32>, step: u32, prompt_hash: u32) -> vec4<f32>;
 ```tsx
 # 材质定义
 material DiffusionMaterial {
-    compute_shader: "shaders/diffusion_shade.ggs";
+    compute_shader: "shaders/diffusion_shade.shader";
     
     properties: {
         model: Handle<DiffusionModel>;
@@ -594,8 +594,8 @@ material DiffusionMaterial {
 ```tsx
 # 混合渲染材质定义
 material HybridMaterial {
-    primary_shader: "shaders/raster_pbr.ggs";
-    secondary_shader: "shaders/nerf_shade.ggs";
+    primary_shader: "shaders/raster_pbr.shader";
+    secondary_shader: "shaders/nerf_shade.shader";
     
     properties: {
         # 光栅化属性
@@ -641,7 +641,7 @@ micro ps_main(input: VertexOutput) -> vec4 {
 
 ### 热重载
 
-编辑器支持着色器热重载，修改 `.ggs` 文件后自动重新编译并应用。
+编辑器支持着色器热重载，修改 `.shader` 文件后自动重新编译并应用。
 
 ## 最佳实践
 

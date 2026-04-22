@@ -5,7 +5,7 @@ namespace Gnosis.Graphic.RHI.Vulkan;
 /// <summary>
 /// Vulkan 资源实现
 /// </summary>
-internal sealed class VulkanResource : RHI.IResource
+internal sealed unsafe class VulkanResource : RHI.IResource
 {
     private static ulong _nextId = 1;
 

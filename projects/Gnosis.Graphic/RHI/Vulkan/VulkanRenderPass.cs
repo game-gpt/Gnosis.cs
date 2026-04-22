@@ -3,7 +3,7 @@ namespace Gnosis.Graphic.RHI.Vulkan;
 /// <summary>
 /// Vulkan 渲染通道实现
 /// </summary>
-internal sealed class VulkanRenderPass : RHI.IRhiRenderPass
+internal sealed unsafe class VulkanRenderPass : RHI.IRhiRenderPass
 {
     /// <summary>
     /// Vulkan 渲染通道句柄

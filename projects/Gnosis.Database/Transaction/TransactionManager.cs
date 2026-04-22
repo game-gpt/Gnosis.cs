@@ -11,6 +11,7 @@ public sealed class TransactionManager
     private readonly BTreeIndex _btree;
     private readonly IWriteAheadLog _wal;
     private readonly List<DatabaseTransaction> _activeTransactions;
+    private readonly TransactionLockManager _lockManager;
     private readonly object _lock = new();
     private SequenceNumber _currentSequence;
 
@@ -23,6 +24,7 @@ public sealed class TransactionManager
         _btree = btree;
         _wal = wal;
         _activeTransactions = [];
+        _lockManager = new TransactionLockManager();
         _currentSequence = SequenceNumber.Zero;
     }
 
@@ -78,18 +80,26 @@ public sealed class TransactionManager
             _activeTransactions.Remove(transaction);
         }
 
-        var commitEntry = new WalEntry(
-            _currentSequence,
-            transaction.Id,
-            WalEntryType.Commit,
-            DatabaseKey.Empty,
-            DatabaseValue.Empty,
-            0);
+        _lockManager.AcquireWriteLock();
+        try
+        {
+            var commitEntry = new WalEntry(
+                _currentSequence,
+                transaction.Id,
+                WalEntryType.Commit,
+                DatabaseKey.Empty,
+                DatabaseValue.Empty,
+                0);
 
-        await _wal.AppendAsync(commitEntry, cancellationToken).ConfigureAwait(false);
-        _currentSequence = _currentSequence.Next;
+            await _wal.AppendAsync(commitEntry, cancellationToken).ConfigureAwait(false);
+            _currentSequence = _currentSequence.Next;
 
-        await ApplyPendingWritesAsync(transaction, cancellationToken).ConfigureAwait(false);
+            await ApplyPendingWritesAsync(transaction, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _lockManager.ReleaseWriteLock();
+        }
     }
 
     internal void Rollback(DatabaseTransaction transaction)
@@ -120,8 +130,16 @@ public sealed class TransactionManager
             return null;
         }
 
-        var result = await _btree.SearchAsync(key, cancellationToken).ConfigureAwait(false);
-        return result;
+        _lockManager.AcquireReadLock(transaction.Id);
+        try
+        {
+            var result = await _btree.SearchAsync(key, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+        finally
+        {
+            _lockManager.ReleaseReadLock(transaction.Id);
+        }
     }
 
     internal ValueTask PutAsync(DatabaseTransaction transaction, DatabaseKey key, DatabaseValue value, CancellationToken cancellationToken = default)

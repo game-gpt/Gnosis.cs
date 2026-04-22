@@ -21,6 +21,7 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj"/>
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj"/>
         <ProjectReference Include="..\Gnosis.Toolchain\Gnosis.Toolchain.csproj"/>
+        <ProjectReference Include="..\Gnosis.Asset\Gnosis.Asset.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -35,9 +35,9 @@ public sealed class SoftwareDevice : IDevice
     {
         var resourceType = desc.Dimension switch
         {
-            TextureDimension.Dim1D => ResourceType.Texture1D,
-            TextureDimension.Dim2D => ResourceType.Texture2D,
-            TextureDimension.Dim3D => ResourceType.Texture3D,
+            TextureDimension.Texture1D => ResourceType.Texture1D,
+            TextureDimension.Texture2D => ResourceType.Texture2D,
+            TextureDimension.Texture3D => ResourceType.Texture3D,
             _ => ResourceType.Texture2D
         };
 

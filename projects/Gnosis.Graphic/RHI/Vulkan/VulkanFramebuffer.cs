@@ -3,7 +3,7 @@ namespace Gnosis.Graphic.RHI.Vulkan;
 /// <summary>
 /// Vulkan 帧缓冲实现
 /// </summary>
-internal sealed class VulkanFramebuffer : RHI.IRhiFramebuffer
+internal sealed unsafe class VulkanFramebuffer : RHI.IRhiFramebuffer
 {
     /// <summary>
     /// Vulkan 帧缓冲句柄

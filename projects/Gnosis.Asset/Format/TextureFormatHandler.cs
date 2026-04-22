@@ -3,7 +3,9 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;
+using Gnosis.Asset.Format.AstcCompression;
 using Gnosis.Asset.Format.BcCompression;
+using Gnosis.Asset.Format.EtcCompression;
 using Gnosis.Asset.Format.TextureParsers;
 
 namespace Gnosis.Asset.Format;
@@ -321,6 +323,12 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
                 TextureCompressionFormat.BC4 => BcCompressor.CompressBc4(texture.RawData, texture.Width, texture.Height),
                 TextureCompressionFormat.BC5 => BcCompressor.CompressBc5(texture.RawData, texture.Width, texture.Height),
                 TextureCompressionFormat.BC7 => BcCompressor.CompressBc7(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ASTC_4x4 => AstcCompressor.Compress4x4(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ASTC_6x6 => AstcCompressor.Compress6x6(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ASTC_8x8 => AstcCompressor.Compress8x8(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ETC2 => HasAlphaChannel(texture.RawData)
+                    ? EtcCompressor.CompressEtc2Rgba(texture.RawData, texture.Width, texture.Height)
+                    : EtcCompressor.CompressEtc2Rgb(texture.RawData, texture.Width, texture.Height),
                 _ => throw new NotSupportedException($"不支持的压缩格式：{format}")
             };
 
@@ -348,6 +356,12 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
             TextureCompressionFormat.BC4 => TextureFormat.BC4_UNorm,
             TextureCompressionFormat.BC5 => TextureFormat.BC5_UNorm,
             TextureCompressionFormat.BC7 => TextureFormat.BC7_UNorm,
+            TextureCompressionFormat.ASTC_4x4 => TextureFormat.ASTC_4x4,
+            TextureCompressionFormat.ASTC_6x6 => TextureFormat.ASTC_6x6,
+            TextureCompressionFormat.ASTC_8x8 => TextureFormat.ASTC_8x8,
+            TextureCompressionFormat.ETC2 => HasAlphaChannel(rgbaData)
+                ? TextureFormat.ETC2_RGBA
+                : TextureFormat.ETC2_RGB,
             _ => TextureFormat.Unknown
         };
     }

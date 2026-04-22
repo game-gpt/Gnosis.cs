@@ -186,6 +186,36 @@ public class ComponentPool<T> : IComponentPool where T : struct
         _count--;
     }
 
+    /// <summary>
+    /// 获取指定实体的组件数据（非泛型，返回 object）
+    /// </summary>
+    public object? GetComponentData(EntityId entityId)
+    {
+        var index = (int)entityId.Index;
+
+        if (index >= _sparse.Length || _sparse[index] == -1)
+        {
+            return null;
+        }
+
+        return _dense[_sparse[index]];
+    }
+
+    /// <summary>
+    /// 为指定实体添加组件数据（非泛型）
+    /// </summary>
+    public void AddComponentData(EntityId entityId, object component)
+    {
+        if (component is T typedComponent)
+        {
+            Add(entityId, typedComponent);
+        }
+        else
+        {
+            throw new InvalidOperationException($"组件类型不匹配：期望 {typeof(T).Name}");
+        }
+    }
+
     private void GrowSparse(int newCapacity)
     {
         var newSparse = new int[newCapacity];

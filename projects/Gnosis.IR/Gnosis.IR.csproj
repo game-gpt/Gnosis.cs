@@ -18,9 +18,4 @@
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Compile Remove="Analysis\**" />
-        <Compile Remove="Transform\**" />
-    </ItemGroup>
 </Project>

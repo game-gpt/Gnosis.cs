@@ -1,12 +1,16 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
+/// <summary>
+/// Shader 语言枚举（已迁移至 Gnosis.IR.Shader）
+/// </summary>
 public enum ShaderLanguage
 {
-    Unknown = 0,
-    GLSL = 1,
-    HLSL = 2,
-    SPIRV = 3,
-    MSL = 4,
-    WGSL = 5,
-    GGShader = 6
+    GgShader,
+    Glsl,
+    Hlsl,
+    Spirv,
+    Msl,
+    Wgsl
 }

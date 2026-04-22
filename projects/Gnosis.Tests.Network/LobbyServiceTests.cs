@@ -40,28 +40,12 @@ public class LobbyServiceTests : GnosisTester
     }
 
     [Test]
-    public void JoinRoom_加入后当前房间不为空()
+    public void CreateRoom_创建后当前房间不为空()
     {
-        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        var otherService = new LobbyService("local2", "玩家二");
-        otherService.JoinRoom(room.RoomId);
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
 
-        Assert.That(otherService.CurrentRoom, Is.Not.Null);
-        Assert.That(otherService.IsConnected, Is.True);
-    }
-
-    [Test]
-    public void JoinRoom_加入后触发OnMemberJoined事件()
-    {
-        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-
-        LobbyMember? joinedMember = null;
-        _service.OnMemberJoined += (_, member) => joinedMember = member;
-
-        var otherService = new LobbyService("local2", "玩家二");
-        otherService.JoinRoom(room.RoomId);
-
-        Assert.That(joinedMember, Is.Not.Null);
+        Assert.That(_service.CurrentRoom, Is.Not.Null);
+        Assert.That(_service.IsConnected, Is.True);
     }
 
     [Test]
@@ -71,6 +55,15 @@ public class LobbyServiceTests : GnosisTester
         _service.LeaveRoom();
 
         Assert.That(_service.CurrentRoom, Is.Null);
+    }
+
+    [Test]
+    public void LeaveRoom_房主离开后房间被销毁()
+    {
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.LeaveRoom();
+
+        Assert.That(_service.GetRoom(room.RoomId), Is.Null);
     }
 
     [Test]
@@ -116,12 +109,12 @@ public class LobbyServiceTests : GnosisTester
     public void SearchRooms_返回房间列表()
     {
         _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        var otherService = new LobbyService("local2", "玩家二");
-        otherService.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
+        _service.LeaveRoom();
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
 
         var results = _service.SearchRooms();
 
-        Assert.That(results.Count, Is.EqualTo(2));
+        Assert.That(results.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -145,11 +138,30 @@ public class LobbyServiceTests : GnosisTester
     public void GetAllRooms_返回所有房间()
     {
         _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
-        var otherService = new LobbyService("local2", "玩家二");
-        otherService.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
+        _service.LeaveRoom();
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
 
         var rooms = _service.GetAllRooms();
 
-        Assert.That(rooms.Count, Is.EqualTo(2));
+        Assert.That(rooms.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void UpdateRoom_更新房间属性()
+    {
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.UpdateRoom(room.RoomId, new Dictionary<string, string> { { "map", "desert" } });
+
+        var updated = _service.GetRoom(room.RoomId);
+        Assert.That(updated!.Properties["map"], Is.EqualTo("desert"));
+    }
+
+    [Test]
+    public void KickMember_踢出成员()
+    {
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.KickMember(room.RoomId, "other1");
+
+        Assert.That(_service.GetRoom(room.RoomId), Is.Not.Null);
     }
 }

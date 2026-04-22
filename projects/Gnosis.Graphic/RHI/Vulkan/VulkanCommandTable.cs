@@ -3,7 +3,7 @@ namespace Gnosis.Graphic.RHI.Vulkan;
 /// <summary>
 /// Vulkan 命令表实现，封装命令缓冲区录制
 /// </summary>
-internal sealed class VulkanCommandTable : RHI.ICommandTable
+internal sealed unsafe class VulkanCommandTable : RHI.ICommandTable
 {
     /// <summary>
     /// Vulkan 命令缓冲区句柄

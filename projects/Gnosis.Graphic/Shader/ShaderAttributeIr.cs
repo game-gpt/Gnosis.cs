@@ -1,30 +1,17 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
-public sealed record ShaderAttributeIr(
-    string Name,
-    IReadOnlyList<KeyValuePair<string, string>> Arguments)
+/// <summary>
+/// Shader 特性 IR 定义（已迁移至 Gnosis.IR.Shader）
+/// </summary>
+public sealed class ShaderAttributeIr
 {
-    public bool HasArgument(string key)
-    {
-        foreach (var arg in Arguments)
-        {
-            if (arg.Key == key)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+    #region Properties
 
-    public string? GetArgument(string key)
-    {
-        foreach (var arg in Arguments)
-        {
-            if (arg.Key == key)
-            {
-                return arg.Value;
-            }
-        }
-        return null;
-    }
+    public string Name { get; set; } = string.Empty;
+
+    public List<object> Arguments { get; } = [];
+
+    #endregion
 }

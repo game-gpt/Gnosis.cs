@@ -370,7 +370,7 @@ public ref struct BitStream
     {
         var low = ReadBits(32);
         var high = ReadBits(32);
-        return (high << 32) | low;
+        return ((ulong)high << 32) | low;
     }
 
     /// <summary>

@@ -66,6 +66,8 @@ public sealed class BTreeIndex : IBTree
     private (bool Split, DatabaseKey MiddleKey, BTreeNode RightNode) InsertRecursive(
         BTreeNode node, DatabaseKey key, DatabaseValue value)
     {
+        node.DecompressInternalKeys();
+
         if (node.IsLeaf)
         {
             var index = node.FindKeyIndex(key);
@@ -108,6 +110,7 @@ public sealed class BTreeIndex : IBTree
 
         if (!node.IsFull)
         {
+            node.CompressInternalKeys();
             return (false, default, null!);
         }
 
@@ -121,6 +124,8 @@ public sealed class BTreeIndex : IBTree
         var node = _root;
         while (node is not null)
         {
+            node.DecompressInternalKeys();
+
             var index = node.FindKeyIndex(key);
 
             if (node.IsLeaf)
@@ -166,6 +171,8 @@ public sealed class BTreeIndex : IBTree
 
     private bool DeleteRecursive(BTreeNode node, DatabaseKey key)
     {
+        node.DecompressInternalKeys();
+
         if (node.IsLeaf)
         {
             var index = node.FindKeyIndex(key);
@@ -278,6 +285,7 @@ public sealed class BTreeIndex : IBTree
         var node = _root;
         while (node is not null && !node.IsLeaf)
         {
+            node.DecompressInternalKeys();
             node = node.ChildrenNodes[FindChildIndex(node, key)];
         }
 

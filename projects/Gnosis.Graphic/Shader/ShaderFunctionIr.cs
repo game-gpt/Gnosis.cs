@@ -1,36 +1,27 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
-public enum ShaderExecutionModel
+/// <summary>
+/// Shader 函数 IR 定义（已迁移至 Gnosis.IR.Shader）
+/// </summary>
+public sealed class ShaderFunctionIr
 {
-    Vertex,
-    Fragment,
-    GLCompute,
-    RayGenerationKHR,
-    ClosestHitKHR,
-    MissKHR,
-    AnyHitKHR,
-    IntersectionKHR
-}
+    #region Properties
 
-public sealed record ShaderFunctionIr(
-    string Name,
-    ShaderExecutionModel? ExecutionModel,
-    IReadOnlyList<ShaderIrParameter> Parameters,
-    ShaderIrType ReturnType,
-    IReadOnlyList<ShaderIrInstruction> Instructions,
-    IReadOnlyList<LocalVariableInstruction> LocalVariables,
-    IReadOnlyList<ShaderAttributeIr> Attributes,
-    bool IsEntryPoint)
-{
-    public uint ResultId { get; set; }
-}
+    public string Name { get; set; } = string.Empty;
 
-public sealed record ShaderIrParameter(
-    string Name,
-    ShaderIrType Type,
-    StorageClass Storage = StorageClass.Function,
-    uint? Location = null,
-    string? Builtin = null)
-{
-    public uint ResultId { get; set; }
+    public ShaderIrType ReturnType { get; set; }
+
+    public List<ShaderIrParameter> Parameters { get; } = [];
+
+    public List<ShaderIrInstruction> Instructions { get; } = [];
+
+    public bool IsEntryPoint { get; set; }
+
+    public ShaderExecutionModel? EntryPointModel { get; set; }
+
+    public List<ShaderAttributeIr> Attributes { get; } = [];
+
+    #endregion
 }

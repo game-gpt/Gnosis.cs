@@ -1,7 +1,8 @@
-using Gnosis.Compiler.AST;
-using Gnosis.Compiler.Diagnostics;
 using Gnosis.Rendering.Backends;
 using Gnosis.Rendering.Backends.ShaderIR;
+using Gnosis.Toolchain.ScriptCompiler.AST;
+using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Gnosis.Toolchain.ScriptCompiler.Backend;
 using NUnit.Framework;
 
 namespace Gnosis.Compiler;

@@ -51,4 +51,14 @@ public interface IComponentPool
     /// 获取所有拥有此组件的实体 ID
     /// </summary>
     IReadOnlyList<EntityId> GetAllEntityIds();
+
+    /// <summary>
+    /// 获取指定实体的组件数据（非泛型，返回 object）
+    /// </summary>
+    object? GetComponentData(EntityId entityId);
+
+    /// <summary>
+    /// 为指定实体添加组件数据（非泛型）
+    /// </summary>
+    void AddComponentData(EntityId entityId, object component);
 }
