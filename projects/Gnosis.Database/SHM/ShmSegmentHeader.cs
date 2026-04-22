@@ -1,5 +1,4 @@
-using Gnosis.Core;
-using Gnosis.Infrastructure;
+using Gnosis.Database.Core;
 
 namespace Gnosis.Database.SHM;
 
