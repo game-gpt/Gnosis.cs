@@ -17,5 +17,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\Gnosis.Security\Gnosis.Security.csproj" />
     </ItemGroup>
 </Project>
