@@ -1,4 +1,7 @@
-namespace Gnosis.Animation;
+using Gnosis.Animation.IK;
+using Gnosis.Animation.State;
+
+namespace Gnosis.Animation.Clip;
 
 public class StubAnimator : IAnimator
 {

@@ -1,6 +1,4 @@
-using Gnosis.Assets.Formats;
-
-namespace Gnosis.Animation;
+namespace Gnosis.Animation.Event;
 
 public interface IAnimationEventReceiver
 {
