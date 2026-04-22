@@ -9,7 +9,6 @@ public sealed class CustomChecker : IIntegrityChecker
     private readonly Func<bool> _checkFunc;
     private readonly double _intervalSeconds;
     private Timestamp _lastCheckTime;
-    private Timestamp _lastExecuteTime;
 
     #endregion
 
@@ -29,7 +28,6 @@ public sealed class CustomChecker : IIntegrityChecker
         _checkFunc = checkFunc;
         _intervalSeconds = intervalSeconds;
         _lastCheckTime = default;
-        _lastExecuteTime = default;
     }
 
     #endregion

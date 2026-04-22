@@ -16,6 +16,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Remove="ShaderCompiler\ShaderCompiler.cs" />
         <Compile Remove="ShaderCompiler\ShaderGenerator\**" />
         <Compile Remove="ScriptCompiler\AST\TypeExpressionStatement.cs" />
         <Compile Remove="ScriptCompiler\AST\TypeCallExpression.cs" />
@@ -28,6 +29,5 @@
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
-        <ProjectReference Include="..\Gnosis.Graphic\Gnosis.Graphic.csproj" />
     </ItemGroup>
 </Project>

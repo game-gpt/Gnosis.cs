@@ -30,6 +30,11 @@ public interface IWorld
     T GetComponent<T>(EntityId entityId) where T : struct;
 
     /// <summary>
+    /// 设置指定实体的组件值，并自动标记变更
+    /// </summary>
+    void SetComponent<T>(EntityId entityId, T component) where T : struct;
+
+    /// <summary>
     /// 移除指定实体的组件
     /// </summary>
     void RemoveComponent<T>(EntityId entityId) where T : struct;
@@ -43,6 +48,11 @@ public interface IWorld
     /// 创建查询构建器
     /// </summary>
     IQuery CreateQuery();
+
+    /// <summary>
+    /// 基于查询描述符创建查询构建器
+    /// </summary>
+    IQuery CreateQuery(QueryDescription description);
 
     /// <summary>
     /// 获取匹配指定组件组合的 Archetype

@@ -130,15 +130,59 @@ public sealed class EntityQuery : IQuery
     /// </summary>
     public IQuery Changed<T>() where T : struct
     {
-        var type = typeof(T);
+        Changed(typeof(T));
+        return this;
+    }
 
+    #endregion
+
+    #region 链式查询方法（非泛型）
+
+    /// <summary>
+    /// 查询必须包含所有指定组件类型的实体（非泛型）
+    /// </summary>
+    public EntityQuery All(Type type)
+    {
+        _allTypes.Add(type);
+        InvalidateCache();
+
+        return this;
+    }
+
+    /// <summary>
+    /// 查询包含任意指定组件类型的实体（非泛型）
+    /// </summary>
+    public EntityQuery Any(Type type)
+    {
+        _anyTypes.Add(type);
+        InvalidateCache();
+
+        return this;
+    }
+
+    /// <summary>
+    /// 排除包含指定组件类型的实体（非泛型）
+    /// </summary>
+    public EntityQuery None(Type type)
+    {
+        _noneTypes.Add(type);
+        InvalidateCache();
+
+        return this;
+    }
+
+    /// <summary>
+    /// 只返回自上次查询以来指定组件发生变更的实体（非泛型）
+    /// </summary>
+    public EntityQuery Changed(Type type)
+    {
         if (!_changedTypes.Contains(type))
         {
             _changedTypes.Add(type);
 
             if (_versionTracker != null)
             {
-                _changedSinceVersions[type] = _versionTracker.GetVersion<T>(EntityId.Null);
+                _changedSinceVersions[type] = _versionTracker.GlobalVersion;
             }
         }
 

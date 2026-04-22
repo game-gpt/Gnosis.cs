@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Gnosis.Asset.Format.MeshOptimization;
+using Gnosis.Asset.Format.MeshParsers;
 
 namespace Gnosis.Asset.Format;
 
@@ -14,13 +15,26 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
     #region 公开方法
 
     /// <summary>
-    /// 从指定路径加载网格数据
+    /// 从指定路径加载网格数据，支持引擎格式、OBJ、glTF 和 GLB
     /// </summary>
     public async Task<MeshData> LoadMeshAsync(string path, CancellationToken cancellationToken = default)
     {
-        var data = await ReadAsync(path, cancellationToken);
-        return JsonSerializer.Deserialize<MeshData>(data)
-            ?? throw new InvalidOperationException($"反序列化网格失败：{path}");
+        if (!FileIO.Exists(path))
+        {
+            throw new FileNotFoundException($"未找到网格文件：{path}");
+        }
+
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+
+        return extension switch
+        {
+            ".gnosis-mesh" or ".mesh" or ".scirptmesh" => await LoadEngineFormatAsync(path, cancellationToken),
+            ".obj" => await LoadObjAsync(path, cancellationToken),
+            ".gltf" => await LoadGltfAsync(path, cancellationToken),
+            ".glb" => await LoadGlbAsync(path, cancellationToken),
+            ".fbx" => throw new NotSupportedException("FBX 格式需要 Autodesk FBX SDK 支持，建议转换为 glTF"),
+            _ => throw new NotSupportedException($"不支持的网格格式：{extension}")
+        };
     }
 
     /// <summary>
@@ -28,11 +42,18 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
     /// </summary>
     public async Task SaveMeshAsync(string path, MeshData mesh, CancellationToken cancellationToken = default)
     {
-        var data = JsonSerializer.SerializeToUtf8Bytes(mesh, new JsonSerializerOptions
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+
+        switch (extension)
         {
-            WriteIndented = true
-        });
-        await WriteAsync(path, data, null, cancellationToken);
+            case ".gnosis-mesh":
+            case ".mesh":
+            case ".scirptmesh":
+                await SaveEngineFormatAsync(path, mesh, cancellationToken);
+                break;
+            default:
+                throw new NotSupportedException($"不支持的导出格式：{extension}");
+        }
     }
 
     /// <summary>
@@ -86,20 +107,46 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
     /// <summary>
     /// 验证网格数据完整性
     /// </summary>
-    public override Task<bool> ValidateAsync(string path, CancellationToken cancellationToken = default)
+    public override async Task<bool> ValidateAsync(string path, CancellationToken cancellationToken = default)
     {
+        if (!FileIO.Exists(path))
+        {
+            return false;
+        }
+
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+
+        if (extension == ".obj")
+        {
+            return await ValidateObjAsync(path, cancellationToken);
+        }
+
+        if (extension == ".gltf")
+        {
+            return await ValidateGltfAsync(path, cancellationToken);
+        }
+
+        if (extension == ".glb")
+        {
+            return await ValidateGlbAsync(path, cancellationToken);
+        }
+
         try
         {
-            var mesh = LoadMeshAsync(path, cancellationToken).GetAwaiter().GetResult();
-            return Task.FromResult(ValidateMeshData(mesh));
+            var mesh = await LoadMeshAsync(path, cancellationToken);
+            return ValidateMeshData(mesh);
         }
         catch (JsonException)
         {
-            return Task.FromResult(false);
+            return false;
         }
         catch (FileNotFoundException)
         {
-            return Task.FromResult(false);
+            return false;
+        }
+        catch (InvalidDataException)
+        {
+            return false;
         }
     }
 
@@ -110,6 +157,181 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
         return new List<string> { ".gnosis-mesh", ".mesh", ".obj", ".fbx", ".gltf", ".glb", ".scirptmesh" };
+    }
+
+    #endregion
+
+    #region 引擎格式加载/保存
+
+    private async Task<MeshData> LoadEngineFormatAsync(string path, CancellationToken cancellationToken)
+    {
+        var data = await ReadAsync(path, cancellationToken);
+        return JsonSerializer.Deserialize<MeshData>(data)
+            ?? throw new InvalidOperationException($"反序列化网格失败：{path}");
+    }
+
+    private async Task SaveEngineFormatAsync(string path, MeshData mesh, CancellationToken cancellationToken)
+    {
+        var data = JsonSerializer.SerializeToUtf8Bytes(mesh, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        await WriteAsync(path, data, null, cancellationToken);
+    }
+
+    #endregion
+
+    #region OBJ 格式加载
+
+    private async Task<MeshData> LoadObjAsync(string path, CancellationToken cancellationToken)
+    {
+        var data = await ReadAsync(path, cancellationToken);
+        var content = System.Text.Encoding.UTF8.GetString(data);
+        var fileName = Path.GetFileNameWithoutExtension(path);
+
+        var parser = new ObjParser();
+        var result = parser.Parse(content.AsSpan(), fileName);
+
+        return new MeshData
+        {
+            Name = fileName,
+            Vertices = result.Vertices,
+            Indices = result.Indices,
+            SubMeshes = result.SubMeshes,
+            Bounds = result.Bounds
+        };
+    }
+
+    private async Task<bool> ValidateObjAsync(string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var data = await ReadAsync(path, cancellationToken);
+            var content = System.Text.Encoding.UTF8.GetString(data);
+
+            var hasVertex = false;
+            var hasFace = false;
+
+            using var reader = new StringReader(content);
+            string? line;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                var trimmed = line.TrimStart();
+
+                if (trimmed.StartsWith("v "))
+                {
+                    hasVertex = true;
+                }
+                else if (trimmed.StartsWith("f "))
+                {
+                    hasFace = true;
+                }
+
+                if (hasVertex && hasFace)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
+    #endregion
+
+    #region glTF/GLB 格式加载
+
+    private async Task<MeshData> LoadGltfAsync(string path, CancellationToken cancellationToken)
+    {
+        var data = await ReadAsync(path, cancellationToken);
+        var basePath = Path.GetDirectoryName(path);
+        var fileName = Path.GetFileNameWithoutExtension(path);
+
+        var parser = new GltfParser();
+        var result = parser.ParseGltf(data, basePath);
+
+        return new MeshData
+        {
+            Name = fileName,
+            Vertices = result.Vertices,
+            Indices = result.Indices,
+            SubMeshes = result.SubMeshes,
+            Bounds = result.Bounds
+        };
+    }
+
+    private async Task<MeshData> LoadGlbAsync(string path, CancellationToken cancellationToken)
+    {
+        var data = await ReadAsync(path, cancellationToken);
+        var fileName = Path.GetFileNameWithoutExtension(path);
+
+        var parser = new GltfParser();
+        var result = parser.ParseGlb(data, basePath: null);
+
+        return new MeshData
+        {
+            Name = fileName,
+            Vertices = result.Vertices,
+            Indices = result.Indices,
+            SubMeshes = result.SubMeshes,
+            Bounds = result.Bounds
+        };
+    }
+
+    private async Task<bool> ValidateGltfAsync(string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var data = await ReadAsync(path, cancellationToken);
+            var json = System.Text.Encoding.UTF8.GetString(data);
+
+            if (!json.Contains("\"meshes\"") && !json.Contains("\"accessors\""))
+            {
+                return false;
+            }
+
+            var mesh = await LoadGltfAsync(path, cancellationToken);
+            return ValidateMeshData(mesh);
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> ValidateGlbAsync(string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var data = await ReadAsync(path, cancellationToken);
+
+            if (data.Length < 4)
+            {
+                return false;
+            }
+
+            var magic = BitConverter.ToUInt32(data, 0);
+            if (magic != 0x46546C67)
+            {
+                return false;
+            }
+
+            var mesh = await LoadGlbAsync(path, cancellationToken);
+            return ValidateMeshData(mesh);
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
     }
 
     #endregion

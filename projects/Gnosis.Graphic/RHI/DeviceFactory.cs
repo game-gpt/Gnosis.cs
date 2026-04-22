@@ -1,7 +1,7 @@
-using Gnosis.Rendering.Backends.Software;
-using Gnosis.Rendering.Backends.Vulkan;
+using Gnosis.Graphic.RHI.Software;
+using Gnosis.Graphic.RHI.Vulkan;
 
-namespace Gnosis.Rendering.RHI;
+namespace Gnosis.Graphic.RHI;
 
 /// <summary>
 /// 图形设备工厂，根据后端类型创建对应的 IDevice 实例

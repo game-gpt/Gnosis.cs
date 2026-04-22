@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using Gnosis.Rendering.Shader;
+using Gnosis.Graphic.Shader;
 
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 /// <summary>
 /// Vulkan 管线状态实现

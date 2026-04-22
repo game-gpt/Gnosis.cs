@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Gnosis.Core.Hash;
 using Gnosis.Security.AntiCheat;
 
 namespace Gnosis.Security.Encryption;
@@ -74,8 +75,8 @@ public sealed class SaveProtector
     {
         var raw = $"{Environment.MachineName}|{Environment.UserName}|{Environment.OSVersion}|{Environment.ProcessorCount}";
         var bytes = Encoding.UTF8.GetBytes(raw);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        var hash = Sha256.Compute(bytes);
+        return Sha256.ComputeHex(bytes).ToLowerInvariant();
     }
 
     private static byte[] DeriveKey(string hardwareId)
@@ -84,7 +85,7 @@ public sealed class SaveProtector
         var combined = new byte[Salt.Length + hardwareIdBytes.Length];
         Buffer.BlockCopy(Salt, 0, combined, 0, Salt.Length);
         Buffer.BlockCopy(hardwareIdBytes, 0, combined, Salt.Length, hardwareIdBytes.Length);
-        return SHA256.HashData(combined);
+        return Sha256.Compute(combined);
     }
 
     private static void ValidateInput(byte[] data, string hardwareId)

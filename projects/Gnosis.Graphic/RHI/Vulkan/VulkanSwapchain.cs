@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 #region Surface 辅助结构
 

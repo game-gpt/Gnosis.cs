@@ -1,4 +1,6 @@
-namespace Gnosis.Rendering.Backends.Metal;
+using Gnosis.Graphic.RHI;
+
+namespace Gnosis.Graphic.RHI.Metal;
 
 /// <summary>
 /// Metal 图形设备，基于 Apple Metal API 实现

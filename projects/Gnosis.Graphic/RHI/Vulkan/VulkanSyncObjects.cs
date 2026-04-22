@@ -1,4 +1,4 @@
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 /// <summary>
 /// Vulkan 栅栏实现

@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+using Gnosis.Core.Hash;
 using Gnosis.Security.AntiCheat;
 
 namespace Gnosis.Security.Integrity;
@@ -22,7 +22,7 @@ public sealed class MemoryIntegrityChecker
     public void Register(string regionId, Func<byte[]> bytesProvider)
     {
         var currentBytes = bytesProvider();
-        var hash = SHA256.HashData(currentBytes);
+        var hash = Sha256.Compute(currentBytes);
         _regions[regionId] = new MemoryRegion(bytesProvider, hash);
     }
 
@@ -34,7 +34,7 @@ public sealed class MemoryIntegrityChecker
         }
 
         var currentBytes = region.BytesProvider();
-        var currentHash = SHA256.HashData(currentBytes);
+        var currentHash = Sha256.Compute(currentBytes);
 
         return currentHash.AsSpan().SequenceEqual(region.OriginalHash);
     }

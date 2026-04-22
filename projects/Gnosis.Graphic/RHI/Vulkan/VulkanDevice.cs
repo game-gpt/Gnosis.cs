@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using Gnosis.Rendering.Shader;
+using Gnosis.Graphic.Shader;
 
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 #region 缺失的 Vulkan 类型
 

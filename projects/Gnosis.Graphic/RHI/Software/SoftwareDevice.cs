@@ -1,6 +1,6 @@
-using Gnosis.Rendering.RHI;
+using Gnosis.Graphic.RHI;
 
-namespace Gnosis.Rendering.Backends.Software;
+namespace Gnosis.Graphic.RHI.Software;
 
 /// <summary>
 /// 软件渲染设备，实现 IDevice 接口的 CPU 端渲染

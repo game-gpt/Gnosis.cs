@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+using Gnosis.Core.Hash;
 using Gnosis.Security.AntiCheat;
 
 namespace Gnosis.Security.Integrity;
@@ -27,7 +27,7 @@ public sealed class FileIntegrityChecker
         }
 
         var bytes = File.ReadAllBytes(filePath);
-        var hash = SHA256.HashData(bytes);
+        var hash = Sha256.Compute(bytes);
         _fileHashes[filePath] = hash;
     }
 
@@ -41,7 +41,7 @@ public sealed class FileIntegrityChecker
         if (!File.Exists(filePath)) return false;
 
         var bytes = File.ReadAllBytes(filePath);
-        var currentHash = SHA256.HashData(bytes);
+        var currentHash = Sha256.Compute(bytes);
 
         return currentHash.AsSpan().SequenceEqual(originalHash);
     }

@@ -1,4 +1,6 @@
-namespace Gnosis.Rendering.Backends.D3D12;
+using Gnosis.Graphic.RHI;
+
+namespace Gnosis.Graphic.RHI.D3D12;
 
 /// <summary>
 /// Direct3D 12 图形设备，基于 Microsoft D3D12 API 实现

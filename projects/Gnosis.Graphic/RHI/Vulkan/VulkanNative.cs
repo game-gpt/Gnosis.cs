@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 /// <summary>
 /// Vulkan 原生 API 绑定

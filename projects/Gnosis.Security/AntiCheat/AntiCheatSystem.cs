@@ -75,6 +75,11 @@ public sealed class AntiCheatSystem : IAntiCheatSystem
     /// <exception cref="SecurityException">当指定名称的检查器不存在时抛出</exception>
     public bool PerformCheck(string checkerName)
     {
+        if (!_isInitialized)
+        {
+            throw new SecurityException("反作弊系统未初始化");
+        }
+
         if (!_checkers.TryGetValue(checkerName, out var checker))
         {
             throw new SecurityException($"检查器 '{checkerName}' 不存在");

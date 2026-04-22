@@ -1,4 +1,4 @@
-namespace Gnosis.Rendering.Backends.Vulkan;
+namespace Gnosis.Graphic.RHI.Vulkan;
 
 #region 核心枚举
 
