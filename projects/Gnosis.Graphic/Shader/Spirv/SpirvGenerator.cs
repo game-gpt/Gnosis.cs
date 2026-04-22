@@ -1,7 +1,15 @@
+using Acorn.Spirv.Data;
 using Gnosis.IR.Shader;
 
 namespace Gnosis.Graphic.Shader.Spirv;
 
+/// <summary>
+///     SPIR-V 生成器，将着色器 IR 编译为 SPIR-V 二进制数据。
+/// </summary>
+/// <remarks>
+///     本生成器使用 Acorn.Spirv 的 <see cref="SpirvConstants" /> 和 <see cref="SpirvOpCode" /> 常量，
+///     遵循架构规则：二进制编解码常量由 Acorn 独占。
+/// </remarks>
 public sealed class SpirvGenerator
 {
     #region Fields
@@ -126,7 +134,7 @@ public sealed class SpirvGenerator
             _variableIds[param.ResultId] = paramId;
         }
 
-        var labelId = _builder.AddLabel();
+        _builder.AddLabel();
 
         foreach (var local in function.LocalVariables)
         {
@@ -173,7 +181,7 @@ public sealed class SpirvGenerator
             }
             else if (entry.ExecutionModel == ShaderExecutionModel.GLCompute)
             {
-                _builder.AddExecutionMode(funcId, SpirvConstants.ExecutionMode.LocalSize, 1, 1, 1);
+                _builder.AddExecutionMode(funcId, SpirvConstants.ExecutionMode.LocalSize, [1, 1, 1]);
             }
         }
     }
@@ -228,7 +236,7 @@ public sealed class SpirvGenerator
     {
         switch (instruction)
         {
-            case LabelInstruction label:
+            case LabelInstruction:
                 _builder.AddLabel();
                 break;
 
@@ -296,11 +304,11 @@ public sealed class SpirvGenerator
                 break;
 
             case SelectionMergeInstruction selMerge:
-                _builder.AddSelectionMerge(selMerge.MergeLabelId);
+                _builder.AddSelectionMerge(selMerge.MergeLabelId, 0);
                 break;
 
             case LoopMergeInstruction loopMerge:
-                _builder.AddLoopMerge(loopMerge.MergeLabelId, loopMerge.ContinueLabelId);
+                _builder.AddLoopMerge(loopMerge.MergeLabelId, loopMerge.ContinueLabelId, 0);
                 break;
 
             case LoadInstruction load:
@@ -335,7 +343,7 @@ public sealed class SpirvGenerator
                 EmitConvert(convert);
                 break;
 
-            case PhiInstruction phi:
+            case PhiInstruction:
                 break;
         }
     }
@@ -348,13 +356,13 @@ public sealed class SpirvGenerator
 
         var op = arith.OpCode switch
         {
-            ShaderIrOpCode.Add => IsFloatType(arith.ResultType) ? SpirvConstants.Op.OpFAdd : SpirvConstants.Op.OpIAdd,
-            ShaderIrOpCode.Sub => IsFloatType(arith.ResultType) ? SpirvConstants.Op.OpFSub : SpirvConstants.Op.OpISub,
-            ShaderIrOpCode.Mul => IsFloatType(arith.ResultType) ? SpirvConstants.Op.OpFMul : SpirvConstants.Op.OpIMul,
-            ShaderIrOpCode.Div => IsFloatType(arith.ResultType) ? SpirvConstants.Op.OpFDiv : SpirvConstants.Op.OpSDiv,
-            ShaderIrOpCode.Mod => SpirvConstants.Op.OpFDiv,
-            ShaderIrOpCode.Negate => IsFloatType(arith.ResultType) ? SpirvConstants.Op.OpFNegate : SpirvConstants.Op.OpSNegate,
-            _ => SpirvConstants.Op.OpFAdd
+            ShaderIrOpCode.Add => IsFloatType(arith.ResultType) ? SpirvOpCode.OpFAdd : SpirvOpCode.OpIAdd,
+            ShaderIrOpCode.Sub => IsFloatType(arith.ResultType) ? SpirvOpCode.OpFSub : SpirvOpCode.OpISub,
+            ShaderIrOpCode.Mul => IsFloatType(arith.ResultType) ? SpirvOpCode.OpFMul : SpirvOpCode.OpIMul,
+            ShaderIrOpCode.Div => IsFloatType(arith.ResultType) ? SpirvOpCode.OpFDiv : SpirvOpCode.OpSDiv,
+            ShaderIrOpCode.Mod => SpirvOpCode.OpFDiv,
+            ShaderIrOpCode.Negate => IsFloatType(arith.ResultType) ? SpirvOpCode.OpFNegate : SpirvOpCode.OpSNegate,
+            _ => SpirvOpCode.OpFAdd
         };
 
         if (arith.OpCode == ShaderIrOpCode.Negate)
@@ -377,13 +385,13 @@ public sealed class SpirvGenerator
 
         var op = cmp.OpCode switch
         {
-            ShaderIrOpCode.Equal => IsFloatType(cmp.ResultType) ? SpirvConstants.Op.OpFOrdEqual : SpirvConstants.Op.OpIEqual,
-            ShaderIrOpCode.NotEqual => IsFloatType(cmp.ResultType) ? SpirvConstants.Op.OpFOrdNotEqual : SpirvConstants.Op.OpINotEqual,
-            ShaderIrOpCode.LessThan => IsFloatType(cmp.ResultType) ? SpirvConstants.Op.OpFOrdLessThan : SpirvConstants.Op.OpSLessThan,
-            ShaderIrOpCode.GreaterThan => IsFloatType(cmp.ResultType) ? SpirvConstants.Op.OpFOrdGreaterThan : SpirvConstants.Op.OpSGreaterThan,
-            ShaderIrOpCode.LessEqual => IsFloatType(cmp.ResultType) ? SpirvConstants.Op.OpFOrdLessEqual : SpirvConstants.Op.OpSLessEqual,
-            ShaderIrOpCode.GreaterEqual => IsFloatType(cmp.ResultType) ? SpirvConstants.Op.OpFOrdGreaterEqual : SpirvConstants.Op.OpSGreaterEqual,
-            _ => SpirvConstants.Op.OpFOrdEqual
+            ShaderIrOpCode.Equal => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdEqual : SpirvOpCode.OpIEqual,
+            ShaderIrOpCode.NotEqual => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdNotEqual : SpirvOpCode.OpINotEqual,
+            ShaderIrOpCode.LessThan => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdLessThan : SpirvOpCode.OpSLessThan,
+            ShaderIrOpCode.GreaterThan => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdGreaterThan : SpirvOpCode.OpSGreaterThan,
+            ShaderIrOpCode.LessEqual => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdLessEqual : SpirvOpCode.OpSLessEqual,
+            ShaderIrOpCode.GreaterEqual => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdGreaterEqual : SpirvOpCode.OpSGreaterEqual,
+            _ => SpirvOpCode.OpFOrdEqual
         };
 
         var resultId = _builder.AddArithmetic(op, resultType, left, right);
@@ -396,10 +404,10 @@ public sealed class SpirvGenerator
 
         var op = log.OpCode switch
         {
-            ShaderIrOpCode.LogicalAnd => SpirvConstants.Op.OpLogicalAnd,
-            ShaderIrOpCode.LogicalOr => SpirvConstants.Op.OpLogicalOr,
-            ShaderIrOpCode.LogicalNot => SpirvConstants.Op.OpLogicalNot,
-            _ => SpirvConstants.Op.OpLogicalAnd
+            ShaderIrOpCode.LogicalAnd => SpirvOpCode.OpLogicalAnd,
+            ShaderIrOpCode.LogicalOr => SpirvOpCode.OpLogicalOr,
+            ShaderIrOpCode.LogicalNot => SpirvOpCode.OpLogicalNot,
+            _ => SpirvOpCode.OpLogicalAnd
         };
 
         if (log.OpCode == ShaderIrOpCode.LogicalNot)
@@ -457,21 +465,14 @@ public sealed class SpirvGenerator
 
         if (mat.OpCode == ShaderIrOpCode.MatrixMultiply)
         {
-            var resultId = _builder.AddArithmetic(SpirvConstants.Op.OpMatrixTimesVector, resultType, mat.LeftId, mat.RightId);
+            var resultId = _builder.AddMatrixTimesVector(resultType, mat.LeftId, mat.RightId);
             _variableIds[mat.ResultId] = resultId;
             return;
         }
 
-        var glslInstruction = mat.OpCode switch
-        {
-            ShaderIrOpCode.MatrixTranspose => SpirvConstants.Op.OpMatrixTimesVector,
-            ShaderIrOpCode.MatrixInverse => SpirvConstants.GLSLstd450.MatrixInverse,
-            _ => 0u
-        };
-
         if (mat.OpCode == ShaderIrOpCode.MatrixInverse)
         {
-            var resultId = _builder.AddExtInst(resultType, _glslStd450Id, glslInstruction, [mat.LeftId]);
+            var resultId = _builder.AddExtInst(resultType, _glslStd450Id, SpirvConstants.GLSLstd450.MatrixInverse, [mat.LeftId]);
             _variableIds[mat.ResultId] = resultId;
         }
     }
@@ -486,7 +487,7 @@ public sealed class SpirvGenerator
     private void EmitTextureLoad(TextureLoadInstruction texLoad)
     {
         var resultType = MapType(texLoad.ResultType);
-        var resultId = _builder.AddArithmetic(SpirvConstants.Op.OpImageFetch, resultType, texLoad.ImageId, texLoad.CoordinateId);
+        var resultId = _builder.AddArithmetic(SpirvOpCode.OpImageFetch, resultType, texLoad.ImageId, texLoad.CoordinateId);
         _variableIds[texLoad.ResultId] = resultId;
     }
 
@@ -566,9 +567,9 @@ public sealed class SpirvGenerator
         var resultType = MapType(convert.ResultType);
         var op = convert.ResultType switch
         {
-            ShaderIrType.IntType => SpirvConstants.Op.OpConvertFToS,
-            ShaderIrType.FloatType => SpirvConstants.Op.OpConvertSToF,
-            _ => SpirvConstants.Op.OpConvertFToS
+            ShaderIrType.IntType => SpirvOpCode.OpConvertFToS,
+            ShaderIrType.FloatType => SpirvOpCode.OpConvertSToF,
+            _ => SpirvOpCode.OpConvertFToS
         };
         var resultId = _builder.AddConvert(op, resultType, convert.ValueId);
         _variableIds[convert.ResultId] = resultId;

@@ -1,50 +1,52 @@
-using Gnosis.Database.Core;
-using SolidDB.Core;
+using GnosisDatabaseCore = Gnosis.Database.Core;
+using SolidDatabaseCore = SolidDB.Core;
 
 namespace Gnosis.Database.Engine;
 
-public sealed class GenesisKvDatabase : IKvDatabase
+public sealed class GenesisKvDatabase : GnosisDatabaseCore.IKvDatabase
 {
     #region 字段
 
     private readonly SolidDB.SolidDatabase _solidDb;
-    private readonly DatabaseOptions _options;
-    private DatabaseStatistics _statistics;
+    private readonly GnosisDatabaseCore.DatabaseOptions _options;
+    private GnosisDatabaseCore.DatabaseStatistics _statistics;
     private bool _disposed;
 
     #endregion
 
     #region 构造函数
 
-    public GenesisKvDatabase(DatabaseOptions options)
+    public GenesisKvDatabase(GnosisDatabaseCore.DatabaseOptions options)
     {
         _options = options;
         _solidDb = new SolidDB.SolidDatabase(options.ToSolidOptions());
-        _statistics = DatabaseStatistics.Zero;
+        _statistics = GnosisDatabaseCore.DatabaseStatistics.Zero;
     }
 
     #endregion
 
     #region 属性
 
-    public DatabaseOptions Options => _options;
+    public GnosisDatabaseCore.DatabaseOptions Options => _options;
 
-    public DatabaseStatistics Statistics => DatabaseStatistics.FromSolidStatistics(_solidDb.Statistics);
+    public GnosisDatabaseCore.DatabaseStatistics Statistics =>
+        GnosisDatabaseCore.DatabaseStatistics.FromSolidStatistics(_solidDb.Statistics);
 
     #endregion
 
     #region 公开方法
 
-    public ITransaction BeginTransaction(IsolationLevel isolationLevel = IsolationLevel.Snapshot)
+    public GnosisDatabaseCore.ITransaction BeginTransaction(
+        GnosisDatabaseCore.IsolationLevel isolationLevel = GnosisDatabaseCore.IsolationLevel.Snapshot)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var solidIsolation = (SolidDB.Core.IsolationLevel)isolationLevel;
+        var solidIsolation = (SolidDatabaseCore.IsolationLevel)isolationLevel;
         var solidTx = _solidDb.BeginTransactionAsync(solidIsolation).GetAwaiter().GetResult();
         return new KvTransaction(solidTx);
     }
 
-    public ISnapshot CreateSnapshot()
+    public GnosisDatabaseCore.ISnapshot CreateSnapshot()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -52,28 +54,35 @@ public sealed class GenesisKvDatabase : IKvDatabase
         return new KvSnapshot(solidSnapshot);
     }
 
-    public async ValueTask<DatabaseValue?> GetAsync(DatabaseKey key, CancellationToken cancellationToken = default)
+    public async ValueTask<GnosisDatabaseCore.DatabaseValue?> GetAsync(
+        GnosisDatabaseCore.DatabaseKey key, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var result = await _solidDb.GetAsync<SolidValue>(key, cancellationToken);
+        var result = await _solidDb.GetAsync<SolidDatabaseCore.SolidValue>(key, cancellationToken);
         if (result.IsEmpty)
         {
             return null;
         }
 
-        return new DatabaseValue(result.Bytes);
+        return new GnosisDatabaseCore.DatabaseValue(result.Bytes);
     }
 
-    public async ValueTask PutAsync(DatabaseKey key, DatabaseValue value, CancellationToken cancellationToken = default)
+    public async ValueTask PutAsync(GnosisDatabaseCore.DatabaseKey key,
+        GnosisDatabaseCore.DatabaseValue value, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        await _solidDb.PutAsync(key, (SolidValue)value, cancellationToken);
-        _statistics = _statistics with { TotalWrites = _statistics.TotalWrites + 1, TotalKeys = _statistics.TotalKeys + 1 };
+        await _solidDb.PutAsync(key, (SolidDatabaseCore.SolidValue)value, cancellationToken);
+        _statistics = _statistics with
+        {
+            TotalWrites = _statistics.TotalWrites + 1,
+            TotalKeys = _statistics.TotalKeys + 1
+        };
     }
 
-    public async ValueTask<bool> DeleteAsync(DatabaseKey key, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> DeleteAsync(GnosisDatabaseCore.DatabaseKey key,
+        CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -90,14 +99,15 @@ public sealed class GenesisKvDatabase : IKvDatabase
         return deleted;
     }
 
-    public async ValueTask<bool> ExistsAsync(DatabaseKey key, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> ExistsAsync(GnosisDatabaseCore.DatabaseKey key,
+        CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         return await _solidDb.ExistsAsync(key, cancellationToken);
     }
 
-    public ICursor Seek(DatabaseKey key)
+    public GnosisDatabaseCore.ICursor Seek(GnosisDatabaseCore.DatabaseKey key)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -135,20 +145,23 @@ public sealed class GenesisKvDatabase : IKvDatabase
 
     #region 内部适配器
 
-    private sealed class KvTransaction : ITransaction
+    private sealed class KvTransaction : GnosisDatabaseCore.ITransaction
     {
-        private readonly ISolidTransaction _solidTx;
+        private readonly SolidDatabaseCore.ISolidTransaction _solidTx;
 
-        public KvTransaction(ISolidTransaction solidTx)
+        public KvTransaction(SolidDatabaseCore.ISolidTransaction solidTx)
         {
             _solidTx = solidTx;
         }
 
-        public TransactionId Id => new(_solidTx.Id.Value);
+        public GnosisDatabaseCore.TransactionId Id =>
+            new GnosisDatabaseCore.TransactionId(_solidTx.Id.Value);
 
-        public IsolationLevel IsolationLevel => (IsolationLevel)_solidTx.IsolationLevel;
+        public GnosisDatabaseCore.IsolationLevel IsolationLevel =>
+            (GnosisDatabaseCore.IsolationLevel)_solidTx.IsolationLevel;
 
-        public Timestamp StartTime => new(new DateTimeOffset(_solidTx.StartTime));
+        public GnosisDatabaseCore.Timestamp StartTime =>
+            new GnosisDatabaseCore.Timestamp(new DateTimeOffset(_solidTx.StartTime));
 
         public bool IsReadOnly => _solidTx.IsReadOnly;
 
@@ -156,23 +169,26 @@ public sealed class GenesisKvDatabase : IKvDatabase
 
         public bool IsRolledBack => _solidTx.IsRolledBack;
 
-        public async ValueTask<DatabaseValue?> GetAsync(DatabaseKey key, CancellationToken cancellationToken = default)
+        public async ValueTask<GnosisDatabaseCore.DatabaseValue?> GetAsync(
+            GnosisDatabaseCore.DatabaseKey key, CancellationToken cancellationToken = default)
         {
-            var result = await _solidTx.GetAsync<SolidValue>(key, cancellationToken);
+            var result = await _solidTx.GetAsync<SolidDatabaseCore.SolidValue>(key, cancellationToken);
             if (result.IsEmpty)
             {
                 return null;
             }
 
-            return new DatabaseValue(result.Bytes);
+            return new GnosisDatabaseCore.DatabaseValue(result.Bytes);
         }
 
-        public async ValueTask PutAsync(DatabaseKey key, DatabaseValue value, CancellationToken cancellationToken = default)
+        public async ValueTask PutAsync(GnosisDatabaseCore.DatabaseKey key,
+            GnosisDatabaseCore.DatabaseValue value, CancellationToken cancellationToken = default)
         {
-            await _solidTx.PutAsync(key, (SolidValue)value, cancellationToken);
+            await _solidTx.PutAsync(key, (SolidDatabaseCore.SolidValue)value, cancellationToken);
         }
 
-        public async ValueTask<bool> DeleteAsync(DatabaseKey key, CancellationToken cancellationToken = default)
+        public async ValueTask<bool> DeleteAsync(GnosisDatabaseCore.DatabaseKey key,
+            CancellationToken cancellationToken = default)
         {
             return await _solidTx.DeleteAsync(key, cancellationToken);
         }
@@ -193,35 +209,37 @@ public sealed class GenesisKvDatabase : IKvDatabase
         }
     }
 
-    private sealed class KvSnapshot : ISnapshot
+    private sealed class KvSnapshot : GnosisDatabaseCore.ISnapshot
     {
-        private readonly ISolidSnapshot _solidSnapshot;
+        private readonly SolidDatabaseCore.ISolidSnapshot _solidSnapshot;
 
-        public KvSnapshot(ISolidSnapshot solidSnapshot)
+        public KvSnapshot(SolidDatabaseCore.ISolidSnapshot solidSnapshot)
         {
             _solidSnapshot = solidSnapshot;
         }
 
-        public SequenceNumber Sequence => new(_solidSnapshot.Sequence.Value);
+        public GnosisDatabaseCore.SequenceNumber Sequence =>
+            new GnosisDatabaseCore.SequenceNumber(_solidSnapshot.Sequence.Value);
 
-        public async ValueTask<DatabaseValue?> GetAsync(DatabaseKey key, CancellationToken cancellationToken = default)
+        public async ValueTask<GnosisDatabaseCore.DatabaseValue?> GetAsync(
+            GnosisDatabaseCore.DatabaseKey key, CancellationToken cancellationToken = default)
         {
-            var result = await _solidSnapshot.GetAsync<SolidValue>(key, cancellationToken);
+            var result = await _solidSnapshot.GetAsync<SolidDatabaseCore.SolidValue>(key, cancellationToken);
             if (result.IsEmpty)
             {
                 return null;
             }
 
-            return new DatabaseValue(result.Bytes);
+            return new GnosisDatabaseCore.DatabaseValue(result.Bytes);
         }
 
-        public ICursor Seek(DatabaseKey key)
+        public GnosisDatabaseCore.ICursor Seek(GnosisDatabaseCore.DatabaseKey key)
         {
             var solidCursor = _solidSnapshot.Seek(key);
             return new KvCursor(solidCursor);
         }
 
-        public ISnapshot CreateChild()
+        public GnosisDatabaseCore.ISnapshot CreateChild()
         {
             var child = _solidSnapshot.CreateChild();
             return new KvSnapshot(child);
@@ -233,16 +251,17 @@ public sealed class GenesisKvDatabase : IKvDatabase
         }
     }
 
-    private sealed class KvCursor : ICursor
+    private sealed class KvCursor : GnosisDatabaseCore.ICursor
     {
-        private readonly ISolidCursor _solidCursor;
+        private readonly SolidDatabaseCore.ISolidCursor _solidCursor;
 
-        public KvCursor(ISolidCursor solidCursor)
+        public KvCursor(SolidDatabaseCore.ISolidCursor solidCursor)
         {
             _solidCursor = solidCursor;
         }
 
-        public DatabaseEntry Current => DatabaseEntry.FromSolidEntry(_solidCursor.Current);
+        public GnosisDatabaseCore.DatabaseEntry Current =>
+            GnosisDatabaseCore.DatabaseEntry.FromSolidEntry(_solidCursor.Current);
 
         public bool IsValid => _solidCursor.IsValid;
 
@@ -254,12 +273,14 @@ public sealed class GenesisKvDatabase : IKvDatabase
 
         public bool SeekToLast() => _solidCursor.SeekToLastAsync().GetAwaiter().GetResult();
 
-        public bool Seek(DatabaseKey key) => _solidCursor.SeekAsync(key).GetAwaiter().GetResult();
+        public bool Seek(GnosisDatabaseCore.DatabaseKey key) =>
+            _solidCursor.SeekAsync(key).GetAwaiter().GetResult();
 
-        public IReadOnlyList<DatabaseEntry> GetRange(DatabaseKey start, DatabaseKey end, int limit = 1000)
+        public IReadOnlyList<GnosisDatabaseCore.DatabaseEntry> GetRange(
+            GnosisDatabaseCore.DatabaseKey start, GnosisDatabaseCore.DatabaseKey end, int limit = 1000)
         {
             var solidEntries = _solidCursor.GetRangeAsync(start, end, limit).GetAwaiter().GetResult();
-            return solidEntries.Select(DatabaseEntry.FromSolidEntry).ToList().AsReadOnly();
+            return solidEntries.Select(GnosisDatabaseCore.DatabaseEntry.FromSolidEntry).ToList().AsReadOnly();
         }
 
         public void Dispose()

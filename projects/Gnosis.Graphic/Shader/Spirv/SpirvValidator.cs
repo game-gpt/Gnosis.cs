@@ -1,339 +1,158 @@
-using System.Text;
+using Acorn.Spirv.Data;
+using Acorn.Spirv.Decode;
 
 namespace Gnosis.Graphic.Shader.Spirv;
 
+/// <summary>
+///     SPIR-V 验证器，验证 SPIR-V 二进制数据的正确性。
+/// </summary>
+/// <remarks>
+///     本验证器使用 Acorn.Spirv 的 <see cref="SpirvDecoder" /> 进行二进制解码，
+///     遵循架构规则：二进制编解码职责由 Acorn 独占。
+/// </remarks>
 public sealed class SpirvValidator
 {
-    #region Fields
-
-    private readonly List<string> _errors = [];
-    private readonly List<string> _warnings = [];
-    private readonly HashSet<uint> _declaredIds = [];
-    private readonly HashSet<uint> _usedIds = [];
-    private readonly HashSet<uint> _typeIds = [];
-    private readonly HashSet<uint> _functionIds = [];
-    private readonly HashSet<uint> _labelIds = [];
-    private readonly HashSet<uint> _variableIds = [];
-    private readonly Dictionary<uint, uint> _idToType = new();
-
-    #endregion
-
-    #region Public Methods
-
-    public SpirvValidationResult Validate(byte[] spirvBinary)
+    /// <summary>
+    ///     验证 SPIR-V 二进制数据。
+    /// </summary>
+    /// <param name="data">SPIR-V 二进制数据。</param>
+    /// <returns>验证结果。</returns>
+    public SpirvValidationResult Validate(byte[] data)
     {
-        _errors.Clear();
-        _warnings.Clear();
-        _declaredIds.Clear();
-        _usedIds.Clear();
-        _typeIds.Clear();
-        _functionIds.Clear();
-        _labelIds.Clear();
-        _variableIds.Clear();
-        _idToType.Clear();
+        var errors = new List<string>();
 
-        if (spirvBinary.Length < 20)
+        if (!ValidateHeader(data, errors))
         {
-            _errors.Add("SPIR-V 二进制太短，无法包含有效头部");
-            return CreateResult();
+            return new SpirvValidationResult(false, errors);
         }
 
-        if (spirvBinary.Length % 4 != 0)
+        try
         {
-            _errors.Add("SPIR-V 二进制长度不是 4 的倍数");
-            return CreateResult();
+            var decoder = new SpirvDecoder();
+            var module = decoder.Decode(data);
+
+            ValidateStructure(module, errors);
+        }
+        catch (InvalidDataException ex)
+        {
+            errors.Add(ex.Message);
         }
 
-        var words = new uint[spirvBinary.Length / 4];
-        Buffer.BlockCopy(spirvBinary, 0, words, 0, spirvBinary.Length);
+        return new SpirvValidationResult(errors.Count == 0, errors);
+    }
 
-        ValidateHeader(words);
+    private static bool ValidateHeader(byte[] data, List<string> errors)
+    {
+        if (data.Length < 20)
+        {
+            errors.Add("SPIR-V 文件数据过短，无法读取文件头");
+            return false;
+        }
 
-        var index = 5;
-        var inFunction = false;
-        var inBlock = false;
+        var magic = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(0, 4));
+
+        if (magic != SpirvConstants.MagicNumber)
+        {
+            errors.Add($"SPIR-V 文件魔数不匹配，期望 0x07230203，实际 0x{magic:X8}");
+            return false;
+        }
+
+        var version = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(4, 4));
+        var major = (version >> 16) & 0xFF;
+        var minor = (version >> 8) & 0xFF;
+
+        if (major != 1 || minor > 6)
+        {
+            errors.Add($"不支持的 SPIR-V 版本：{major}.{minor}");
+        }
+
+        return errors.Count == 0;
+    }
+
+    private static void ValidateStructure(SpirvModuleData module, List<string> errors)
+    {
         var hasCapability = false;
         var hasMemoryModel = false;
+        var declaredIds = new HashSet<uint>();
 
-        while (index < words.Length)
+        foreach (var instruction in module.Instructions)
         {
-            var word0 = words[index];
-            var wordCount = (int)(word0 >> 16);
-            var opCode = word0 & 0xFFFF;
-
-            if (wordCount == 0)
+            if (instruction.Opcode == SpirvOpCode.OpCapability)
             {
-                _errors.Add($"指令 {index}: wordCount 为 0（opCode={opCode}）");
-                break;
+                hasCapability = true;
             }
 
-            if (index + wordCount > words.Length)
+            if (instruction.Opcode == SpirvOpCode.OpMemoryModel)
             {
-                _errors.Add($"指令 {index}: wordCount={wordCount} 超出剩余字数");
-                break;
+                hasMemoryModel = true;
             }
 
-            var operands = new uint[wordCount - 1];
-            if (operands.Length > 0)
+            if (instruction.Operands.Count > 1)
             {
-                Array.Copy(words, index + 1, operands, 0, operands.Length);
+                var possibleResultId = instruction.Operands[0];
+
+                if (IsResultProducingInstruction(instruction.Opcode))
+                {
+                    if (!declaredIds.Add(possibleResultId))
+                    {
+                        errors.Add($"ID %{possibleResultId} 被重复声明");
+                    }
+                }
             }
-
-            switch (opCode)
-            {
-                case SpirvConstants.Op.OpCapability:
-                    hasCapability = true;
-                    break;
-
-                case SpirvConstants.Op.OpMemoryModel:
-                    hasMemoryModel = true;
-                    break;
-
-                case SpirvConstants.Op.OpTypeVoid:
-                case SpirvConstants.Op.OpTypeBool:
-                case SpirvConstants.Op.OpTypeInt:
-                case SpirvConstants.Op.OpTypeFloat:
-                case SpirvConstants.Op.OpTypeVector:
-                case SpirvConstants.Op.OpTypeMatrix:
-                case SpirvConstants.Op.OpTypeStruct:
-                case SpirvConstants.Op.OpTypePointer:
-                case SpirvConstants.Op.OpTypeFunction:
-                case SpirvConstants.Op.OpTypeImage:
-                case SpirvConstants.Op.OpTypeSampler:
-                case SpirvConstants.Op.OpTypeSampledImage:
-                case SpirvConstants.Op.OpTypeAccelerationStructureKHR:
-                    if (operands.Length >= 1)
-                    {
-                        RegisterId(operands[0], true);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpVariable:
-                    if (operands.Length >= 2)
-                    {
-                        RegisterId(operands[1], false);
-                        _variableIds.Add(operands[1]);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpFunction:
-                    if (operands.Length >= 2)
-                    {
-                        RegisterId(operands[1], false);
-                        _functionIds.Add(operands[1]);
-                        inFunction = true;
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpFunctionEnd:
-                    inFunction = false;
-                    inBlock = false;
-                    break;
-
-                case SpirvConstants.Op.OpLabel:
-                    if (operands.Length >= 1)
-                    {
-                        RegisterId(operands[0], false);
-                        _labelIds.Add(operands[0]);
-                    }
-                    inBlock = true;
-                    break;
-
-                case SpirvConstants.Op.OpFunctionParameter:
-                    if (operands.Length >= 2)
-                    {
-                        RegisterId(operands[1], false);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpLoad:
-                    if (operands.Length >= 3)
-                    {
-                        RegisterId(operands[1], false);
-                        TrackUse(operands[2]);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpStore:
-                    if (operands.Length >= 2)
-                    {
-                        TrackUse(operands[0]);
-                        TrackUse(operands[1]);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpAccessChain:
-                    if (operands.Length >= 3)
-                    {
-                        RegisterId(operands[1], false);
-                        TrackUse(operands[2]);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpCompositeConstruct:
-                    if (operands.Length >= 2)
-                    {
-                        RegisterId(operands[1], false);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpCompositeExtract:
-                    if (operands.Length >= 2)
-                    {
-                        RegisterId(operands[1], false);
-                    }
-                    break;
-
-                case SpirvConstants.Op.OpBranch:
-                    if (operands.Length >= 1)
-                    {
-                        TrackUse(operands[0]);
-                    }
-                    inBlock = false;
-                    break;
-
-                case SpirvConstants.Op.OpReturn:
-                case SpirvConstants.Op.OpReturnValue:
-                case SpirvConstants.Op.OpKill:
-                    inBlock = false;
-                    break;
-            }
-
-            index += wordCount;
         }
 
         if (!hasCapability)
         {
-            _errors.Add("缺少 OpCapability 指令");
+            errors.Add("缺少 OpCapability 指令");
         }
 
         if (!hasMemoryModel)
         {
-            _errors.Add("缺少 OpMemoryModel 指令");
+            errors.Add("缺少 OpMemoryModel 指令");
         }
-
-        CheckUndefinedIds();
-
-        return CreateResult();
     }
 
-    #endregion
-
-    #region Private Methods
-
-    private void ValidateHeader(uint[] words)
+    private static bool IsResultProducingInstruction(ushort opcode)
     {
-        var magic = words[0];
-        if (magic != SpirvConstants.MagicNumber)
-        {
-            _errors.Add($"无效的 SPIR-V 魔数: 0x{magic:X8}（期望 0x{SpirvConstants.MagicNumber:X8}）");
-        }
-
-        var version = words[1];
-        var major = version >> 16;
-        var minor = (version >> 8) & 0xFF;
-
-        if (major == 0 || major > 1 || minor > 6)
-        {
-            _warnings.Add($"不常见的 SPIR-V 版本: {major}.{minor}");
-        }
-
-        var bound = words[3];
-        if (bound == 0)
-        {
-            _errors.Add("Bound 为 0");
-        }
+        return opcode is
+            SpirvOpCode.OpTypeVoid or SpirvOpCode.OpTypeBool or SpirvOpCode.OpTypeInt or SpirvOpCode.OpTypeFloat
+            or SpirvOpCode.OpTypeVector or SpirvOpCode.OpTypeMatrix or SpirvOpCode.OpTypeImage
+            or SpirvOpCode.OpTypeSampler or SpirvOpCode.OpTypeSampledImage or SpirvOpCode.OpTypeArray
+            or SpirvOpCode.OpTypeRuntimeArray or SpirvOpCode.OpTypeStruct or SpirvOpCode.OpTypePointer
+            or SpirvOpCode.OpTypeFunction or SpirvOpCode.OpTypeAccelerationStructureKHR
+            or SpirvOpCode.OpConstant or SpirvOpCode.OpConstantTrue or SpirvOpCode.OpConstantFalse
+            or SpirvOpCode.OpVariable or SpirvOpCode.OpFunction or SpirvOpCode.OpFunctionParameter
+            or SpirvOpCode.OpLabel or SpirvOpCode.OpLoad or SpirvOpCode.OpAccessChain
+            or SpirvOpCode.OpCompositeConstruct or SpirvOpCode.OpCompositeExtract
+            or SpirvOpCode.OpFunctionCall or SpirvOpCode.OpExtInst or SpirvOpCode.OpExtInstImport
+            or SpirvOpCode.OpDot or SpirvOpCode.OpMatrixTimesVector
+            or SpirvOpCode.OpIAdd or SpirvOpCode.OpISub or SpirvOpCode.OpIMul
+            or SpirvOpCode.OpFAdd or SpirvOpCode.OpFSub or SpirvOpCode.OpFMul or SpirvOpCode.OpFDiv
+            or SpirvOpCode.OpSNegate or SpirvOpCode.OpFNegate;
     }
+}
 
-    private void RegisterId(uint id, bool isType)
+/// <summary>
+///     SPIR-V 验证结果。
+/// </summary>
+public sealed class SpirvValidationResult
+{
+    /// <summary>
+    ///     是否验证通过。
+    /// </summary>
+    public bool IsValid { get; init; }
+
+    /// <summary>
+    ///     验证错误列表。
+    /// </summary>
+    public IReadOnlyList<string> Errors { get; init; } = [];
+
+    /// <summary>
+    ///     初始化 <see cref="SpirvValidationResult" /> 的新实例。
+    /// </summary>
+    public SpirvValidationResult(bool isValid, IReadOnlyList<string> errors)
     {
-        if (id == 0)
-        {
-            _errors.Add($"声明了 ID 0（无效）");
-            return;
-        }
-
-        if (_declaredIds.Contains(id))
-        {
-            _errors.Add($"ID %{id} 被重复声明");
-            return;
-        }
-
-        _declaredIds.Add(id);
-
-        if (isType)
-        {
-            _typeIds.Add(id);
-        }
+        IsValid = isValid;
+        Errors = errors;
     }
-
-    private void TrackUse(uint id)
-    {
-        _usedIds.Add(id);
-    }
-
-    private void CheckUndefinedIds()
-    {
-        foreach (var id in _usedIds)
-        {
-            if (!_declaredIds.Contains(id))
-            {
-                _errors.Add($"使用了未声明的 ID %{id}");
-            }
-        }
-    }
-
-    private SpirvValidationResult CreateResult()
-    {
-        return new SpirvValidationResult(
-            _errors.Count == 0,
-            _errors.AsReadOnly(),
-            _warnings.AsReadOnly());
-    }
-
-    #endregion
-
-    #region Nested Types
-
-    public sealed record SpirvValidationResult(
-        bool IsValid,
-        IReadOnlyList<string> Errors,
-        IReadOnlyList<string> Warnings)
-    {
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-
-            if (IsValid)
-            {
-                sb.AppendLine("SPIR-V 验证通过");
-            }
-            else
-            {
-                sb.AppendLine("SPIR-V 验证失败");
-            }
-
-            if (Errors.Count > 0)
-            {
-                sb.AppendLine("错误:");
-                foreach (var error in Errors)
-                {
-                    sb.AppendLine($"  - {error}");
-                }
-            }
-
-            if (Warnings.Count > 0)
-            {
-                sb.AppendLine("警告:");
-                foreach (var warning in Warnings)
-                {
-                    sb.AppendLine($"  - {warning}");
-                }
-            }
-
-            return sb.ToString();
-        }
-    }
-
-    #endregion
 }

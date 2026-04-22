@@ -1,114 +1,355 @@
+using Acorn.Spirv.Data;
+
 namespace Gnosis.Graphic.Shader.Spirv;
 
+/// <summary>
+///     SPIR-V 类型缓存，缓存 SPIR-V 类型声明以避免重复声明相同类型。
+/// </summary>
+/// <remarks>
+///     本缓存使用 Acorn.Spirv 的 <see cref="SpirvConstants" /> 常量，
+///     遵循架构规则：二进制编解码常量由 Acorn 独占。
+/// </remarks>
 public sealed class SpirvTypeCache
 {
-    #region Fields
-
     private readonly SpirvBuilder _builder;
-    private readonly Dictionary<string, uint> _typeIds = new();
+    private readonly Dictionary<string, uint> _typeCache = [];
 
-    #endregion
+    private uint _voidTypeId;
+    private uint _boolTypeId;
+    private uint _int32TypeId;
+    private uint _uint32TypeId;
+    private uint _float32TypeId;
+    private uint _glslStd450Id;
 
-    #region Constructors
-
+    /// <summary>
+    ///     初始化 <see cref="SpirvTypeCache" /> 的新实例。
+    /// </summary>
+    /// <param name="builder">SPIR-V 构建器。</param>
     public SpirvTypeCache(SpirvBuilder builder)
     {
         _builder = builder;
     }
 
-    #endregion
-
-    #region Public Methods
-
-    public uint GetVoidType()
+    /// <summary>
+    ///     获取 void 类型 ID。
+    /// </summary>
+    public uint VoidType => GetOrCreate(ref _voidTypeId, "void", () =>
     {
-        return GetOrCreate("void", _builder.DeclareVoidType);
+        var id = _builder.AllocateId();
+        _builder.DeclareVoidType(id);
+        return id;
+    });
+
+    /// <summary>
+    ///     获取 bool 类型 ID。
+    /// </summary>
+    public uint BoolType => GetOrCreate(ref _boolTypeId, "bool", () =>
+    {
+        var id = _builder.AllocateId();
+        _builder.DeclareBoolType(id);
+        return id;
+    });
+
+    /// <summary>
+    ///     获取 32 位有符号整数类型 ID。
+    /// </summary>
+    public uint Int32Type => GetOrCreate(ref _int32TypeId, "int32", () =>
+    {
+        var id = _builder.AllocateId();
+        _builder.DeclareIntType(id, 32, true);
+        return id;
+    });
+
+    /// <summary>
+    ///     获取 32 位无符号整数类型 ID。
+    /// </summary>
+    public uint UInt32Type => GetOrCreate(ref _uint32TypeId, "uint32", () =>
+    {
+        var id = _builder.AllocateId();
+        _builder.DeclareIntType(id, 32, false);
+        return id;
+    });
+
+    /// <summary>
+    ///     获取 32 位浮点类型 ID。
+    /// </summary>
+    public uint Float32Type => GetOrCreate(ref _float32TypeId, "float32", () =>
+    {
+        var id = _builder.AllocateId();
+        _builder.DeclareFloatType(id, 32);
+        return id;
+    });
+
+    /// <summary>
+    ///     获取 GLSL.std.450 扩展指令集 ID。
+    /// </summary>
+    public uint GLSLStd450 => GetOrCreate(ref _glslStd450Id, "GLSLStd450", () =>
+    {
+        var id = _builder.AllocateId();
+        _builder.AddExtInstImport(id, "GLSL.std.450");
+        return id;
+    });
+
+    /// <summary>
+    ///     获取或创建向量类型 ID。
+    /// </summary>
+    /// <param name="componentTypeId">分量类型 ID。</param>
+    /// <param name="componentCount">分量数量。</param>
+    /// <returns>向量类型 ID。</returns>
+    public uint GetVectorType(uint componentTypeId, uint componentCount)
+    {
+        var key = $"vec_{componentTypeId}_{componentCount}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareVectorType(id, componentTypeId, componentCount);
+            return id;
+        });
     }
 
-    public uint GetBoolType()
+    /// <summary>
+    ///     获取或创建矩阵类型 ID。
+    /// </summary>
+    /// <param name="columnTypeId">列类型 ID。</param>
+    /// <param name="columnCount">列数量。</param>
+    /// <returns>矩阵类型 ID。</returns>
+    public uint GetMatrixType(uint columnTypeId, uint columnCount)
     {
-        return GetOrCreate("bool", _builder.DeclareBoolType);
+        var key = $"mat_{columnTypeId}_{columnCount}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareMatrixType(id, columnTypeId, columnCount);
+            return id;
+        });
     }
 
-    public uint GetIntType(uint bitWidth = 32, bool signed = true)
+    /// <summary>
+    ///     获取或创建指针类型 ID。
+    /// </summary>
+    /// <param name="storageClass">存储类。</param>
+    /// <param name="typeId">指向的类型 ID。</param>
+    /// <returns>指针类型 ID。</returns>
+    public uint GetPointerType(uint storageClass, uint typeId)
     {
-        var key = $"{(signed ? 'i' : 'u')}{bitWidth}";
-        return GetOrCreate(key, () => _builder.DeclareIntType(bitWidth, signed ? 1u : 0u));
+        var key = $"ptr_{storageClass}_{typeId}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclarePointerType(id, storageClass, typeId);
+            return id;
+        });
     }
 
-    public uint GetFloatType(uint bitWidth = 32)
+    /// <summary>
+    ///     获取或创建数组类型 ID。
+    /// </summary>
+    /// <param name="elementTypeId">元素类型 ID。</param>
+    /// <param name="lengthId">长度 ID。</param>
+    /// <returns>数组类型 ID。</returns>
+    public uint GetArrayType(uint elementTypeId, uint lengthId)
     {
-        var key = $"f{bitWidth}";
-        return GetOrCreate(key, () => _builder.DeclareFloatType(bitWidth));
+        var key = $"arr_{elementTypeId}_{lengthId}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareArrayType(id, elementTypeId, lengthId);
+            return id;
+        });
     }
 
-    public uint GetVectorType(uint elementType, uint componentCount)
+    /// <summary>
+    ///     获取或创建运行时数组类型 ID。
+    /// </summary>
+    /// <param name="elementTypeId">元素类型 ID。</param>
+    /// <returns>运行时数组类型 ID。</returns>
+    public uint GetRuntimeArrayType(uint elementTypeId)
     {
-        var key = $"vec{componentCount}<{elementType}>";
-        return GetOrCreate(key, () => _builder.DeclareVectorType(elementType, componentCount));
+        var key = $"rtarr_{elementTypeId}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareRuntimeArrayType(id, elementTypeId);
+            return id;
+        });
     }
 
-    public uint GetMatrixType(uint columnType, uint columnCount)
+    /// <summary>
+    ///     获取或创建结构体类型 ID。
+    /// </summary>
+    /// <param name="memberTypeIds">成员类型 ID 列表。</param>
+    /// <returns>结构体类型 ID。</returns>
+    public uint GetStructType(uint[] memberTypeIds)
     {
-        var key = $"mat{columnCount}<{columnType}>";
-        return GetOrCreate(key, () => _builder.DeclareMatrixType(columnType, columnCount));
+        var key = $"struct_{string.Join("_", memberTypeIds)}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareStructType(id, memberTypeIds);
+            return id;
+        });
     }
 
-    public uint GetStructType(uint[] memberTypeIds, string name)
+    /// <summary>
+    ///     获取或创建函数类型 ID。
+    /// </summary>
+    /// <param name="returnTypeId">返回类型 ID。</param>
+    /// <param name="parameterTypeIds">参数类型 ID 列表。</param>
+    /// <returns>函数类型 ID。</returns>
+    public uint GetFunctionType(uint returnTypeId, uint[]? parameterTypeIds = null)
     {
-        var key = $"struct:{name}";
-        return GetOrCreate(key, () => _builder.DeclareStructType(memberTypeIds));
+        var paramKey = parameterTypeIds is not null ? string.Join("_", parameterTypeIds) : "none";
+        var key = $"func_{returnTypeId}_{paramKey}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareFunctionType(id, returnTypeId, parameterTypeIds);
+            return id;
+        });
     }
 
-    public uint GetImageType(uint sampledType, uint dim, uint depth = 0, uint arrayed = 0, uint ms = 0, uint format = 0)
+    /// <summary>
+    ///     获取或创建图像类型 ID。
+    /// </summary>
+    public uint GetImageType(uint sampledTypeId, uint dim, uint depth, uint arrayed, uint ms, uint sampled, uint imageFormat)
     {
-        var key = $"image<{sampledType},{dim},{depth},{arrayed},{ms},{format}>";
-        return GetOrCreate(key, () => _builder.DeclareImageType(sampledType, dim, depth, arrayed, ms, format));
+        var key = $"img_{sampledTypeId}_{dim}_{depth}_{arrayed}_{ms}_{sampled}_{imageFormat}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareImageType(id, sampledTypeId, dim, depth, arrayed, ms, sampled, imageFormat);
+            return id;
+        });
     }
 
+    /// <summary>
+    ///     获取或创建采样器类型 ID。
+    /// </summary>
     public uint GetSamplerType()
     {
-        return GetOrCreate("sampler", _builder.DeclareSamplerType);
+        return GetOrCreate("sampler", () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareSamplerType(id);
+            return id;
+        });
     }
 
-    public uint GetSampledImageType(uint imageType)
+    /// <summary>
+    ///     获取或创建采样图像类型 ID。
+    /// </summary>
+    public uint GetSampledImageType(uint imageTypeId)
     {
-        var key = $"sampled_image<{imageType}>";
-        return GetOrCreate(key, () => _builder.DeclareSampledImageType(imageType));
+        var key = $"sampled_img_{imageTypeId}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareSampledImageType(id, imageTypeId);
+            return id;
+        });
     }
 
-    public uint GetPointerType(uint pointeeType, uint storageClass)
-    {
-        var key = $"ptr<{storageClass},{pointeeType}>";
-        return GetOrCreate(key, () => _builder.DeclarePointerType(pointeeType, storageClass));
-    }
-
-    public uint GetFunctionType(uint returnType, uint[] parameterTypes)
-    {
-        var key = $"fn<{returnType}>[{string.Join(",", parameterTypes)}]";
-        return GetOrCreate(key, () => _builder.DeclareFunctionType(returnType, parameterTypes));
-    }
-
+    /// <summary>
+    ///     获取或创建加速结构类型 ID（光线追踪）。
+    /// </summary>
     public uint GetAccelerationStructureType()
     {
-        return GetOrCreate("accel_struct", _builder.DeclareAccelerationStructureType);
+        return GetOrCreate("accel_struct", () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareAccelerationStructureType(id);
+            return id;
+        });
     }
 
-    #endregion
+    /// <summary>
+    ///     获取 void 类型 ID（便捷别名）。
+    /// </summary>
+    public uint GetVoidType() => VoidType;
 
-    #region Private Methods
+    /// <summary>
+    ///     获取 bool 类型 ID（便捷别名）。
+    /// </summary>
+    public uint GetBoolType() => BoolType;
 
-    private uint GetOrCreate(string key, Func<uint> factory)
+    /// <summary>
+    ///     获取整数类型 ID。
+    /// </summary>
+    /// <param name="bitWidth">位宽。</param>
+    /// <param name="signed">是否有符号。</param>
+    /// <returns>整数类型 ID。</returns>
+    public uint GetIntType(uint bitWidth, bool signed)
     {
-        if (_typeIds.TryGetValue(key, out var id))
+        var key = $"int_{bitWidth}_{signed}";
+        return GetOrCreate(key, () =>
         {
+            var id = _builder.AllocateId();
+            _builder.DeclareIntType(id, bitWidth, signed);
             return id;
+        });
+    }
+
+    /// <summary>
+    ///     获取浮点类型 ID。
+    /// </summary>
+    /// <param name="bitWidth">位宽。</param>
+    /// <returns>浮点类型 ID。</returns>
+    public uint GetFloatType(uint bitWidth)
+    {
+        var key = $"float_{bitWidth}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareFloatType(id, bitWidth);
+            return id;
+        });
+    }
+
+    /// <summary>
+    ///     获取或创建结构体类型 ID（带名称）。
+    /// </summary>
+    /// <param name="memberTypeIds">成员类型 ID 列表。</param>
+    /// <param name="name">结构体名称（用于缓存键）。</param>
+    /// <returns>结构体类型 ID。</returns>
+    public uint GetStructType(uint[] memberTypeIds, string name)
+    {
+        var key = $"struct_{name}_{string.Join("_", memberTypeIds)}";
+        return GetOrCreate(key, () =>
+        {
+            var id = _builder.AllocateId();
+            _builder.DeclareStructType(id, memberTypeIds);
+            return id;
+        });
+    }
+
+    private uint GetOrCreate(ref uint field, string key, Func<uint> factory)
+    {
+        if (field != 0)
+        {
+            return field;
         }
 
-        id = factory();
-        _typeIds[key] = id;
+        if (_typeCache.TryGetValue(key, out var cachedId))
+        {
+            field = cachedId;
+            return cachedId;
+        }
+
+        var id = factory();
+        _typeCache[key] = id;
+        field = id;
         return id;
     }
 
-    #endregion
+    private uint GetOrCreate(string key, Func<uint> factory)
+    {
+        if (_typeCache.TryGetValue(key, out var cachedId))
+        {
+            return cachedId;
+        }
+
+        var id = factory();
+        _typeCache[key] = id;
+        return id;
+    }
 }
