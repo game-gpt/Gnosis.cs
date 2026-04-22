@@ -1,4 +1,6 @@
-namespace Gnosis.Animation;
+using Gnosis.Animation.IK;
+
+namespace Gnosis.Animation.Blend;
 
 public interface IAnimationBlendTree
 {

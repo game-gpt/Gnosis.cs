@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Animation</PackageId>
+        <RootNamespace>Gnosis.Animation</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Animation - 动画系统，包含关键帧动画、状态机、补间、IK</Description>
+        <PackageTags>gnosis;game-engine;animation;keyframe;state-machine;tweening;ik</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="Clip\AnimatorComponent.cs" />
+        <Compile Remove="IK\SkeletonComponent.cs" />
+    </ItemGroup>
+</Project>

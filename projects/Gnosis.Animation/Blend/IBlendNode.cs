@@ -1,4 +1,4 @@
-namespace Gnosis.Animation;
+namespace Gnosis.Animation.Blend;
 
 public interface IBlendNode
 {

@@ -1,4 +1,9 @@
-namespace Gnosis.Animation;
+using Gnosis.Animation.Blend;
+using Gnosis.Animation.Clip;
+using Gnosis.Animation.Event;
+using Gnosis.Animation.IK;
+
+namespace Gnosis.Animation.State;
 
 public interface IAnimationSystem
 {

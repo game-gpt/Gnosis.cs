@@ -1,7 +1,4 @@
-using Gnosis.Animation;
-using Gnosis.ECS.Core;
-
-namespace Gnosis.Animation;
+namespace Gnosis.Animation.IK;
 
 public struct SkeletonComponent : IComponent
 {
