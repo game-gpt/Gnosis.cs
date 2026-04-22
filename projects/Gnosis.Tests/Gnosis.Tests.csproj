@@ -21,8 +21,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Gnosis\Gnosis.csproj"/>
-        <ProjectReference Include="..\Gnosis.Testing\Gnosis.Testing.csproj"/>
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj"/>
+        <ProjectReference Include="..\Gnosis.Runtime\Gnosis.Runtime.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="Network\**\*.cs"/>
+        <Compile Remove="Assets\**\*.cs"/>
+        <Compile Remove="Compiler\**\*.cs"/>
+        <Compile Remove="Database\**\*.cs"/>
     </ItemGroup>
 
 </Project>

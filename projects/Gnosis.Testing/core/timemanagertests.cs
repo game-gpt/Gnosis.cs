@@ -1,7 +1,6 @@
-using Gnosis.Core;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.Core;
+namespace Gnosis.core;
 
 [TestFixture]
 public class TimeManagerTests

@@ -1,7 +1,6 @@
-using Gnosis.Infrastructure;
 using NUnit.Framework;
 
-namespace Gnosis.Testing.Infrastructure;
+namespace Gnosis.Infrastructure;
 
 [TestFixture]
 public class FileLoggerTests

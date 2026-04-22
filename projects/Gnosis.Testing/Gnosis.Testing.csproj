@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Gnosis\Gnosis.csproj"/>
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

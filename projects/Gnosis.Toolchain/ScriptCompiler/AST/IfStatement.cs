@@ -1,0 +1,43 @@
+using Gnosis.Core.Diagnostic;
+
+namespace Gnosis.Toolchain.ScriptCompiler.AST;
+
+/// <summary>
+/// 表示条件语句节点
+/// </summary>
+/// <remarks>
+/// 语法示例：
+/// <code>
+/// # 简单 if 语句
+/// if x &gt; 0 {
+///     do_something()
+/// }
+/// 
+/// # if-else 语句
+/// if x &gt; 0 {
+///     do_a()
+/// } else {
+///     do_b()
+/// }
+/// 
+/// # if-else if-else 链
+/// if x &gt; 0 {
+///     do_a()
+/// } else if x &lt; 0 {
+///     do_b()
+/// } else {
+///     do_c()
+/// }
+/// </code>
+/// </remarks>
+public sealed record IfStatement(
+    AstNode Condition,
+    AstNode ThenBlock,
+    AstNode? ElseBlock,
+    SourceSpan? Span = null) : AstNode(NodeType.IfStmt, Span)
+{
+    /// <summary>
+    /// 接受访问者访问
+    /// </summary>
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitIfStmt(this);
+}

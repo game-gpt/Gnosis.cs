@@ -1,4 +1,4 @@
-﻿using Gnosis.Compiler.Lexer;
+using Gnosis.Compiler.Lexer;
 using Gnosis.Compiler.Lexer.Testing;
 using NUnit.Framework;
 
@@ -147,13 +147,13 @@ public class GameScriptLexerTests
     }
 
     [Test]
-    public void Tokenize_TypeKeywords_ReturnsTypeKeywordTokens()
+    public void Tokenize_TypeNames_ReturnsIdentifierTokens()
     {
         var result = _tester.Tokenize("i32 f32 bool string vec3");
 
         Assert.That(result.Tokens.Count, Is.EqualTo(6));
-        Assert.That(result.Tokens[0].TokenType, Is.EqualTo(TokenType.TypeKeyword));
-        Assert.That(result.Tokens[1].TokenType, Is.EqualTo(TokenType.TypeKeyword));
+        Assert.That(result.Tokens[0].TokenType, Is.EqualTo(TokenType.Identifier));
+        Assert.That(result.Tokens[1].TokenType, Is.EqualTo(TokenType.Identifier));
     }
 
     [Test]

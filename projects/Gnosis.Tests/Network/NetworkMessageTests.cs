@@ -1,6 +1,6 @@
 using Gnosis.Core;
 using Gnosis.Infrastructure;
-using Gnosis.Network.Messages;
+using Gnosis.Network.Serialization;
 using Gnosis.Testing;
 using NUnit.Framework;
 

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+        <PackageId>Gnosis.Physics</PackageId>
+        <RootNamespace>Gnosis.Physics</RootNamespace>
+        <Version>0.0.1</Version>
+        <Authors>Gnosis Engine Team</Authors>
+        <Description>Gnosis Physics - 物理模拟系统，包含碰撞检测、刚体动力学</Description>
+        <PackageTags>gnosis;game-engine;physics;collision;rigid-body;dynamics</PackageTags>
+        <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="Collision\ColliderComponent.cs" />
+        <Compile Remove="Dynamics\RigidBodyComponent.cs" />
+    </ItemGroup>
+</Project>
