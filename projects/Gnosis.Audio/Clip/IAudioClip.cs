@@ -1,6 +1,4 @@
-using Gnosis.Assets.Formats;
-
-namespace Gnosis.Audio;
+namespace Gnosis.Audio.Clip;
 
 public interface IAudioClip
 {

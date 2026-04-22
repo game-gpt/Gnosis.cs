@@ -1,4 +1,4 @@
-namespace Gnosis.Audio;
+namespace Gnosis.Audio.Clip;
 
 public enum AudioRolloffMode
 {

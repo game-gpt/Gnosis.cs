@@ -1,4 +1,9 @@
-namespace Gnosis.Audio;
+using Gnosis.Audio.Clip;
+using Gnosis.Audio.Listener;
+using Gnosis.Audio.Mixer;
+using Gnosis.Audio.Source;
+
+namespace Gnosis.Audio.Driver;
 
 public interface IAudioSystem
 {
