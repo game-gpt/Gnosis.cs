@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Graphic.Light;
 using Gnosis.Graphic.RHI;
 

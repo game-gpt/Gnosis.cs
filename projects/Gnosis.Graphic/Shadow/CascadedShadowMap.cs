@@ -25,7 +25,7 @@ public sealed class CascadedShadowMap : IDisposable
     public int Resolution { get; private set; }
     public IResource DepthTextureArray { get; private set; }
     public IRhiRenderPass RenderPass { get; private set; }
-    IRhiFramebuffer[] Framebuffers { get; private set; }
+    public IRhiFramebuffer[] Framebuffers { get; private set; }
     public Matrix4x4[] ViewProjectionMatrices { get; private set; }
     public float[] SplitDepths { get; private set; }
 
@@ -65,7 +65,7 @@ public sealed class CascadedShadowMap : IDisposable
 
         if (lightDir.LengthSquared() > 0.0001f)
         {
-            lightDir = Vector3.Normalize(lightDir);
+            lightDir = lightDir.Normalize();
         }
         else
         {
@@ -186,7 +186,7 @@ public sealed class CascadedShadowMap : IDisposable
         }
 
         var lightProjection = Matrix4x4.CreateOrthographic(
-            minX, maxX, minY, maxY, minZ, maxZ);
+            maxX - minX, maxY - minY, minZ, maxZ);
 
         return lightView * lightProjection;
     }
@@ -278,7 +278,7 @@ public sealed class CascadedShadowMap : IDisposable
                 SrcStage = PipelineStageFlag.EarlyFragmentTests,
                 DstStage = PipelineStageFlag.EarlyFragmentTests,
                 SrcAccess = AccessFlag.None,
-                DstAccess = AccessFlag.DepthStencilWrite
+                DstAccess = AccessFlag.DepthStencilAttachmentWrite
             }
         };
 

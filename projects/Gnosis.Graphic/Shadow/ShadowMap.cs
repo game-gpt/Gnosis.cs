@@ -110,7 +110,7 @@ public sealed class ShadowMap : IDisposable
                 SrcStage = PipelineStageFlag.EarlyFragmentTests,
                 DstStage = PipelineStageFlag.EarlyFragmentTests,
                 SrcAccess = AccessFlag.None,
-                DstAccess = AccessFlag.DepthStencilWrite
+                DstAccess = AccessFlag.DepthStencilAttachmentWrite
             }
         };
 
