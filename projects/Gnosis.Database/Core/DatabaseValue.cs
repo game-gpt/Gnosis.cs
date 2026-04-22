@@ -1,24 +1,40 @@
+using SolidValueInner = SolidDB.Core.SolidValue;
+
 namespace Gnosis.Database.Core;
 
-public readonly record struct DatabaseValue(ReadOnlyMemory<byte> Bytes)
+public readonly record struct DatabaseValue
 {
-    public int Length => Bytes.Length;
+    private readonly SolidValueInner _inner;
 
-    public bool IsEmpty => Bytes.IsEmpty;
+    public DatabaseValue(ReadOnlyMemory<byte> bytes)
+    {
+        _inner = new SolidValueInner(bytes.ToArray());
+    }
 
-    public static DatabaseValue Empty => new(ReadOnlyMemory<byte>.Empty);
+    public DatabaseValue(SolidValueInner value)
+    {
+        _inner = value;
+    }
 
-    public static DatabaseValue FromString(string value) =>
-        new(System.Text.Encoding.UTF8.GetBytes(value));
+    public ReadOnlyMemory<byte> Bytes => _inner.Bytes;
 
-    public static DatabaseValue FromInt32(int value) =>
-        new(BitConverter.GetBytes(value));
+    public int Length => _inner.Length;
 
-    public static DatabaseValue FromInt64(long value) =>
-        new(BitConverter.GetBytes(value));
+    public bool IsEmpty => _inner.IsEmpty;
 
-    public static DatabaseValue FromDouble(double value) =>
-        new(BitConverter.GetBytes(value));
+    public static DatabaseValue Empty => new(SolidValueInner.Empty);
+
+    public static DatabaseValue FromString(string value) => new(SolidValueInner.FromString(value));
+
+    public static DatabaseValue FromInt32(int value) => new(SolidValueInner.FromInt32(value));
+
+    public static DatabaseValue FromInt64(long value) => new(SolidValueInner.FromInt64(value));
+
+    public static DatabaseValue FromDouble(double value) => new(SolidValueInner.FromDouble(value));
+
+    public static DatabaseValue FromObject<T>(T value) => new(SolidValueInner.FromObject(value));
+
+    public T? ToObject<T>() => _inner.ToObject<T>();
 
     public int CompareTo(DatabaseValue other)
     {
@@ -37,4 +53,10 @@ public readonly record struct DatabaseValue(ReadOnlyMemory<byte> Bytes)
 
         return thisSpan.Length.CompareTo(otherSpan.Length);
     }
+
+    public static implicit operator SolidValueInner(DatabaseValue value) => value._inner;
+
+    public static implicit operator DatabaseValue(SolidValueInner value) => new(value);
+
+    public override string ToString() => _inner.ToString();
 }

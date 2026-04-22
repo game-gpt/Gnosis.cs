@@ -1,57 +1,48 @@
+using SolidKeyInner = SolidDB.Core.SolidKey;
+
 namespace Gnosis.Database.Core;
 
-public readonly record struct DatabaseKey(ReadOnlyMemory<byte> Bytes)
+public readonly record struct DatabaseKey
 {
-    public int Length => Bytes.Length;
+    private readonly SolidKeyInner _inner;
 
-    public bool IsEmpty => Bytes.IsEmpty;
+    public DatabaseKey(ReadOnlyMemory<byte> bytes)
+    {
+        _inner = new SolidKeyInner(bytes.ToArray());
+    }
 
-    public static DatabaseKey Empty => new(ReadOnlyMemory<byte>.Empty);
+    public DatabaseKey(SolidKeyInner key)
+    {
+        _inner = key;
+    }
 
-    public static DatabaseKey FromString(string value) =>
-        new(System.Text.Encoding.UTF8.GetBytes(value));
+    public ReadOnlyMemory<byte> Bytes => _inner.Bytes;
 
-    public static DatabaseKey FromUInt64(ulong value) =>
-        new(BitConverter.GetBytes(value));
+    public int Length => _inner.Length;
 
-    public static DatabaseKey FromGuid(Guid value) =>
-        new(value.ToByteArray());
+    public bool IsEmpty => _inner.IsEmpty;
+
+    public static DatabaseKey Empty => new(SolidKeyInner.Empty);
+
+    public static DatabaseKey FromString(string value) => new(SolidKeyInner.FromString(value));
+
+    public static DatabaseKey FromUInt64(ulong value) => new(SolidKeyInner.FromUInt64(value));
+
+    public static DatabaseKey FromGuid(Guid value) => new(SolidKeyInner.FromGuid(value));
 
     public bool StartsWith(DatabaseKey prefix)
     {
-        if (prefix.Length > Length)
-        {
-            return false;
-        }
-
-        var span = Bytes.Span;
-        var prefixSpan = prefix.Bytes.Span;
-        for (var i = 0; i < prefix.Length; i++)
-        {
-            if (span[i] != prefixSpan[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return _inner.StartsWith(prefix._inner);
     }
 
     public int CompareTo(DatabaseKey other)
     {
-        var thisSpan = Bytes.Span;
-        var otherSpan = other.Bytes.Span;
-        var minLength = Math.Min(thisSpan.Length, otherSpan.Length);
-
-        for (var i = 0; i < minLength; i++)
-        {
-            var cmp = thisSpan[i].CompareTo(otherSpan[i]);
-            if (cmp != 0)
-            {
-                return cmp;
-            }
-        }
-
-        return thisSpan.Length.CompareTo(otherSpan.Length);
+        return _inner.CompareTo(other._inner);
     }
+
+    public static implicit operator SolidKeyInner(DatabaseKey key) => key._inner;
+
+    public static implicit operator DatabaseKey(SolidKeyInner key) => new(key);
+
+    public override string ToString() => _inner.ToString();
 }

@@ -9,9 +9,13 @@
         <RootNamespace>Gnosis.Storage</RootNamespace>
         <Version>0.0.1</Version>
         <Authors>Gnosis Engine Team</Authors>
-        <Description>Gnosis Storage - 数据持久化抽象，支持本地与云端存储后端</Description>
-        <PackageTags>gnosis;game-engine;storage;persistence;local;cloud</PackageTags>
+        <Description>Gnosis Storage - 基于 SolidDB 的数据持久化抽象</Description>
+        <PackageTags>gnosis;game-engine;storage;persistence;solid-db</PackageTags>
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\SolidDB\projects\SolidDB\SolidDB.csproj" />
+    </ItemGroup>
 </Project>

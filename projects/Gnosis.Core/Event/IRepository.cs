@@ -1,11 +1,5 @@
 namespace Gnosis.Core.Event;
 
-public interface IRepository<T> where T : class
+public interface IRepository<T> : SolidDB.Core.IRepository<T> where T : class
 {
-    Task<T?> GetByIdAsync(Guid id);
-    Task<IEnumerable<T>> GetAllAsync();
-    Task AddAsync(T entity);
-    Task UpdateAsync(T entity);
-    Task DeleteAsync(Guid id);
-    Task SaveChangesAsync();
 }

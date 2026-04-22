@@ -1,26 +1,31 @@
-using Gnosis.Database.SHM;
-using Gnosis.Database.Storage;
-using Gnosis.Database.WAL;
-
 namespace Gnosis.Database.Core;
 
-public readonly record struct DatabaseOptions(
-    string Path,
-    StorageOptions Storage,
-    WalOptions Wal,
-    ShmOptions Shm,
-    int BTreeOrder,
-    bool ReadOnly,
-    bool AutoCheckpoint,
-    int CheckpointIntervalMs)
+public sealed class DatabaseOptions
 {
-    public static readonly DatabaseOptions Default = new(
-        Path: ".genesis/db",
-        Storage: StorageOptions.Default,
-        Wal: WalOptions.Default,
-        Shm: ShmOptions.Default,
-        BTreeOrder: 128,
-        ReadOnly: false,
-        AutoCheckpoint: true,
-        CheckpointIntervalMs: 30000);
+    public string Path { get; set; } = ".genesis/db";
+
+    public int BTreeOrder { get; set; } = 128;
+
+    public int PageSize { get; set; } = 4096;
+
+    public bool ReadOnly { get; set; }
+
+    public bool AutoCheckpoint { get; set; } = true;
+
+    public int CheckpointIntervalMs { get; set; } = 30000;
+
+    public int PageCacheSize { get; set; } = 1024;
+
+    public static DatabaseOptions Default => new();
+
+    public SolidDB.Core.SolidOptions ToSolidOptions() => new()
+    {
+        Path = Path,
+        BTreeOrder = BTreeOrder,
+        PageSize = PageSize,
+        ReadOnly = ReadOnly,
+        AutoCheckpoint = AutoCheckpoint,
+        CheckpointIntervalMs = CheckpointIntervalMs,
+        PageCacheSize = PageCacheSize
+    };
 }

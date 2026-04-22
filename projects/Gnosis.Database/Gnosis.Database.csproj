@@ -9,13 +9,14 @@
         <RootNamespace>Gnosis.Database</RootNamespace>
         <Version>0.0.1</Version>
         <Authors>Gnosis Engine Team</Authors>
-        <Description>Gnosis Database - 嵌入式 NoSQL 引擎</Description>
-        <PackageTags>gnosis;game-engine;database;nosql;embedded</PackageTags>
+        <Description>Gnosis Database - 基于 SolidDB 基座的嵌入式 NoSQL 引擎</Description>
+        <PackageTags>gnosis;game-engine;database;nosql;embedded;solid-db</PackageTags>
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\..\..\SolidDB\projects\SolidDB\SolidDB.csproj" />
     </ItemGroup>
 </Project>
