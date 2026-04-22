@@ -52,15 +52,26 @@ public class NetworkMetricsTests : GnosisTester
         _metrics.RecordPacketSent(100);
         _metrics.RecordPacketSent(200);
 
-        Assert.That(_metrics.PacketLossRate, Is.EqualTo(0f));
+        Assert.That(_metrics.TotalPacketsSent, Is.EqualTo(2));
+        Assert.That(_metrics.TotalBytesSent, Is.EqualTo(300));
     }
 
     [Test]
-    public void RecordPacketLost_记录后丢包率大于零()
+    public void RecordPacketReceived_记录后接收包数增加()
+    {
+        _metrics.RecordPacketReceived(100);
+        _metrics.RecordPacketReceived(200);
+
+        Assert.That(_metrics.TotalPacketsReceived, Is.EqualTo(2));
+        Assert.That(_metrics.TotalBytesReceived, Is.EqualTo(300));
+    }
+
+    [Test]
+    public void RecordPacketLoss_记录后丢包率大于零()
     {
         _metrics.RecordPacketSent(100);
         _metrics.RecordPacketSent(100);
-        _metrics.RecordPacketLost();
+        _metrics.RecordPacketLoss();
 
         Assert.That(_metrics.PacketLossRate, Is.GreaterThan(0f));
     }
@@ -75,33 +86,11 @@ public class NetworkMetricsTests : GnosisTester
     }
 
     [Test]
-    public void RecordBytesSent_记录后发送字节数增加()
-    {
-        _metrics.RecordBytesSent(1024);
-        _metrics.RecordBytesSent(2048);
-
-        var snapshot = _metrics.GetSnapshot();
-        Assert.That(snapshot.UploadBandwidth, Is.GreaterThanOrEqualTo(0f));
-    }
-
-    [Test]
-    public void RecordBytesReceived_记录后接收字节数增加()
-    {
-        _metrics.RecordBytesReceived(512);
-        _metrics.RecordBytesReceived(1024);
-
-        var snapshot = _metrics.GetSnapshot();
-        Assert.That(snapshot.DownloadBandwidth, Is.GreaterThanOrEqualTo(0f));
-    }
-
-    [Test]
     public void GetSnapshot_返回当前度量快照()
     {
         _metrics.RecordRtt(50f);
         _metrics.RecordPacketSent(100);
-        _metrics.RecordPacketSent(100);
-        _metrics.RecordBytesSent(1024);
-        _metrics.RecordBytesReceived(512);
+        _metrics.RecordPacketReceived(50);
 
         var snapshot = _metrics.GetSnapshot();
 
@@ -115,12 +104,14 @@ public class NetworkMetricsTests : GnosisTester
     {
         _metrics.RecordRtt(50f);
         _metrics.RecordPacketSent(100);
-        _metrics.RecordBytesSent(1024);
+        _metrics.RecordPacketReceived(50);
 
         _metrics.Reset();
 
         Assert.That(_metrics.SmoothedRtt, Is.EqualTo(0f));
         Assert.That(_metrics.PacketLossRate, Is.EqualTo(0f));
+        Assert.That(_metrics.TotalPacketsSent, Is.EqualTo(0));
+        Assert.That(_metrics.TotalBytesSent, Is.EqualTo(0));
     }
 
     [Test]
@@ -131,7 +122,36 @@ public class NetworkMetricsTests : GnosisTester
         _metrics.RecordRtt(45f);
         _metrics.RecordRtt(70f);
 
-        var snapshot = _metrics.GetSnapshot();
-        Assert.That(snapshot.Jitter, Is.GreaterThanOrEqualTo(0f));
+        Assert.That(_metrics.Jitter, Is.GreaterThanOrEqualTo(0f));
+    }
+
+    [Test]
+    public void GetAverageRtt_返回平均RTT()
+    {
+        _metrics.RecordRtt(50f);
+        _metrics.RecordRtt(100f);
+
+        var avg = _metrics.GetAverageRtt();
+
+        Assert.That(avg, Is.InRange(70f, 80f));
+    }
+
+    [Test]
+    public void GetMaxRtt_返回最大RTT()
+    {
+        _metrics.RecordRtt(50f);
+        _metrics.RecordRtt(100f);
+        _metrics.RecordRtt(75f);
+
+        Assert.That(_metrics.GetMaxRtt(), Is.EqualTo(100f));
+    }
+
+    [Test]
+    public void TotalPacketsLost_记录丢包后增加()
+    {
+        _metrics.RecordPacketSent(100);
+        _metrics.RecordPacketLoss(3);
+
+        Assert.That(_metrics.TotalPacketsLost, Is.EqualTo(3));
     }
 }

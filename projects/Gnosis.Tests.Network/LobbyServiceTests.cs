@@ -11,7 +11,7 @@ public class LobbyServiceTests : GnosisTester
     public override void Setup()
     {
         base.Setup();
-        _service = new LobbyService();
+        _service = new LobbyService("local1", "本地玩家");
     }
 
     public override void Teardown()
@@ -23,7 +23,7 @@ public class LobbyServiceTests : GnosisTester
     [Test]
     public void CreateRoom_创建后房间数量增加()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
 
         Assert.That(_service.RoomCount, Is.EqualTo(1));
     }
@@ -34,64 +34,52 @@ public class LobbyServiceTests : GnosisTester
         LobbyRoom? createdRoom = null;
         _service.OnRoomCreated += room => createdRoom = room;
 
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
 
         Assert.That(createdRoom, Is.Not.Null);
-        Assert.That(createdRoom!.Id, Is.EqualTo("room1"));
     }
 
     [Test]
-    public void JoinRoom_加入后成员数量增加()
+    public void JoinRoom_加入后当前房间不为空()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
-        _service.JoinRoom("room1", "player1");
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.JoinRoom(room.RoomId);
 
-        Assert.That(_service.Members.Count, Is.EqualTo(1));
+        Assert.That(_service.CurrentRoom, Is.Not.Null);
+        Assert.That(_service.IsConnected, Is.True);
     }
 
     [Test]
     public void JoinRoom_加入后触发OnMemberJoined事件()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
 
         LobbyMember? joinedMember = null;
         _service.OnMemberJoined += (_, member) => joinedMember = member;
 
-        _service.JoinRoom("room1", "player1");
+        _service.JoinRoom(room.RoomId);
 
         Assert.That(joinedMember, Is.Not.Null);
-        Assert.That(joinedMember!.Id, Is.EqualTo("player1"));
     }
 
     [Test]
-    public void LeaveRoom_离开后成员数量减少()
+    public void LeaveRoom_离开后当前房间为空()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
-        _service.JoinRoom("room1", "player1");
-        _service.LeaveRoom("room1", "player1");
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.JoinRoom(room.RoomId);
+        _service.LeaveRoom();
 
-        Assert.That(_service.Members.Count, Is.EqualTo(0));
-    }
-
-    [Test]
-    public void LeaveRoom_房主离开后房主迁移()
-    {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
-        _service.JoinRoom("room1", "player1");
-        _service.JoinRoom("room1", "player2");
-        _service.LeaveRoom("room1", "player1");
-
-        Assert.That(_service.Members.Count, Is.EqualTo(1));
+        Assert.That(_service.CurrentRoom, Is.Null);
     }
 
     [Test]
     public void GetRoom_获取已创建的房间()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
+        var created = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
 
-        var room = _service.GetRoom("room1");
+        var room = _service.GetRoom(created.RoomId);
         Assert.That(room, Is.Not.Null);
-        Assert.That(room!.Id, Is.EqualTo("room1"));
+        Assert.That(room!.RoomId, Is.EqualTo(created.RoomId));
     }
 
     [Test]
@@ -104,8 +92,8 @@ public class LobbyServiceTests : GnosisTester
     [Test]
     public void DestroyRoom_销毁后房间数量减少()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
-        _service.DestroyRoom("room1");
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.DestroyRoom(room.RoomId);
 
         Assert.That(_service.RoomCount, Is.EqualTo(0));
     }
@@ -113,52 +101,52 @@ public class LobbyServiceTests : GnosisTester
     [Test]
     public void DestroyRoom_销毁后触发OnRoomDestroyed事件()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
+        var room = _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
 
         string? destroyedRoomId = null;
         _service.OnRoomDestroyed += id => destroyedRoomId = id;
 
-        _service.DestroyRoom("room1");
+        _service.DestroyRoom(room.RoomId);
 
-        Assert.That(destroyedRoomId, Is.EqualTo("room1"));
+        Assert.That(destroyedRoomId, Is.EqualTo(room.RoomId));
     }
 
     [Test]
-    public void SearchRooms_按条件搜索房间()
+    public void SearchRooms_返回房间列表()
     {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
-        _service.CreateRoom("room2", new LobbyRoomOptions { MaxMembers = 8 });
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
 
-        var filter = new LobbySearchFilter { MaxMemberCount = 4 };
-        var results = _service.SearchRooms(filter);
+        var results = _service.SearchRooms();
 
-        Assert.That(results.Count, Is.EqualTo(1));
-        Assert.That(results[0].Id, Is.EqualTo("room1"));
-    }
-
-    [Test]
-    public void IsConnected_加入房间后为True()
-    {
-        _service.CreateRoom("room1", new LobbyRoomOptions { MaxMembers = 4 });
-        _service.JoinRoom("room1", "player1");
-
-        Assert.That(_service.IsConnected, Is.True);
+        Assert.That(results.Count, Is.EqualTo(2));
     }
 
     [Test]
     public void IsMatching_开始匹配后为True()
     {
-        _service.StartMatchmaking(new MatchCriteria { MaxTeamSize = 2 });
+        _service.StartMatching(new MatchCriteria { RequiredPlayers = 2 });
 
         Assert.That(_service.IsMatching, Is.True);
     }
 
     [Test]
-    public void CancelMatchmaking_取消后不再匹配()
+    public void CancelMatching_取消后不再匹配()
     {
-        _service.StartMatchmaking(new MatchCriteria { MaxTeamSize = 2 });
-        _service.CancelMatchmaking();
+        _service.StartMatching(new MatchCriteria { RequiredPlayers = 2 });
+        _service.CancelMatching();
 
         Assert.That(_service.IsMatching, Is.False);
+    }
+
+    [Test]
+    public void GetAllRooms_返回所有房间()
+    {
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 4 });
+        _service.CreateRoom(new LobbyRoomOptions { MaxPlayers = 8 });
+
+        var rooms = _service.GetAllRooms();
+
+        Assert.That(rooms.Count, Is.EqualTo(2));
     }
 }

@@ -159,7 +159,7 @@ public sealed class RenderDocCaptureWidget : WidgetElement
 
     #endregion
 
-    #region 事件处理
+    #region 公开方法
 
     /// <summary>
     /// 触发单帧捕获
@@ -316,13 +316,6 @@ public sealed class RenderDocCaptureWidget : WidgetElement
     #endregion
 
     #region 事件处理
-
-    public RenderDocCaptureWidget()
-    {
-        _statusText = "RenderDoc: Not Connected";
-
-        AddHandler<MouseEventArgs>(OnMouseEvent);
-    }
 
     private void OnMouseEvent(WidgetElement sender, MouseEventArgs e)
     {

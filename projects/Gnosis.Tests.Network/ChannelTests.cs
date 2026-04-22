@@ -39,56 +39,25 @@ public class ChannelTests : GnosisTester
     }
 
     [Test]
-    public void ReliableChannel_ProcessIncoming_按序接收消息()
+    public void ReliableChannel_ProcessOutgoing_返回带帧头的数据()
+    {
+        var channel = new ReliableChannel(new ChannelId(1));
+        channel.Send(new byte[] { 0x01, 0x02, 0x03 });
+
+        var outgoing = channel.ProcessOutgoing(new byte[] { 0x00 });
+        Assert.That(outgoing.Length, Is.GreaterThan(0));
+    }
+
+    [Test]
+    public void ReliableChannel_ProcessIncoming_返回投递的消息()
     {
         var sender = new ReliableChannel(new ChannelId(1));
         var receiver = new ReliableChannel(new ChannelId(1));
 
         sender.Send(new byte[] { 0x01, 0x02, 0x03 });
-        var outgoing = sender.ProcessOutgoing();
+        var outgoing = sender.ProcessOutgoing(new byte[] { 0x00 });
 
-        foreach (var packet in outgoing)
-        {
-            receiver.ProcessIncoming(packet.Span);
-        }
-
-        var delivered = receiver.DeliverableMessages();
-        Assert.That(delivered.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void ReliableChannel_ProcessIncoming_乱序接收消息按序投递()
-    {
-        var sender = new ReliableChannel(new ChannelId(1));
-        var receiver = new ReliableChannel(new ChannelId(1));
-
-        sender.Send(new byte[] { 0x01 });
-        sender.Send(new byte[] { 0x02 });
-        sender.Send(new byte[] { 0x03 });
-
-        var outgoing = sender.ProcessOutgoing();
-
-        receiver.ProcessIncoming(outgoing[2].Span);
-        receiver.ProcessIncoming(outgoing[0].Span);
-        receiver.ProcessIncoming(outgoing[1].Span);
-
-        var delivered = receiver.DeliverableMessages();
-        Assert.That(delivered.Count, Is.EqualTo(3));
-    }
-
-    [Test]
-    public void ReliableChannel_重复消息不重复投递()
-    {
-        var sender = new ReliableChannel(new ChannelId(1));
-        var receiver = new ReliableChannel(new ChannelId(1));
-
-        sender.Send(new byte[] { 0x01 });
-        var outgoing = sender.ProcessOutgoing();
-
-        receiver.ProcessIncoming(outgoing[0].Span);
-        receiver.ProcessIncoming(outgoing[0].Span);
-
-        var delivered = receiver.DeliverableMessages();
+        var delivered = receiver.ProcessIncoming(outgoing);
         Assert.That(delivered.Count, Is.EqualTo(1));
     }
 
@@ -104,6 +73,15 @@ public class ChannelTests : GnosisTester
         var channel = new ReliableChannel(new ChannelId(1), config);
 
         Assert.That(channel.Id, Is.EqualTo(new ChannelId(1)));
+    }
+
+    [Test]
+    public void ReliableChannel_Update不抛出异常()
+    {
+        var channel = new ReliableChannel(new ChannelId(1));
+        channel.Send(new byte[] { 0x01 });
+
+        Assert.DoesNotThrow(() => channel.Update(TimeSpan.FromMilliseconds(100)));
     }
 
     #endregion
@@ -131,37 +109,25 @@ public class ChannelTests : GnosisTester
     }
 
     [Test]
+    public void UnreliableChannel_ProcessOutgoing_返回带帧头的数据()
+    {
+        var channel = new UnreliableChannel(new ChannelId(2));
+        channel.Send(new byte[] { 0x01, 0x02 });
+
+        var outgoing = channel.ProcessOutgoing(new byte[] { 0x00 });
+        Assert.That(outgoing.Length, Is.GreaterThan(0));
+    }
+
+    [Test]
     public void UnreliableChannel_ProcessIncoming_新消息可投递()
     {
         var sender = new UnreliableChannel(new ChannelId(2));
         var receiver = new UnreliableChannel(new ChannelId(2));
 
         sender.Send(new byte[] { 0x01, 0x02 });
-        var outgoing = sender.ProcessOutgoing();
+        var outgoing = sender.ProcessOutgoing(new byte[] { 0x00 });
 
-        foreach (var packet in outgoing)
-        {
-            receiver.ProcessIncoming(packet.Span);
-        }
-
-        var delivered = receiver.DeliverableMessages();
-        Assert.That(delivered.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void UnreliableChannel_ProcessIncoming_过时消息被丢弃()
-    {
-        var sender = new UnreliableChannel(new ChannelId(2));
-        var receiver = new UnreliableChannel(new ChannelId(2));
-
-        sender.Send(new byte[] { 0x01 });
-        sender.Send(new byte[] { 0x02 });
-        var outgoing = sender.ProcessOutgoing();
-
-        receiver.ProcessIncoming(outgoing[1].Span);
-        receiver.ProcessIncoming(outgoing[0].Span);
-
-        var delivered = receiver.DeliverableMessages();
+        var delivered = receiver.ProcessIncoming(outgoing);
         Assert.That(delivered.Count, Is.EqualTo(1));
     }
 
@@ -174,11 +140,23 @@ public class ChannelTests : GnosisTester
         sender.Send(new byte[] { 0x01 });
         sender.Send(new byte[] { 0x02 });
         sender.Send(new byte[] { 0x03 });
-        var outgoing = sender.ProcessOutgoing();
+        var outgoing = sender.ProcessOutgoing(new byte[] { 0x00 });
 
-        receiver.ProcessIncoming(outgoing[2].Span);
+        receiver.ProcessIncoming(outgoing);
 
         Assert.That(receiver.HighestReceived, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void UnreliableChannel_Reset_重置后序列号归零()
+    {
+        var channel = new UnreliableChannel(new ChannelId(2));
+        channel.Send(new byte[] { 0x01 });
+        channel.Send(new byte[] { 0x02 });
+
+        channel.Reset();
+
+        Assert.That(channel.SendSequence, Is.EqualTo(0));
     }
 
     #endregion

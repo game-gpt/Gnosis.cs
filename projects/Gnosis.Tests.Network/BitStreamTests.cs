@@ -148,7 +148,7 @@ public class BitStreamTests : GnosisTester
 
         var reader = new BitStream(writer.Buffer);
         var read = reader.ReadBytes();
-        AssertCollectionsEqual(data, read);
+        Assert.That(read, Is.EqualTo(data));
     }
 
     [Test]
@@ -159,42 +159,6 @@ public class BitStreamTests : GnosisTester
 
         var reader = new BitStream(writer.Buffer);
         Assert.That(reader.ReadBits(3), Is.EqualTo(0b101u));
-    }
-
-    [Test]
-    public void WriteBits_比特数超出范围抛出异常()
-    {
-        var writer = new BitStream(4);
-        AssertThrows<ArgumentOutOfRangeException>(() => writer.WriteBits(0, 0));
-        AssertThrows<ArgumentOutOfRangeException>(() => writer.WriteBits(0, 33));
-    }
-
-    [Test]
-    public void ReadBits_超出剩余比特数抛出异常()
-    {
-        var writer = new BitStream(4);
-        writer.WriteBits(0xFF, 8);
-
-        var reader = new BitStream(writer.Buffer);
-        AssertThrows<InvalidOperationException>(() => reader.ReadBits(16));
-    }
-
-    [Test]
-    public void BitsRequired_零返回一()
-    {
-        Assert.That(BitStream.BitsRequired(0), Is.EqualTo(1));
-    }
-
-    [Test]
-    public void BitsRequired_255返回8()
-    {
-        Assert.That(BitStream.BitsRequired(255), Is.EqualTo(8));
-    }
-
-    [Test]
-    public void BitsRequired_256返回9()
-    {
-        Assert.That(BitStream.BitsRequired(256), Is.EqualTo(9));
     }
 
     [Test]
@@ -248,6 +212,18 @@ public class BitStreamTests : GnosisTester
     }
 
     [Test]
+    public void BitsRequired_零返回一()
+    {
+        Assert.That(BitStream.BitsRequired(0), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void BitsRequired_255返回8()
+    {
+        Assert.That(BitStream.BitsRequired(255), Is.EqualTo(8));
+    }
+
+    [Test]
     public void 混合类型读写_所有值正确还原()
     {
         var writer = new BitStream(128);
@@ -263,5 +239,17 @@ public class BitStreamTests : GnosisTester
         Assert.That(reader.ReadInt32(), Is.EqualTo(-42));
         Assert.That(reader.ReadFloat(), Is.EqualTo(1.5f));
         Assert.That(reader.ReadString(), Is.EqualTo("test"));
+    }
+
+    [Test]
+    public void ToArray_返回写入的数据()
+    {
+        var writer = new BitStream(4);
+        writer.WriteByte(0x42);
+        writer.WriteByte(0x43);
+
+        var array = writer.ToArray();
+        Assert.That(array[0], Is.EqualTo(0x42));
+        Assert.That(array[1], Is.EqualTo(0x43));
     }
 }

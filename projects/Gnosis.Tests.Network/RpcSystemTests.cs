@@ -107,18 +107,18 @@ public class RpcSystemTests : GnosisTester
     public void Execute_调用已注册方法触发处理器()
     {
         var receivedCaller = ConnectionId.Empty;
-        var receivedData = ReadOnlySpan<byte>.Empty;
+        byte[]? receivedData = null;
         var id = _system.Register("Method", (caller, args) =>
         {
             receivedCaller = caller;
-            receivedData = args;
+            receivedData = args.ToArray();
         });
 
         var call = _system.CreateServerRpc(id, new byte[] { 0x01, 0x02 });
         _system.Execute(new ConnectionId(1), call);
 
         Assert.That(receivedCaller, Is.EqualTo(new ConnectionId(1)));
-        Assert.That(receivedData.ToArray(), Is.EqualTo(new byte[] { 0x01, 0x02 }));
+        Assert.That(receivedData, Is.EqualTo(new byte[] { 0x01, 0x02 }));
     }
 
     [Test]
@@ -150,7 +150,7 @@ public class RpcSystemTests : GnosisTester
     public void SerializeCall_序列化后可正确反序列化()
     {
         var id = _system.Register("Method", (_, _) => { });
-        var original = _system.CreateClientRpc(id, new ConnectionId(42), new byte[] { 0xAA, 0xBB });
+        var original = _system.CreateClientRpc(id, new ConnectionId(42), new ReadOnlyMemory<byte>(new byte[] { 0xAA, 0xBB }));
 
         var data = _system.SerializeCall(original);
         var deserialized = _system.DeserializeCall(data);
@@ -159,6 +159,10 @@ public class RpcSystemTests : GnosisTester
         Assert.That(deserialized.RpcType, Is.EqualTo(original.RpcType));
         Assert.That(deserialized.TargetConnection, Is.EqualTo(original.TargetConnection));
         Assert.That(deserialized.Arguments.ToArray(), Is.EqualTo(original.Arguments.ToArray()));
+    }
+
+    [Test]
+    public void DeserializeCall_数据不足抛出异常()
     {
         var data = new byte[10];
         AssertThrows<ArgumentException>(() => _system.DeserializeCall(data));
