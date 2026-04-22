@@ -6,27 +6,24 @@
 
 | 组件 | 版本要求 | 说明 |
 |------|----------|------|
-| Rust | 1.70+ | 核心运行时环境 |
-| .NET SDK | 8.0+ | 元语言编译器依赖 |
+| .NET SDK | 8.0+ | C# 元语言层编译器与工具链 |
 | Git | 最新版 | 版本控制 |
 
 ### 推荐工具
 
 | 工具 | 用途 |
 |------|------|
-| VS Code / Rider | IDE 开发环境 |
-| Docker | 容器化部署 |
+| Visual Studio / Rider | C# 开发与调试 |
+| VS Code | gg 语言编辑 |
+| RenderDoc | 渲染调试 |
 
 ---
 
 ## 获取源码
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-org/gnosis-engine.git
-
-# 进入项目目录
-cd gnosis-engine
+git clone https://github.com/your-org/Gnosis.cs.git
+cd Gnosis.cs
 ```
 
 ---
@@ -34,20 +31,30 @@ cd gnosis-engine
 ## 项目结构概览
 
 ```
-gnosis-engine/
+Gnosis.cs/
 ├── projects/
-│   ├── gg-engine-galgame/      # Galgame 游戏模板
-│   ├── gg-engine-platformer/   # 平台跳跃游戏模板
-│   ├── gg-engine-stg/          # STG 弹幕游戏模板
-│   ├── my-first-galgame/       # 示例项目
-│   └── wion/                   # 数据序列化库
-├── documentation/              # 文档
+│   └── Gnosis/                # Gnosis 元引擎（25 个包的源码）
+│       ├── Compiler/          # gg 编译器 (C#)
+│       ├── Interpreter/       # 虚拟机与字节码 (C#)
+│       ├── ECS/               # ECS 运行时 (C#)
+│       ├── Rendering/         # 渲染系统 (C#)
+│       ├── Network/           # 网络系统 (C#)
+│       ├── Database/          # 嵌入式 NoSQL (C#)
+│       ├── Assets/            # 资产管线 (C#)
+│       ├── AI/                # AI 系统 (C#)
+│       ├── Animation/         # 动画系统 (C#)
+│       ├── Audio/             # 音频系统 (C#)
+│       ├── Input/             # 输入系统 (C#)
+│       ├── Physics/           # 物理系统 (C#)
+│       ├── Editor/            # 编辑器 (C#)
+│       ├── Infrastructure/    # 基础设施 (C#)
+│       └── Core/              # 核心类型 (C#)
+├── documentation/             # 文档
 │   └── zh-hans/
-│       ├── overview/           # 概览
-│       ├── development/        # 开发指南
-│       └── maintenance/        # 维护指南
-└── Cargo.toml                  # Rust 工作空间配置
+└── Gnosis.sln                 # .NET 解决方案
 ```
+
+> 完整的 25 包结构说明请参阅 [架构详解](../maintenance/architecture.md)。
 
 ---
 
@@ -55,13 +62,13 @@ gnosis-engine/
 
 ```bash
 # 还原依赖
-cargo build
+dotnet restore
 
-# 运行测试
-cargo test
+# Debug 模式
+dotnet build
 
-# 构建发布版本
-cargo build --release
+# Release 模式
+dotnet build -c Release
 ```
 
 ---
@@ -79,7 +86,7 @@ version = "0.1.0"
 author = "Your Name"
 
 [engine]
-target_arch = "WASM"  # 支持: WASM, x86_64, ARM64
+target_arch = "WASM"
 
 [assets]
 source = "assets/"
@@ -91,22 +98,20 @@ output = "cooked/"
 创建 `scripts/main.scirpt`：
 
 ```tsx
-// 组件定义
-export component Position {
-    x: float;
-    y: float;
+component Position {
+    x: f32;
+    y: f32;
 }
 
-export component Velocity {
-    vx: float;
-    vy: float;
+component Velocity {
+    vx: f32;
+    vy: f32;
 }
 
-// 系统定义
-export system MoveSystem {
+system MoveSystem {
     query = Query.all(Position, Velocity);
 
-    on_update(delta: float) {
+    on_update(delta: f32) {
         <% foreach (var (pos, vel) in query) { %>
             pos.x += vel.vx * delta;
             pos.y += vel.vy * delta;
@@ -114,8 +119,7 @@ export system MoveSystem {
     }
 }
 
-// 游戏入口
-export function main() {
+micro main() {
     game.start();
 }
 ```
@@ -124,10 +128,10 @@ export function main() {
 
 ```bash
 # 编译 gg 源码
-ggc compile scripts/ --arch WASM
+dotnet run --project projects/Gnosis -- compile scripts/ --arch WASM
 
 # 运行游戏
-ggc run
+dotnet run --project projects/Gnosis -- run
 ```
 
 ---
@@ -143,14 +147,14 @@ gg 语言专为游戏逻辑设计，语法融合了 TypeScript 的简洁性与 C
 组件是纯数据结构，不包含逻辑：
 
 ```tsx
-export component Health {
-    current: float;
-    max: float;
+component Health {
+    current: f32;
+    max: f32;
 }
 
-export component Player {
+component Player {
     name: string;
-    level: int;
+    level: i32;
 }
 ```
 
@@ -159,13 +163,13 @@ export component Player {
 系统包含游戏逻辑，通过查询访问组件：
 
 ```tsx
-export system HealthSystem {
+system HealthSystem {
     query = Query.all(Health);
 
-    on_update(delta: float) {
+    on_update(delta: f32) {
         <% foreach (var health in query) { %>
             if (health.current <= 0) {
-                // 处理死亡逻辑
+                # 处理死亡逻辑
             }
         <% } %>
     }
@@ -177,12 +181,12 @@ export system HealthSystem {
 `<% %>` 块在编译时执行，生成特化代码：
 
 ```tsx
-// 编译时循环展开
+# 编译时循环展开
 <% foreach (var entity in query) { %>
-    // 这里的代码会为每个匹配的实体生成
+    # 这里的代码会为每个匹配的实体生成
 <% } %>
 
-// 编译时条件
+# 编译时条件
 <% if (MACRO.DEBUG) { %>
     debug_log("Debug mode enabled");
 <% } %>
@@ -227,7 +231,7 @@ plugin WeChatChannel {
     provides_macros = ["WECHAT", "WECHAT_SHARE"];
     provides_capabilities = ["WeChatLogin", "WeChatShare"];
 
-    export function login(): Promise<UserInfo> {
+    micro login(): Promise<UserInfo> {
         return new Promise((resolve, reject) => {
             wx_login({
                 success: (res) => resolve({ code: res.code })
@@ -235,7 +239,7 @@ plugin WeChatChannel {
         });
     }
 
-    export function share(title: string, image_url: string) {
+    micro share(title: string, image_url: string) {
         wx_share({ title: title, image_url: image_url });
     }
 }
@@ -247,7 +251,7 @@ plugin WeChatChannel {
 <% if (MACRO.WECHAT) { %>
     import WeChatChannel;
     
-    function on_share_click() {
+    micro on_share_click() {
         WeChatChannel.share("My Game", "share_image.png");
     }
 <% } %>
@@ -263,7 +267,7 @@ plugin WeChatChannel {
 
 ```bash
 # 启动热重载服务
-ggc watch
+dotnet run --project projects/Gnosis -- watch
 ```
 
 ### 发布后热更新
@@ -271,7 +275,7 @@ ggc watch
 游戏启动时检查更新并下载：
 
 ```tsx
-export function main() {
+micro main() {
     var manifest = http.get("https://cdn.example.com/latest.json");
     
     foreach (var diff in manifest.diffs) {
@@ -290,7 +294,7 @@ export function main() {
 1. 阅读 [项目介绍](./introduction.md) 了解核心设计理念
 2. 阅读 [设计哲学](./design-philosophy.md) 深入理解多阶段编程
 3. 查看 [开发指南](../development/getting-started.md) 了解更多开发细节
-4. 探索 `projects/` 目录下的示例项目
+4. 阅读 [架构详解](../maintenance/architecture.md) 了解 25 包结构
 
 ---
 
@@ -310,3 +314,7 @@ export function main() {
 - **状态同步**：适用于需要服务器权威校验的场景（如 RPG、FPS）
 
 引擎支持在同一游戏中无缝切换两种模式。
+
+### Q: Gnosis 和游戏引擎是什么关系？
+
+Gnosis 是元引擎（Layer 1），提供 25 个 C# 包。游戏引擎（Layer 2）是基于 Gnosis 构建的 C# 应用程序。游戏内容（Layer 3）由 gg 语言编写。详见 [三层蛋糕模型](../maintenance/architecture.md#一三层蛋糕模型必须牢记)。

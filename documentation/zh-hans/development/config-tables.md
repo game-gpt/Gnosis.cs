@@ -1,192 +1,135 @@
 # 配置表系统
 
-本文档介绍 Gnosis 引擎的配置表系统，包括配置表的格式规范和使用方式。
+Gnosis 配置表系统位于 `Gnosis.Asset` 包的 `Format` 子模块中，使用 `gg-object` (gon) 格式定义结构化配置数据。
 
-## 概述
+---
 
-配置表用于存储游戏中的静态数据，如角色属性、物品信息、技能数据等。配置表位于项目的 `assets/sheets` 目录下。
+## 相关包与子模块
 
-## 支持的格式
+| 包 | 子模块 | 职责 |
+|:---|:---|:---|
+| `Gnosis.Asset` | `Format` | gon 格式解析器 |
+| `Gnosis.Asset` | `VFS` | 配置文件的虚拟文件系统访问 |
+| `Gnosis.Asset` | `Import` | 配置表的导入与依赖收集 |
+| `Gnosis.Asset` | `Cache` | 配置表的构建缓存 |
+| `Gnosis.Storage` | `Pref` | 玩家偏好键值存储 |
 
-配置表支持以下格式：
+---
 
-| 格式 | 文件扩展名 | 说明 |
-| :--- | :--- | :--- |
-| CSV | `.csv` | 逗号分隔值文件 |
-| TSV | `.tsv` | 制表符分隔值文件 |
-| Excel | `.xlsx`, `.xls` | Microsoft Excel 文件 |
+## gg-object (gon) 格式
 
-## 表格结构规范
+gon 是 JSON 的超集，专为游戏配置设计。
 
-配置表采用四行结构，具体如下：
+### 格式特点
 
-| 行号 | 内容 | 说明 |
-| :--- | :--- | :--- |
-| 第一行 | 策划注释 | 对字段的业务说明，仅供策划参考 |
-| 第二行 | 字段名 | 数据字段的标识符，用于代码引用 |
-| 第三行 | 字段类型 | 字段的数据类型定义 |
-| 第四行起 | 数据 | 实际的数据内容 |
+| 特性 | 描述 |
+|------|------|
+| JSON 兼容 | 所有合法 JSON 都是合法 gon |
+| 类型标注 | 支持字段类型声明 |
+| 引用 | 支持跨文件引用 |
+| 注释 | 支持行注释 `#` 和块注释 `/* */` |
+| 表达式 | 支持简单数学表达式 |
+| 枚举 | 支持枚举类型定义 |
 
 ### 示例
 
-以下是一个角色配置表的示例（CSV 格式）：
-
-```csv
-角色ID,角色名称,生命值,攻击力,防御力,技能列表
-id,name,hp,attack,defense,skills
-i32,string,i32,i32,i32,[i32]
-1,战士,100,15,10,"[1,2,3]"
-2,法师,60,25,5,"[4,5]"
-3,弓箭手,80,20,8,"[6]"
-```
-
-### 字段类型
-
-#### 基础类型
-
-| 类型 | 说明 | 示例 |
-| :--- | :--- | :--- |
-| `i32` | 32位有符号整数 | `100`, `-5` |
-| `i64` | 64位有符号整数 | `1000000000` |
-| `f32` | 单精度浮点数 | `3.14` |
-| `f64` | 双精度浮点数 | `3.14159265359` |
-| `bool` | 布尔值 | `true`, `false` |
-| `string` | 字符串 | `战士` |
-
-#### 列表类型
-
-| 类型 | 说明 | 示例 |
-| :--- | :--- | :--- |
-| `[T]` | 动态数组，元素类型为 T | `[1, 2, 3]` |
-| `[T; N]` | 固定大小数组，N 为长度 | `[1, 2, 3, 4, 5]` (N=5) |
-
-**示例：**
-
-| 类型 | 说明 |
-| :--- | :--- |
-| `[i32]` | 32位整数动态数组 |
-| `[string]` | 字符串动态数组 |
-| `[i32; 4]` | 长度为4的32位整数数组 |
-| `[f32; 3]` | 长度为3的单精度浮点数组（常用于向量） |
-
-#### 引用类型（外键）
-
-| 类型 | 说明 | 示例 |
-| :--- | :--- | :--- |
-| `&T` | 引用类型，存储主键，导出时进行外键检查 | `101` |
-
-引用类型用于建立表与表之间的关联关系。字段存储的是被引用表的主键值，在导出配置表时会自动进行外键完整性检查。
-
-**示例：**
-
-```csv
-技能ID,技能名称,所属角色
-id,name,characterId
-i32,string,&Character
-1,火球术,2
-2,冰箭,2
-3,连射,3
-```
-
-在上述示例中，`characterId` 字段类型为 `&Character`，表示引用 `Character` 表的主键。导出时会检查值 `2` 和 `3` 是否在 `Character` 表中存在。
-
-**外键检查规则：**
-
-- 被引用的表必须有主键字段
-- 引用值必须存在于被引用表中
-- 如果引用值不存在，导出时会报错
-
-## 配置映射
-
-配置表的行映射顺序可以在配置文件中调整。默认映射如下：
-
-```json
-{
-    "commentRow": 1,
-    "fieldNameRow": 2,
-    "fieldTypeRow": 3,
-    "dataStartRow": 4
+```gon
+# 角色配置表
+CharacterTable: {
+    id: i32,
+    name: string,
+    hp: f32,
+    attack: f32,
+    defense: f32,
+    skills: [i32],
 }
+
+characters: [
+    { id: 1001, name: "战士", hp: 1000.0, attack: 50.0, defense: 30.0, skills: [2001, 2002] },
+    { id: 1002, name: "法师", hp: 600.0, attack: 80.0, defense: 10.0, skills: [2003, 2004] },
+    { id: 1003, name: "治疗", hp: 800.0, attack: 30.0, defense: 20.0, skills: [2005, 2006] },
+]
+
+# 技能配置表
+SkillTable: {
+    id: i32,
+    name: string,
+    damage: f32,
+    cooldown: f32,
+    element: string,
+}
+
+skills: [
+    { id: 2001, name: "猛击", damage: 80.0, cooldown: 5.0, element: "physical" },
+    { id: 2002, name: "盾击", damage: 40.0, cooldown: 3.0, element: "physical" },
+    { id: 2003, name: "火球", damage: 120.0, cooldown: 8.0, element: "fire" },
+    { id: 2004, name: "冰锥", damage: 90.0, cooldown: 6.0, element: "ice" },
+    { id: 2005, name: "治愈", damage: -100.0, cooldown: 10.0, element: "holy" },
+    { id: 2006, name: "护盾", damage: 0.0, cooldown: 15.0, element: "holy" },
+]
 ```
 
-### 自定义映射
+---
 
-如果需要调整映射顺序，可以在项目的配置文件中进行设置：
+## 配置表在 gg-script 中的使用
 
-```json
-{
-    "sheets": {
-        "mapping": {
-            "commentRow": 1,
-            "fieldNameRow": 2,
-            "fieldTypeRow": 3,
-            "dataStartRow": 4
-        }
+### 导入配置表
+
+```tsx
+import "tables/characters.gon" as CharTable;
+import "tables/skills.gon" as SkillTable;
+
+system BattleSystem {
+    query = Query.all(CombatState);
+
+    on_update(delta: f32) {
+        <% foreach (var entity in query) { %>
+            var char_data = CharTable.characters[entity.char_id];
+            var skill_data = SkillTable.skills[entity.active_skill];
+            
+            # 应用技能伤害
+            entity.hp -= skill_data.damage * (1.0 - char_data.defense / 200.0);
+        <% } %>
     }
 }
 ```
 
-## 导出输出
+### 编译时验证
 
-配置表导出后，会生成以下文件：
+配置表在编译时（阶段一）进行类型检查：
 
-### 输出路径
+- 字段类型与声明一致
+- 引用 ID 存在性校验
+- 数值范围校验
 
-默认导出路径为 `assets/scripts/config-table/`。
+---
 
-### 输出文件
+## 配置表管线
 
-| 文件 | 说明 |
-| :--- | :--- |
-| `XxxTable.script` | 配置表代码文件，包含数据访问接口 |
-| `XxxTable.gon` | 调试用的 gon 格式文件，可读性好 |
-| 二进制数据 | 实际运行时使用的二进制格式文件 |
+### 导入流程
 
-**示例：**
-
-对于 `Character.csv` 配置表，导出后生成：
-
-```
-assets/scripts/config-table/
-├── CharacterTable.script    # 代码文件
-├── CharacterTable.gon       # 调试文件
-└── CharacterTable.bin       # 二进制数据（运行时加载）
+```mermaid
+flowchart LR
+    gon["gon 文件"] --> Parser["gon 解析器"]
+    Parser --> Validate["类型校验"]
+    Validate --> Binary["二进制序列化"]
+    Binary --> VFS["存入 VFS"]
 ```
 
-### 文件用途
+### 增量构建
 
-- **`.script` 文件**：提供类型安全的数据访问接口，在代码中直接引用
-- **`.gon` 文件**：调试时查看数据内容，便于排查问题
-- **二进制文件**：实际运行时加载的数据格式，体积小、加载快
+`Gnosis.Asset.Cache` 子模块支持配置表的增量构建：
 
-## 使用流程
+- 文件哈希比对，仅重新处理变更的配置表
+- 依赖图追踪，变更传播到依赖方
 
-1. 在 `assets/sheets` 目录下创建配置表文件
-2. 按照规范填写表格内容
-3. 运行配置表导出工具生成代码
-4. 在游戏代码中引用生成的数据类
+---
 
-## 最佳实践
+## 与其他系统的关系
 
-### 命名规范
-
-- 文件名使用小写字母和连字符：`character-config.csv`
-- 字段名使用驼峰命名法：`characterId`, `maxHp`
-- 避免使用保留字和特殊字符
-
-### 数据组织
-
-- 按功能模块划分配置表：角色、物品、技能等
-- 相关数据放在同一张表中，避免过度拆分
-- 使用外键关联不同表的数据
-
-### 版本控制
-
-- 将原始配置表纳入版本控制
-- 导出的代码文件也应纳入版本控制
-- 修改配置表后及时提交变更
-
-## 相关文档
-
-- [gg-object 语言](../languages/gg-object.md) - 对象配置语言
-- [资产管线](architecture.md#资产管线) - 资产预处理流程
+| 系统 | 关系 |
+|------|------|
+| `Gnosis.ECS` | 配置表数据可作为组件初始值 |
+| `Gnosis.Network` | 配置表在服务器和客户端间同步 |
+| `Gnosis.Storage` | 运行时配置覆盖（玩家偏好） |
+| `Gnosis.Security` | 配置表完整性校验 |

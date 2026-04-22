@@ -53,17 +53,17 @@ Color = f(Ray, UV, Position, Noise, Time, ...)
 这正是 gg 引擎"机制与策略分离"原则的体现。通过**元编程**和**抽象语法树 (AST) 变换**来统一不同渲染范式之间的差异：
 
 ```rust
-// 定义一个通用的"获取颜色"接口，不关心底层是采样纹理还是跑神经网络
+# 定义一个通用的"获取颜色"接口，不关心底层是采样纹理还是跑神经网络
 micro shade_pixel(input: ShadingInput) -> vec4<f32> {
     <% if (RENDER_MODE == "RASTER") { %>
         return textureSample(albedo_map, sampler, input.uv);
     <% } else if (RENDER_MODE == "RAY_TRACE") { %>
         return trace_ray(input.ray_origin, input.ray_dir);
     <% } else if (RENDER_MODE == "NERF") { %>
-        // 编译为运行 MLP 网络的计算着色器
+        # 编译为运行 MLP 网络的计算着色器
         return evaluate_nerf_network(input.ray_pos, input.ray_dir);
     <% } else if (RENDER_MODE == "DIFFUSION") { %>
-        // 编译为降噪迭代逻辑
+        # 编译为降噪迭代逻辑
         return diffusion_step(input.noise, input.step);
     <% } %>
 }
@@ -91,31 +91,53 @@ Shader 抽象并非万能，理解其边界有助于正确使用：
 **Stable Diffusion 的特殊性**：虽然计算过程可以用 Compute Shader 实现，但 gg 引擎不会用 `gg-shader` 去编写 UNet 架构代码。而是通过 `[External]` 绑定：`gg-shader` 定义一个黑盒函数 `denoise_step`，其实现由引擎的**扩散模型后端**通过 Tensor Core 调度执行：
 
 ```rust
-// gg-shader 只声明接口，实现由引擎后端提供
+# gg-shader 只声明接口，实现由引擎后端提供
 [External("diffusion_denoise_step")]
 micro denoise_step(noise: texture_2d<f32>, step: u32, prompt_hash: u32) -> vec4<f32>;
 ```
 
 ## 基础语法
 
+### 注释
+
+gg-shader 支持两种注释语法：
+
+| 语法 | 描述 |
+| :--- | :--- |
+| `#` | 行注释，从 `#` 到行末的内容被忽略 |
+| `<# #>` | 块注释，支持嵌套 |
+
+```rust
+# 这是行注释
+let x = 1.0; # 行末注释
+
+<# 这是块注释 #>
+let y = 2.0;
+
+<# 嵌套
+   <# 内层注释 #>
+#>
+let z = 3.0;
+```
+
 ### 函数定义
 
 gg-shader 使用 `micro` 关键字定义着色器函数：
 
 ```rust
-// 顶点着色器
+# 顶点着色器
 [Vertex]
 micro vs_main([Builtin(vertex_index)] idx: u32) -> VertexOutput {
     ...
 }
 
-// 片段着色器
+# 片段着色器
 [Fragment]
 micro ps_main(input: VertexOutput) -> vec4<f32> {
     ...
 }
 
-// 计算着色器
+# 计算着色器
 [Compute]
 [WorkgroupSize(8, 8, 1)]
 micro cs_main([Builtin(global_invocation_id)] global_id: vec3<u32>) {
@@ -128,7 +150,7 @@ micro cs_main([Builtin(global_invocation_id)] global_id: vec3<u32>) {
 gg-shader 使用 `neural` 关键字定义神经网络层，直接利用 GPU 的 Tensor Core / Matrix Core 执行推理：
 
 ```rust
-// 线性层
+# 线性层
 neural LinearLayer<in_dim: u32, out_dim: u32> @precision(half) {
     weight: tensor<f16, [out_dim, in_dim]>,
     bias: tensor<f16, [out_dim]>,
@@ -138,7 +160,7 @@ neural LinearLayer<in_dim: u32, out_dim: u32> @precision(half) {
     }
 }
 
-// 在 micro 函数中调用
+# 在 micro 函数中调用
 [Fragment]
 micro ps_main(input: VertexOutput) -> vec4<f32> {
     let features = extract_features(input);
@@ -158,7 +180,7 @@ micro ps_main(input: VertexOutput) -> vec4<f32> {
 详细的神经着色器编程指南请参考 [gg-neural 指南](gg-neural.md)。
 
 ```rust
-// 使用 using 语句简化泛型
+# 使用 using 语句简化泛型
 using gg_shader::f32::{vec2, vec3, vec4};
 
 micro vs_main(position: vec3, uv: vec2) -> VertexOutput {
@@ -193,10 +215,10 @@ micro ps_main(uv: vec2) -> vec4 {
 - 在 term 域（表达式中），创建实例时需要使用完整的泛型语法：`Vector2::<f32>(0, 0)`
 
 ```rust
-// 正确：使用简写形式
+# 正确：使用简写形式
 type Position = vec2;
 
-// 正确：在 term 域中使用完整泛型语法
+# 正确：在 term 域中使用完整泛型语法
 let pos = Vector2::<f32>(100.0, 200.0);
 let dir = Vector3::<f32>(1.0, 0.0, 0.0);
 ```
@@ -370,7 +392,7 @@ let sampler: sampler;
 ### 导出
 
 ```rust
-// math.ggs
+# math.ggs
 micro lerp(a: f32, b: f32, t: f32) -> f32 {
     return a + (b - a) * t;
 }
@@ -498,7 +520,7 @@ entity.add(Transform { position: vec3(0, 0, 0) });
 神经渲染材质通过 `gg-shader` 定义推理接口，实际计算由引擎神经渲染后端执行：
 
 ```rust
-// nerf_shade.ggs
+# nerf_shade.ggs
 struct NeRFInput {
     ray_pos: vec3<f32>,
     ray_dir: vec3<f32>,
@@ -513,13 +535,13 @@ micro nerf_render([Builtin(global_invocation_id)] global_id: vec3<u32>) {
     textureStore(output_image, global_id.xy, color);
 }
 
-// 由引擎神经渲染后端提供实现
+# 由引擎神经渲染后端提供实现
 [External("nerf_evaluate")]
 micro evaluate_nerf_network(pos: vec3<f32>, dir: vec3<f32>) -> vec4<f32>;
 ```
 
 ```tsx
-// 材质定义
+# 材质定义
 material NeRFMaterial {
     compute_shader: "shaders/nerf_shade.ggs";
     
@@ -535,7 +557,7 @@ material NeRFMaterial {
 扩散模型材质定义去噪步骤的接口，UNet 推理由引擎扩散模型后端接管：
 
 ```rust
-// diffusion_shade.ggs
+# diffusion_shade.ggs
 [Compute]
 [WorkgroupSize(8, 8, 1)]
 micro diffusion_render([Builtin(global_invocation_id)] global_id: vec3<u32>) {
@@ -546,13 +568,13 @@ micro diffusion_render([Builtin(global_invocation_id)] global_id: vec3<u32>) {
     textureStore(output_image, global_id.xy, color);
 }
 
-// 由引擎扩散模型后端提供实现
+# 由引擎扩散模型后端提供实现
 [External("diffusion_denoise_step")]
 micro denoise_step(pixel: vec2<f32>, step: u32, prompt_hash: u32) -> vec4<f32>;
 ```
 
 ```tsx
-// 材质定义
+# 材质定义
 material DiffusionMaterial {
     compute_shader: "shaders/diffusion_shade.ggs";
     
@@ -570,18 +592,18 @@ material DiffusionMaterial {
 混合渲染将多个后端的输出合成到最终画面：
 
 ```tsx
-// 混合渲染材质定义
+# 混合渲染材质定义
 material HybridMaterial {
     primary_shader: "shaders/raster_pbr.ggs";
     secondary_shader: "shaders/nerf_shade.ggs";
     
     properties: {
-        // 光栅化属性
+        # 光栅化属性
         albedo: texture_2d;
         metallic: f32 = 0.5;
         roughness: f32 = 0.5;
         
-        // 神经渲染属性
+        # 神经渲染属性
         nerf_model: Handle<NeRFModel>;
         compose_mode: ComposeMode = DepthBlend;
     };
@@ -589,7 +611,7 @@ material HybridMaterial {
 ```
 
 ```rust
-// 混合着色器：将光栅化与神经渲染结果合成
+# 混合着色器：将光栅化与神经渲染结果合成
 micro compose_hybrid(
     raster_color: vec4<f32>,
     raster_depth: f32,

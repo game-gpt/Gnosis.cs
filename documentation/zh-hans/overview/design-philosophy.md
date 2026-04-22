@@ -10,6 +10,8 @@ Gnosis 引擎的设计围绕五大核心原则展开，这些原则决定了引�
 
 将构建过程划分为多个阶段，每一阶段的决策固化为下一阶段的常量，最终输出一个**零反射、零冗余**的运行时。
 
+> **语言分层原则**：多阶段编程的实现依赖于两类语言的严格区分——C# 作为**引擎元语言**实现编译器、虚拟机生成器等构建时工具链；GGScript/GGShader/GGWidget 等 GG 语言族作为**游戏对象语言**编写游戏逻辑、着色器和编辑器 UI。游戏开发者使用 GG 语言族编写一切（游戏、插件、Mod、DLC、编辑器 Widget），而非 C#。详见 [项目介绍 - 引擎元语言与游戏对象语言](introduction.md#关键概念引擎元语言与游戏对象语言)。
+
 ### 阶段划分
 
 ```mermaid
@@ -71,13 +73,13 @@ flowchart TB
 ### 编译时 vs 运行时
 
 ```tsx
-// 编译时宏展开
+# 编译时宏展开
 <% foreach (var (pos, vel) in query) { %>
     pos.x += vel.vx * delta;
     pos.y += vel.vy * delta;
 <% } %>
 
-// 生成的字节码 (伪汇编)
+# 生成的字节码 (伪汇编)
 GET_ARCHETYPE R0, Archetype_PosVel
 LOOP_START:
 LD_FIELD R1, R0, offsetof(Position.x)
@@ -142,7 +144,7 @@ flowchart TB
 gg 引擎采用自主设计的 `gg-shader` 语言：
 
 ```rust
-// gg-shader 示例
+# gg-shader 示例
 fn vs_main(
     position: vec3<f32>,
     uv: vec2<f32>

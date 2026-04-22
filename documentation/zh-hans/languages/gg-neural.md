@@ -31,7 +31,7 @@ gg-shader 源码 → gg-shader IR → Tensor Core 调度 / SPIR-V Cooperative Ma
 `neural` 是 gg-shader 中定义神经网络层的一等语句，与 `micro` 函数平级：
 
 ```rust
-// 定义一个线性层
+# 定义一个线性层
 neural LinearLayer<in_dim: u32, out_dim: u32> {
     weight: tensor<f32, [out_dim, in_dim]>,
     bias: tensor<f32, [out_dim]>,
@@ -65,7 +65,7 @@ neural LinearLayer<in_dim: u32, out_dim: u32> {
 `neural` 块可以在 `micro` 函数中被调用，二者在同一渲染帧内无缝协作：
 
 ```rust
-// 在片段着色器中调用 NeRF 的 MLP
+# 在片段着色器中调用 NeRF 的 MLP
 [Fragment]
 micro ps_main(input: VertexOutput) -> vec4<f32> {
     let nerf_color = nerf_mlp.forward(vec.from(input.world_pos, input.view_dir));
@@ -108,13 +108,13 @@ neural Conv2D<channels_in: u32, channels_out: u32, kernel_size: u32, stride: u32
 激活函数以 `micro` 函数形式提供，作用于 `neural` 块的输出：
 
 ```rust
-// 内置激活函数
+# 内置激活函数
 micro relu(x: f32) -> f32 { return max(0.0, x); }
 micro sigmoid(x: f32) -> f32 { return 1.0 / (1.0 + exp(-x)); }
 micro gelu(x: f32) -> f32 { return x * 0.5 * (1.0 + erf(x / sqrt(2.0))); }
 micro silu(x: f32) -> f32 { return x * sigmoid(x); }
 
-// 向量化版本（编译器自动向量化）
+# 向量化版本（编译器自动向量化）
 micro relu_vec< N: u32>(x: vec<N, f32>) -> vec<N, f32>;
 micro sigmoid_vec< N: u32>(x: vec<N, f32>) -> vec<N, f32>;
 ```
@@ -123,7 +123,7 @@ micro sigmoid_vec< N: u32>(x: vec<N, f32>) -> vec<N, f32>;
 
 ```rust
 neural MLP<hidden_dim: u32, output_dim: u32, num_layers: u32> {
-    // 元编程生成多层权重
+    # 元编程生成多层权重
     <% for (int i = 0; i < num_layers; i++) { %>
         let layer_<%= i %>_weight: tensor<f32, [<%= i == num_layers - 1 ? "output_dim" : "hidden_dim" %>, <%= i == 0 ? "input_dim" : "hidden_dim" %>]>;
         let layer_<%= i %>_bias: tensor<f32, [<%= i == num_layers - 1 ? "output_dim" : "hidden_dim" %>]>;
@@ -162,17 +162,17 @@ neural SelfAttention<embed_dim: u32, num_heads: u32> {
         let k = matmul(x, k_proj_weight) + k_proj_bias;
         let v = matmul(x, v_proj_weight) + v_proj_bias;
 
-        // 多头分割
+        # 多头分割
         let q_heads = reshape(q, [num_heads, seq_len, head_dim]);
         let k_heads = reshape(k, [num_heads, seq_len, head_dim]);
         let v_heads = reshape(v, [num_heads, seq_len, head_dim]);
 
-        // 缩放点积注意力
+        # 缩放点积注意力
         let scale = 1.0 / sqrt(f32(head_dim));
         let attn = softmax(matmul(q_heads, transpose(k_heads, -2, -1)) * scale);
         let out = matmul(attn, v_heads);
 
-        // 合并头并投影
+        # 合并头并投影
         let merged = reshape(out, [seq_len, embed_dim]);
         return matmul(merged, out_proj_weight) + out_proj_bias;
     }
@@ -200,19 +200,19 @@ neural LayerNorm<normalized_dim: u32> {
 ### tensor 类型
 
 ```rust
-// 标量张量
+# 标量张量
 let x: tensor<f32, []>;
 
-// 一维张量（向量）
+# 一维张量（向量）
 let v: tensor<f32, [128]>;
 
-// 二维张量（矩阵）
+# 二维张量（矩阵）
 let w: tensor<f32, [256, 128]>;
 
-// 四维张量（卷积核）
+# 四维张量（卷积核）
 let kernel: tensor<f32, [64, 3, 3, 3]>;
 
-// 动态维度（运行时确定）
+# 动态维度（运行时确定）
 let dynamic: tensor<f32, [?, 768]>;
 ```
 
@@ -231,14 +231,14 @@ let dynamic: tensor<f32, [?, 768]>;
 ### 精度控制
 
 ```rust
-// 指定计算精度
+# 指定计算精度
 neural LinearLayer<in_dim: u32, out_dim: u32> @precision(half) {
     weight: tensor<f16, [out_dim, in_dim]>,
     bias: tensor<f32, [out_dim]>,
 
     forward(input: vec<in_dim, f32>) -> vec<out_dim, f32> {
-        // 输入自动转换为 f16 进行 Tensor Core 计算
-        // 输出自动回转为 f32
+        # 输入自动转换为 f16 进行 Tensor Core 计算
+        # 输出自动回转为 f32
         return matmul(weight, input) + bias;
     }
 }
@@ -256,9 +256,9 @@ neural LinearLayer<in_dim: u32, out_dim: u32> @precision(half) {
 ### 权重加载
 
 ```rust
-// 从资产加载预训练权重
+# 从资产加载预训练权重
 neural NeRFMLP @precision(half) {
-    // [Weights("models/nerf/mlp_weights.bin")] 指定权重资产路径
+    # [Weights("models/nerf/mlp_weights.bin")] 指定权重资产路径
     weight_0: tensor<f16, [256, 63]>  @weights("models/nerf/layer0_weight.bin"),
     bias_0: tensor<f16, [256]>        @weights("models/nerf/layer0_bias.bin"),
     weight_1: tensor<f16, [256, 256]> @weights("models/nerf/layer1_weight.bin"),
@@ -280,11 +280,11 @@ neural NeRFMLP @precision(half) {
 ### 权重布局
 
 ```rust
-// 指定权重内存布局
-@layout(row_major)    // 行优先（默认）
-@layout(column_major) // 列优先（某些 BLAS 实现更高效）
-@layout(nchw)         // 卷积核 NCHW 布局
-@layout(nhwc)         // 卷积核 NHWC 布局（Tensor Core 友好）
+# 指定权重内存布局
+@layout(row_major)    # 行优先（默认）
+@layout(column_major) # 列优先（某些 BLAS 实现更高效）
+@layout(nchw)         # 卷积核 NCHW 布局
+@layout(nhwc)         # 卷积核 NHWC 布局（Tensor Core 友好）
 ```
 
 ## 编译路径
@@ -304,12 +304,12 @@ gg-neural 编译器将 `matmul` 操作映射为 GPU 原生矩阵乘法指令：
 对于不支持 Tensor Core 的 GPU，编译器回退到 SPIR-V Cooperative Matrix 扩展：
 
 ```rust
-// 编译器自动生成的 SPIR-V Cooperative Matrix 伪代码
-// matmul(weight, input) 映射为：
-//
-// %a = OpLoad %matNxM %weight_tile
-// %b = OpLoad %matMxK %input_tile
-// %c = OpMatrixTimesScalar %a %b    // 或 OpCooperativeMatrixMulAdd
+# 编译器自动生成的 SPIR-V Cooperative Matrix 伪代码
+# matmul(weight, input) 映射为：
+#
+# %a = OpLoad %matNxM %weight_tile
+# %b = OpLoad %matMxK %input_tile
+# %c = OpMatrixTimesScalar %a %b    # 或 OpCooperativeMatrixMulAdd
 ```
 
 ### 编译流程
@@ -331,7 +331,7 @@ gg-neural 编译器将 `matmul` 操作映射为 GPU 原生矩阵乘法指令：
 ### NeRF 实时渲染
 
 ```rust
-// nerf_realtime.ggns
+# nerf_realtime.ggns
 neural NeRFMLP @precision(half) {
     encoding_weight: tensor<f16, [256, 63]>,
     encoding_bias: tensor<f16, [256]>,
@@ -357,7 +357,7 @@ micro nerf_render(
     let pixel = vec2<f32>(global_id.xy);
     let ray = generate_camera_ray(pixel, uniforms.view, uniforms.projection);
 
-    // 射线行进，每步调用 MLP
+    # 射线行进，每步调用 MLP
     var color = vec3<f32>(0.0, 0.0, 0.0);
     var alpha = 0.0;
     for (step in range(0, MAX_STEPS)) {
@@ -379,7 +379,7 @@ micro nerf_render(
 ### 3D Gaussian Splatting
 
 ```rust
-// 3dgs.ggns
+# 3dgs.ggns
 neural GaussianDecoder @precision(half) {
     sh_weight: tensor<f16, [48, 3]>,
     sh_bias: tensor<f16, [3]>,
@@ -393,7 +393,7 @@ neural GaussianDecoder @precision(half) {
 ### 超分辨率
 
 ```rust
-// upscale.ggns
+# upscale.ggns
 neural UpscaleConv @precision(half) {
     conv1_weight: tensor<f16, [64, 3, 3, 3]>,
     conv1_bias: tensor<f16, [64]>,
@@ -414,13 +414,13 @@ neural UpscaleConv @precision(half) {
 ### DLSS 风格帧生成
 
 ```rust
-// frame_gen.ggns
+# frame_gen.ggns
 neural FrameGenerator @precision(half) {
-    // 光流编码器
+    # 光流编码器
     flow_enc_conv1: Conv2D<3, 32, 3, 1, 1>,
     flow_enc_conv2: Conv2D<32, 64, 3, 2, 1>,
 
-    // 帧合成器
+    # 帧合成器
     synthesis_conv1: Conv2D<68, 64, 3, 1, 1>,
     synthesis_conv2: Conv2D<64, 32, 3, 1, 1>,
     synthesis_conv3: Conv2D<32, 3, 3, 1, 1>,
@@ -454,17 +454,17 @@ neural FrameGenerator @precision(half) {
 ### 内存布局
 
 ```rust
-// 推荐：权重常驻 GPU 显存
-@weights_layout(device_local)  // 默认，权重常驻显存
+# 推荐：权重常驻 GPU 显存
+@weights_layout(device_local)  # 默认，权重常驻显存
 
-// 可选：权重按需流式加载（大模型场景）
+# 可选：权重按需流式加载（大模型场景）
 @weights_layout(streaming)
 ```
 
 ### 与渲染管线的融合
 
 ```rust
-// 最佳实践：在渲染帧内完成推理，避免 CPU 回读
+# 最佳实践：在渲染帧内完成推理，避免 CPU 回读
 [Compute]
 [WorkgroupSize(8, 8, 1)]
 micro deferred_neural_shading(
@@ -493,7 +493,7 @@ gg-neural 是 gg-shader 的扩展，不是独立语言：
 在同一个 `.ggs` 文件中混合使用：
 
 ```rust
-// 混合使用示例
+# 混合使用示例
 neural SmallMLP @precision(half) {
     w0: tensor<f16, [64, 32]>,
     b0: tensor<f16, [64]>,
@@ -506,22 +506,22 @@ neural SmallMLP @precision(half) {
     }
 }
 
-// micro 函数中调用 neural 块
+# micro 函数中调用 neural 块
 [Fragment]
 micro ps_main(input: VertexOutput) -> vec4<f32> {
-    let features = extract_features(input);  // micro 函数
-    let neural_color = SmallMLP.forward(features);  // neural 推理
-    let final_color = tone_map(neural_color);  // micro 函数
+    let features = extract_features(input);  # micro 函数
+    let neural_color = SmallMLP.forward(features);  # neural 推理
+    let final_color = tone_map(neural_color);  # micro 函数
     return vec4<f32>(final_color, 1.0);
 }
 
 micro extract_features(input: VertexOutput) -> vec<32, f32> {
-    // 传统着色器逻辑：提取位置、法线、UV 等特征
+    # 传统着色器逻辑：提取位置、法线、UV 等特征
     ...
 }
 
 micro tone_map(color: vec<3, f32>) -> vec<3, f32> {
-    // ACES Tone Mapping
+    # ACES Tone Mapping
     ...
 }
 ```

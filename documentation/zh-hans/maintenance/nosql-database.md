@@ -2,7 +2,7 @@
 
 ## 概述
 
-Genesis NoSQL 存储引擎是专为 Genesis 引擎设计的高性能键值存储系统，采用 B+ 树索引、WAL（Write-Ahead Logging）预写日志和 SHM（Shared Memory）共享内存等现代化优化技术，为引擎的时空树、因果锚点、波函数坍缩等核心系统提供低延迟、高吞吐的持久化能力。
+Gnosis NoSQL 存储引擎位于 `Gnosis.Database` 包中，是专为 Gnosis 引擎设计的高性能键值存储系统，采用 B+ 树索引、WAL（Write-Ahead Logging）预写日志和 SHM（Shared Memory）共享内存等现代化优化技术，为引擎的存档系统、资产缓存、配置存储等核心系统提供低延迟、高吞吐的持久化能力。
 
 > 存储不是目的，而是世界状态的投影。每一次写入都是一次因果锚定，每一次读取都是一次时空回溯。
 
@@ -21,7 +21,7 @@ Genesis NoSQL 存储引擎是专为 Genesis 引擎设计的高性能键值存储
 ```
 ┌─────────────────────────────────────────────────┐
 │              应用层 (Application)                │
-│  ISpacetimeTree  IHistoryStore  IRepository<T>  │
+│  IAssetStore  ISceneData  ISaveSlot  │
 └───────────┬──────────────┬──────────────┬───────┘
             │              │              │
 ┌───────────▼──────────────▼──────────────▼───────┐
@@ -43,7 +43,7 @@ Genesis NoSQL 存储引擎是专为 Genesis 引擎设计的高性能键值存储
                        │
 ┌──────────────────────▼─────────────────────────┐
 │             文件系统层 (File System)             │
-│  .genesis/db     .genesis/wal     .genesis/shm  │
+│  .gnosis/db     .gnosis/wal     .gnosis/shm  │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -114,7 +114,7 @@ Database/
 │       ├── StorageOptions.cs
 │       └── FileMetadata.cs
 └── Implementations/         # 具体实现
-    ├── GenesisKvDatabase.cs
+    ├── GnosisKvDatabase.cs
     ├── BTreeIndex.cs
     ├── WalManager.cs
     ├── ShmCacheManager.cs
@@ -127,7 +127,7 @@ Database/
 ### IKvDatabase — 键值数据库
 
 ```csharp
-namespace Genesis.Database.Core.Interfaces;
+namespace Gnosis.Database.Core.Interfaces;
 
 public interface IKvDatabase : IDisposable, IAsyncDisposable
 {
@@ -146,7 +146,7 @@ public interface IKvDatabase : IDisposable, IAsyncDisposable
 ### ITransaction — 事务
 
 ```csharp
-namespace Genesis.Database.Core.Interfaces;
+namespace Gnosis.Database.Core.Interfaces;
 
 public interface ITransaction : IDisposable
 {
@@ -167,7 +167,7 @@ public interface ITransaction : IDisposable
 ### ISnapshot — 快照
 
 ```csharp
-namespace Genesis.Database.Core.Interfaces;
+namespace Gnosis.Database.Core.Interfaces;
 
 public interface ISnapshot : IDisposable
 {
@@ -181,7 +181,7 @@ public interface ISnapshot : IDisposable
 ### ICursor — 游标
 
 ```csharp
-namespace Genesis.Database.Core.Interfaces;
+namespace Gnosis.Database.Core.Interfaces;
 
 public interface ICursor : IDisposable
 {
@@ -199,7 +199,7 @@ public interface ICursor : IDisposable
 ### IWriteAheadLog — 预写日志
 
 ```csharp
-namespace Genesis.Database.WAL.Interfaces;
+namespace Gnosis.Database.WAL.Interfaces;
 
 public interface IWriteAheadLog : IDisposable, IAsyncDisposable
 {
@@ -216,7 +216,7 @@ public interface IWriteAheadLog : IDisposable, IAsyncDisposable
 ### ISharedMemory — 共享内存
 
 ```csharp
-namespace Genesis.Database.SHM.Interfaces;
+namespace Gnosis.Database.SHM.Interfaces;
 
 public interface ISharedMemory : IDisposable
 {
@@ -236,7 +236,7 @@ public interface ISharedMemory : IDisposable
 ### IBTree — B+ 树索引
 
 ```csharp
-namespace Genesis.Database.BTree.Interfaces;
+namespace Gnosis.Database.BTree.Interfaces;
 
 public interface IBTree : IDisposable
 {
@@ -255,7 +255,7 @@ public interface IBTree : IDisposable
 ### IPageManager — 页面管理器
 
 ```csharp
-namespace Genesis.Database.PageManager.Interfaces;
+namespace Gnosis.Database.PageManager.Interfaces;
 
 public interface IPageManager : IDisposable, IAsyncDisposable
 {
@@ -273,7 +273,7 @@ public interface IPageManager : IDisposable, IAsyncDisposable
 ### IStorageEngine — 存储引擎
 
 ```csharp
-namespace Genesis.Database.Storage.Interfaces;
+namespace Gnosis.Database.Storage.Interfaces;
 
 public interface IStorageEngine : IDisposable, IAsyncDisposable
 {
@@ -292,7 +292,7 @@ public interface IStorageEngine : IDisposable, IAsyncDisposable
 ### DatabaseKey — 数据库键
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct DatabaseKey(ReadOnlyMemory<byte> Bytes)
 {
@@ -309,7 +309,7 @@ public readonly record struct DatabaseKey(ReadOnlyMemory<byte> Bytes)
 ### DatabaseValue — 数据库值
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct DatabaseValue(ReadOnlyMemory<byte> Bytes)
 {
@@ -326,7 +326,7 @@ public readonly record struct DatabaseValue(ReadOnlyMemory<byte> Bytes)
 ### DatabaseEntry — 键值对
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct DatabaseEntry(DatabaseKey Key, DatabaseValue Value)
 {
@@ -338,7 +338,7 @@ public readonly record struct DatabaseEntry(DatabaseKey Key, DatabaseValue Value
 ### TransactionId — 事务标识
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct TransactionId(ulong Value)
 {
@@ -351,7 +351,7 @@ public readonly record struct TransactionId(ulong Value)
 ### SequenceNumber — WAL 序列号
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct SequenceNumber(ulong Value)
 {
@@ -364,7 +364,7 @@ public readonly record struct SequenceNumber(ulong Value)
 ### PageId — 页面标识
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct PageId(long Value)
 {
@@ -378,7 +378,7 @@ public readonly record struct PageId(long Value)
 ### StorageEngineType
 
 ```csharp
-namespace Genesis.Database.Core.Enums;
+namespace Gnosis.Database.Core.Enums;
 
 public enum StorageEngineType
 {
@@ -391,7 +391,7 @@ public enum StorageEngineType
 ### IsolationLevel
 
 ```csharp
-namespace Genesis.Database.Core.Enums;
+namespace Gnosis.Database.Core.Enums;
 
 public enum IsolationLevel
 {
@@ -405,7 +405,7 @@ public enum IsolationLevel
 ### CompactionMode
 
 ```csharp
-namespace Genesis.Database.Core.Enums;
+namespace Gnosis.Database.Core.Enums;
 
 public enum CompactionMode
 {
@@ -418,7 +418,7 @@ public enum CompactionMode
 ### PageType
 
 ```csharp
-namespace Genesis.Database.Core.Enums;
+namespace Gnosis.Database.Core.Enums;
 
 public enum PageType
 {
@@ -452,7 +452,7 @@ WAL（Write-Ahead Logging）是数据库崩溃恢复的核心机制。所有数�
 ### WalEntry 值对象
 
 ```csharp
-namespace Genesis.Database.WAL.ValueObjects;
+namespace Gnosis.Database.WAL.ValueObjects;
 
 public readonly record struct WalEntry(
     SequenceNumber Sequence,
@@ -520,7 +520,7 @@ public enum WalEntryType : byte
 ### WalCheckpoint 值对象
 
 ```csharp
-namespace Genesis.Database.WAL.ValueObjects;
+namespace Gnosis.Database.WAL.ValueObjects;
 
 public readonly record struct WalCheckpoint(
     SequenceNumber Sequence,
@@ -539,7 +539,7 @@ public readonly record struct WalCheckpoint(
 ### WalOptions 值对象
 
 ```csharp
-namespace Genesis.Database.WAL.ValueObjects;
+namespace Gnosis.Database.WAL.ValueObjects;
 
 public readonly record struct WalOptions(
     string Directory,
@@ -549,7 +549,7 @@ public readonly record struct WalOptions(
     int BufferSize)
 {
     public static readonly WalOptions Default = new(
-        Directory: ".genesis/wal",
+        Directory: ".gnosis/wal",
         MaxFileSize: 64 * 1024 * 1024,
         SyncOnCommit: true,
         CompressionEnabled: false,
@@ -594,7 +594,7 @@ SHM（Shared Memory）缓存利用操作系统的共享内存机制，实现进�
 ### ShmSegmentHeader 值对象
 
 ```csharp
-namespace Genesis.Database.SHM.ValueObjects;
+namespace Gnosis.Database.SHM.ValueObjects;
 
 public readonly record struct ShmSegmentHeader(
     uint Magic,
@@ -605,7 +605,7 @@ public readonly record struct ShmSegmentHeader(
     long UsedSize,
     Timestamp CreatedAt)
 {
-    public static readonly uint ExpectedMagic = 0x47454E53; // "GENS"
+    public static readonly uint ExpectedMagic = 0x474E4F53; // "GNOS"
     public static readonly uint CurrentVersion = 1;
     public double UsageRatio => TotalSize > 0 ? (double)UsedSize / TotalSize : 0;
 }
@@ -614,7 +614,7 @@ public readonly record struct ShmSegmentHeader(
 ### ShmPageEntry 值对象
 
 ```csharp
-namespace Genesis.Database.SHM.ValueObjects;
+namespace Gnosis.Database.SHM.ValueObjects;
 
 public readonly record struct ShmPageEntry(
     PageId PageId,
@@ -635,7 +635,7 @@ public readonly record struct ShmPageEntry(
 ### ShmOptions 值对象
 
 ```csharp
-namespace Genesis.Database.SHM.ValueObjects;
+namespace Gnosis.Database.SHM.ValueObjects;
 
 public readonly record struct ShmOptions(
     string Name,
@@ -646,7 +646,7 @@ public readonly record struct ShmOptions(
     bool EnableCrossProcess)
 {
     public static readonly ShmOptions Default = new(
-        Name: "genesis_db_shm",
+        Name: "gnosis_db_shm",
         MaxSize: 256 * 1024 * 1024,
         PageSize: 4096,
         MaxPageCount: 65536,
@@ -670,7 +670,7 @@ public readonly record struct ShmOptions(
 
 ### 设计原理
 
-B+ 树是数据库索引的经典数据结构，所有数据存储在叶子节点，内部节点仅存储键和子指针。B+ 树支持高效的范围查询和顺序扫描，与 Genesis 引擎的时空树查询模式高度契合。
+B+ 树是数据库索引的经典数据结构，所有数据存储在叶子节点，内部节点仅存储键和子指针。B+ 树支持高效的范围查询和顺序扫描，与 Gnosis 引擎的场景查询模式高度契合。
 
 ### B+ 树参数
 
@@ -684,7 +684,7 @@ B+ 树是数据库索引的经典数据结构，所有数据存储在叶子节�
 ### BTreeNode 值对象
 
 ```csharp
-namespace Genesis.Database.BTree.ValueObjects;
+namespace Gnosis.Database.BTree.ValueObjects;
 
 public readonly record struct BTreeNode(
     PageId PageId,
@@ -703,7 +703,7 @@ public readonly record struct BTreeNode(
 ### BTreeSplitResult / BTreeMergeResult
 
 ```csharp
-namespace Genesis.Database.BTree.ValueObjects;
+namespace Gnosis.Database.BTree.ValueObjects;
 
 public readonly record struct BTreeSplitResult(
     DatabaseKey MiddleKey,
@@ -724,7 +724,7 @@ public readonly record struct BTreeMergeResult(
 ### Page 值对象
 
 ```csharp
-namespace Genesis.Database.PageManager.ValueObjects;
+namespace Gnosis.Database.PageManager.ValueObjects;
 
 public readonly record struct Page(
     PageId Id,
@@ -740,7 +740,7 @@ public readonly record struct Page(
 ### PageHeader 值对象
 
 ```csharp
-namespace Genesis.Database.PageManager.ValueObjects;
+namespace Gnosis.Database.PageManager.ValueObjects;
 
 public readonly record struct PageHeader(
     PageType Type,
@@ -755,7 +755,7 @@ public readonly record struct PageHeader(
 ### FreePageList 值对象
 
 ```csharp
-namespace Genesis.Database.PageManager.ValueObjects;
+namespace Gnosis.Database.PageManager.ValueObjects;
 
 public readonly record struct FreePageList(IReadOnlyList<PageId> FreePages)
 {
@@ -769,7 +769,7 @@ public readonly record struct FreePageList(IReadOnlyList<PageId> FreePages)
 ### IFileProvider 接口
 
 ```csharp
-namespace Genesis.Database.Storage.Interfaces;
+namespace Gnosis.Database.Storage.Interfaces;
 
 public interface IFileProvider : IDisposable, IAsyncDisposable
 {
@@ -783,7 +783,7 @@ public interface IFileProvider : IDisposable, IAsyncDisposable
 ### StorageOptions 值对象
 
 ```csharp
-namespace Genesis.Database.Storage.ValueObjects;
+namespace Gnosis.Database.Storage.ValueObjects;
 
 public readonly record struct StorageOptions(
     StorageEngineType EngineType,
@@ -796,7 +796,7 @@ public readonly record struct StorageOptions(
 {
     public static readonly StorageOptions Default = new(
         EngineType: StorageEngineType.MemoryMappedFile,
-        BasePath: ".genesis/db",
+        BasePath: ".gnosis/db",
         PageSize: 4096,
         InitialSize: 16 * 1024 * 1024,
         MaxSize: long.MaxValue,
@@ -808,7 +808,7 @@ public readonly record struct StorageOptions(
 ### FileMetadata 值对象
 
 ```csharp
-namespace Genesis.Database.Storage.ValueObjects;
+namespace Gnosis.Database.Storage.ValueObjects;
 
 public readonly record struct FileMetadata(
     string Path,
@@ -821,7 +821,7 @@ public readonly record struct FileMetadata(
 ## DatabaseOptions — 数据库配置
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct DatabaseOptions(
     string Path,
@@ -834,7 +834,7 @@ public readonly record struct DatabaseOptions(
     int CheckpointIntervalMs)
 {
     public static readonly DatabaseOptions Default = new(
-        Path: ".genesis/db",
+        Path: ".gnosis/db",
         Storage: StorageOptions.Default,
         Wal: WalOptions.Default,
         Shm: ShmOptions.Default,
@@ -848,7 +848,7 @@ public readonly record struct DatabaseOptions(
 ## DatabaseStatistics — 数据库统计
 
 ```csharp
-namespace Genesis.Database.Core.ValueObjects;
+namespace Gnosis.Database.Core.ValueObjects;
 
 public readonly record struct DatabaseStatistics(
     long TotalKeys,
@@ -867,12 +867,12 @@ public readonly record struct DatabaseStatistics(
 
 ## 与现有系统的集成
 
-### 与 Persistence 模块的关系
+### 与 Gnosis.Storage 包的关系
 
-Database 模块是 Persistence 模块的底层引擎，提供高性能的存储原语：
+Database 模块是 Gnosis.Storage 包的底层引擎，提供高性能的存储原语：
 
 ```
-Persistence (IHistoryStore, IRepository<T>, IIncrementalSave)
+Persistence (IAssetStore, ISceneData, ISaveSlot)
       │
       │  内部使用
       ▼
@@ -883,11 +883,11 @@ Database (IKvDatabase, ITransaction, ISnapshot)
 BTree + WAL + SHM + PageManager
 ```
 
-### 与 Spacetime 模块的集成
+### 与 Gnosis.Scene 包的集成
 
-时空树节点的持久化通过 Database 模块实现：
+场景数据的持久化通过 Database 模块实现：
 
-| 时空树操作 | 数据库操作 | 说明 |
+| 场景操作 | 数据库操作 | 说明 |
 |:---|:---|:---|
 | 节点创建 | Put(SpatialHash → NodeData) | 以空间哈希为键存储节点 |
 | 节点查询 | Get(SpatialHash) | 通过 B+ 树快速定位 |
@@ -895,9 +895,9 @@ BTree + WAL + SHM + PageManager
 | 历史回溯 | Snapshot(Sequence).Get(HistoryHash) | 快照隔离读取 |
 | 批量更新 | Transaction(Put × N).Commit() | 事务保证原子性 |
 
-### 与 Causal 模块的集成
+### 与 Gnosis.Security 包的集成
 
-因果锚点的权重更新通过 WAL 保证持久性：
+安全审计日志的写入通过 WAL 保证持久性：
 
 ```
 因果锚点权重更新
@@ -975,7 +975,7 @@ BTree + WAL + SHM + PageManager
 
 ## 文件格式
 
-### 数据库文件 (.genesis/db)
+### 数据库文件 (.gnosis/db)
 
 ```
 ┌─────────────────────────────────────────┐
@@ -994,7 +994,7 @@ BTree + WAL + SHM + PageManager
 └─────────────────────────────────────────┘
 ```
 
-### WAL 文件 (.genesis/wal)
+### WAL 文件 (.gnosis/wal)
 
 ```
 ┌─────────────────────────────────────────┐
@@ -1011,7 +1011,7 @@ BTree + WAL + SHM + PageManager
 └─────────────────────────────────────────┘
 ```
 
-### SHM 文件 (.genesis/shm)
+### SHM 文件 (.gnosis/shm)
 
 ```
 ┌─────────────────────────────────────────┐

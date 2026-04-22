@@ -311,7 +311,7 @@ system ClientPredictionMovement {
             var pred_vx = trans.vx;
             var pred_vy = trans.vy;
             
-            // 同样的移动逻辑...
+            # 同样的移动逻辑...
             
             pred.predicted_x = pred_x;
             pred.predicted_y = pred_y;
@@ -501,14 +501,26 @@ widget ModeSwitchPanel {
 
 ### 主场景入口
 
-```tsx
-export scene GameMain {
-    var player1_entity: Entity;
-    var player2_entity: Entity;
+场景数据以 gon 格式定义（`assets/scenes/game_main.scene`）：
 
+```gon
+Scene {
+    name: "GameMain",
+    entities: [],
+    systems: [
+        SceneSystem { type_name: "GameMainSystem", is_enabled: true }
+    ],
+    environment: {}
+}
+```
+
+主场景逻辑由 `GameMainSystem` 驱动：
+
+```tsx
+system GameMainSystem {
     on_load() {
-        player1_entity = create_player(0);
-        player2_entity = create_player(1);
+        let player1_entity = create_player(0);
+        let player2_entity = create_player(1);
         
         ui_root.add_child(widget_mode_switch.create());
         ui_root.add_child(widget_health_bar.create(player1_entity));
@@ -517,22 +529,22 @@ export scene GameMain {
         game.set_sync_mode(SyncMode.None);
     }
 
-    function create_player(id: int): Entity {
-        var e = create_entity();
-        e.add<PlayerTag>({ player_id: id, local_device: id });
-        e.add<NetTransform>({ x: 100 + id*200, y: 500 });
-        e.add<CombatStats>();
-        e.add<PredictedState>();
-        return e;
-    }
-
-    on_update(delta: float) {
-        var messages = NetworkManager.poll();
-        foreach (var msg in messages) {
+    on_update(delta: f32) {
+        let messages = NetworkManager.poll();
+        loop msg in messages {
             dispatch_network_message(msg);
         }
         render_sprites();
     }
+}
+
+micro create_player(id: int): Entity {
+    let e = create_entity();
+    e.add<PlayerTag>({ player_id: id, local_device: id });
+    e.add<NetTransform>({ x: 100 + id*200, y: 500 });
+    e.add<CombatStats>();
+    e.add<PredictedState>();
+    return e;
 }
 ```
 

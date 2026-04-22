@@ -2,6 +2,19 @@
 
 本文档介绍 gg 语言的语法特性，以及如何使用 gg 语言进行 ECS 编程。
 
+## ⚠️ 语言归属声明
+
+**gg-script 是游戏对象语言，不是 C#。** 以下概念在 GG 语言中与 C# 完全不同，切勿混淆：
+
+| GG 语言概念 | GG 语法示例 | 易混淆的 C# 概念 | 区别 |
+|---|---|---|---|
+| GGScript 特性标注 | `[Encrypted]`、`[Replicated]` | C# `System.Attribute` | GG 特性标注由编译器在编译时处理，不依赖 C# 反射 |
+| GGShader 特性标注 | `[Vertex]`、`[Compute]`、`[WorkgroupSize]` | C# `System.Attribute` | GG 特性标注定义着色器入口和管线语义 |
+| 成员访问 | `person.name` | C# 属性 (Property) | GG 语言只有字段 (Field)，没有 C# 意义上的属性 |
+| 元编程块 | `<% %>` | C# 源生成器 | `<% %>` 内部是 C# 语法，由 C# 元语言层在编译时执行 |
+
+**核心原则**：无论是游戏本体、插件 (Plugin)、Mod、DLC，还是编辑器 Widget，都使用 GGScript、GGShader、GGWidget 编写，**而非 C#**。C# 仅用于 Layer 1（元引擎）和 Layer 2（游戏引擎）。详见 [项目介绍 - 三层蛋糕模型](../overview/introduction.md#⚠️-关键概念三层蛋糕模型)。
+
 ## 语言概述
 
 gg 语言专为游戏逻辑设计，具有以下特性：
@@ -13,6 +26,28 @@ gg 语言专为游戏逻辑设计，具有以下特性：
 | 零运行时反射          | 所有类型信息在编译时解析    |
 
 ## 基础语法
+
+### 注释
+
+gg 语言支持两种注释语法：
+
+| 语法 | 描述 |
+| :--- | :--- |
+| `#` | 行注释，从 `#` 到行末的内容被忽略 |
+| `<# #>` | 块注释，支持嵌套 |
+
+```tsx
+# 这是行注释
+let x = 1; # 行末注释
+
+<# 这是块注释 #>
+let y = 2;
+
+<# 嵌套
+   <# 内层注释 #>
+#>
+let z = 3;
+```
 
 ### 变量声明
 
@@ -123,15 +158,15 @@ system MoveSystem {
 ```tsx
 system MySystem {
     on_load() {
-        // 系统加载时调用
+        # 系统加载时调用
     }
     
     on_update(delta: f32) {
-        // 每帧调用
+        # 每帧调用
     }
     
     on_unload() {
-        // 系统卸载时调用
+        # 系统卸载时调用
     }
 }
 ```
@@ -303,21 +338,46 @@ if entity.has<Health>() {
 
 ## 场景定义
 
-```tsx
-scene GameMain {
-    let player: Entity;
+场景（`.scene`）是 GON 格式的序列化文件，不属于脚本语言的声明。场景数据通过 `asset.load<SceneData>()` 加载，由引擎的场景管理器负责实例化和生命周期调度。
 
-    on_load() {
-        player = create_entity();
-        player.add(PlayerTag { player_id: 0 });
-        player.add(Position { x: 100.0, y: 100.0 });
-    }
+场景文件示例（`assets/scenes/game_main.scene`）：
 
-    on_update(delta: f32) {
-        # 游戏逻辑
+```gon
+Scene {
+    name: "GameMain",
+    entities: [
+        Entity {
+            name: "Player",
+            components: [
+                PlayerTag { player_id: 0 },
+                Position { x: 100.0, y: 100.0 }
+            ]
+        }
+    ],
+    systems: [
+        SceneSystem { type_name: "MoveSystem", is_enabled: true }
+    ],
+    environment: {
+        background_color: "#1a1a2e",
+        gravity: 9.8
     }
 }
 ```
+
+场景的加载与切换：
+
+```tsx
+micro on_load() {
+    let scene = asset.load<SceneData>("scenes/game_main.scene");
+    scene_manager.load(scene);
+}
+
+micro on_update(delta: f32) {
+    # 游戏逻辑
+}
+```
+
+> 有关 GON 格式的详细语法，请参阅 [gon 语言语法指南](gg-object.md)。
 
 ## 插件定义
 

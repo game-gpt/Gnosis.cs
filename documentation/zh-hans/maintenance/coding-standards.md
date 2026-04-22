@@ -1,383 +1,380 @@
-# Rust 编码规范
+# C# 编码规范
 
-本文档定义了 Gnosis 引擎项目的 Rust 编码规范。
+本文档定义 Gnosis 项目的 C# 编码规范，适用于 Layer 1（元引擎）和 Layer 2（游戏引擎）的所有 C# 代码。
 
-## 代码风格
+***
 
-### 格式化
+## 通用原则
 
-使用 `rustfmt` 进行代码格式化：
+1. **一致性**：同一项目内风格必须统一
+2. **可读性**：代码是写给人看的，其次才是给机器执行的
+3. **简洁性**：选择最简单、最清晰的实现方式
+4. **安全性**：不暴露敏感信息，不引入安全隐患
 
-```bash
-cargo fmt
+***
+
+## 命名规范
+
+### 大小写规则
+
+| 标识符      | 风格             | 示例                                    |
+| -------- | -------------- | ------------------------------------- |
+| 命名空间     | PascalCase     | `Gnosis.ECS`                          |
+| 类、结构体、接口 | PascalCase     | `ArchetypeStorage`, `IQueryFilter`    |
+| 枚举类型     | PascalCase     | `ShaderStage`                         |
+| 枚举值      | PascalCase     | `ShaderStage.Vertex`                  |
+| 方法       | PascalCase     | `CreateEntity()`, `GetComponent<T>()` |
+| 属性       | PascalCase     | `EntityCount`, `IsAlive`              |
+| 字段（私有）   | \_camelCase    | `_chunkSize`, `_entityCount`          |
+| 字段（公有）   | PascalCase     | `MaxEntities`, `DefaultCapacity`      |
+| 常量       | PascalCase     | `MaxChunkCapacity`                    |
+| 局部变量     | camelCase      | `entityId`, `deltaTime`               |
+| 参数       | camelCase      | `delta`, `archetypeId`                |
+| 类型参数     | T + PascalCase | `TComponent`, `TEntity`               |
+| 布尔变量/属性  | is/has/can 前缀  | `IsAlive`, `HasComponent`, `CanSpawn` |
+
+### 命名空间规范
+
+命名空间遵循 `Gnosis.{包名}.{子模块}` 的模式：
+
+```csharp
+namespace Gnosis.ECS.Core;
+namespace Gnosis.ECS.Implementation;
+namespace Gnosis.Graphic.RHI;
+namespace Gnosis.Network.Transport;
 ```
 
-### 命名规范
+### 包命名铁律
 
-| 类型 | 规范 | 示例 |
-| :--- | :--- | :--- |
-| 模块 | snake_case | `bullet_pattern` |
-| 类型 | PascalCase | `BulletPattern` |
-| 函数 | snake_case | `create_bullet` |
-| 变量 | snake_case | `bullet_count` |
-| 常量 | SCREAMING_SNAKE_CASE | `MAX_BULLETS` |
-| 生命周期 | 单引号小写 | `'a`, `'lifetime` |
+| 规则            | 正确示例                | 错误示例                    |
+| :------------ | :------------------ | :---------------------- |
+| 包名使用**单数名词**  | `Gnosis.Asset`      | `Gnosis.Assets`         |
+| 子模块不使用主包名     | `Graphic.FX`        | `Graphic.Core`          |
+| 避免动词或 -ing 形式 | `Animation.Tween`   | `Animation.Tweening`    |
+| 适配器模式命名后缀     | `Animation.Adapter` | `Animation.SpinePlugin` |
+
+***
+
+## 代码结构
 
 ### 文件组织
 
-```rust
-// 1. 外部依赖
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
+一个文件应只包含一个主要类型，文件名与类型名一致：
 
-// 2. 内部模块
-use crate::components::*;
-use crate::systems::*;
+```
+ArchetypeStorage.cs    → class ArchetypeStorage
+IQueryFilter.cs        → interface IQueryFilter
+EntityId.cs            → struct EntityId
+```
 
-// 3. 类型定义
-pub struct MyStruct {
-    // ...
-}
+### 成员排列顺序
 
-// 4. 实现
-impl MyStruct {
-    // ...
-}
+```csharp
+public class ExampleClass
+{
+    #region 常量
 
-// 5. 函数
-pub fn my_function() {
-    // ...
+    public const int MaxCapacity = 1024;
+
+    #endregion
+
+    #region 静态字段
+
+    private static int _instanceCount;
+
+    #endregion
+
+    #region 实例字段
+
+    private readonly int _id;
+    private string _name;
+
+    #endregion
+
+    #region 构造函数
+
+    public ExampleClass(int id)
+    {
+        _id = id;
+    }
+
+    #endregion
+
+    #region 属性
+
+    public int Id => _id;
+
+    public string Name
+    {
+        get => _name;
+        set => _name = value;
+    }
+
+    #endregion
+
+    #region 公有方法
+
+    public void Process()
+    {
+    }
+
+    #endregion
+
+    #region 私有方法
+
+    private void InternalProcess()
+    {
+    }
+
+    #endregion
 }
 ```
 
-## 文档注释
+### Region 使用规则
 
-### 模块文档
+- 大文件（超过 200 行）**必须**使用 `#region` 划分代码区域
+- Region 名称使用中文
+- 常用的 Region 名称：常量、字段、构造函数、属性、公有方法、私有方法
 
-```rust
-//! # 弹幕模式模块
-//!
-//! 本模块提供各种弹幕发射模式的定义和实现。
-//!
-//! ## 支持的模式
-//!
-//! - 直线弹幕
-//! - 扇形弹幕
-//! - 圆形弹幕
-//! - 螺旋弹幕
-```
+***
 
-### 函数文档
+## 注释规范
 
-```rust
-/// 创建新的弹幕发射器。
-///
-/// # Arguments
-///
-/// * `pattern` - 弹幕模式
-/// * `spawn_rate` - 生成速率（每秒）
-///
-/// # Returns
-///
-/// 返回配置好的弹幕发射器实例。
-///
-/// # Example
-///
-/// ```
-/// let emitter = BulletEmitter::new(BulletPattern::Circle { count: 32 }, 10.0);
-/// ```
-pub fn new(pattern: BulletPattern, spawn_rate: f32) -> Self {
-    // ...
+### 注释语言
+
+- 所有注释必须使用**中文**
+- XML 文档注释也应使用中文
+
+### 注释位置
+
+- 注释必须放在代码**上方**，禁止使用后置注释（行尾注释）
+- 建议使用 XML 文档注释
+
+### XML 文档注释
+
+```csharp
+/// <summary>
+/// 创建一个新的实体并返回其标识符
+/// </summary>
+/// <param name="archetypeId">原型标识符</param>
+/// <returns>新创建的实体标识符</returns>
+public EntityId CreateEntity(int archetypeId)
+{
 }
 ```
 
-### 安全性文档
+### 空行规则
 
-```rust
-/// # Safety
-///
-/// 调用者必须确保 `ptr` 指向有效的内存区域。
-pub unsafe fn from_ptr(ptr: *const u8) -> Self {
-    // ...
+- 方法之间保留一个空行
+- 逻辑块之间保留一个空行
+- 注释上方保留一个空行（除非是文件开头或紧跟大括号）
+
+***
+
+## 语句规范
+
+### 大括号使用
+
+- `if`、`for`、`foreach`、`while`、`do`、`switch` 等语句后面**必须**使用大括号
+- 即使只有一行代码，也不能省略大括号
+- 大括号独占一行（Allman 风格）
+
+```csharp
+if (condition)
+{
+    DoSomething();
+}
+
+for (int i = 0; i < count; i++)
+{
+    Process(i);
 }
 ```
 
-## 错误处理
+### 字符串使用
 
-### Result 类型
+- 字符串拼接优先使用字符串插值 `$""`
+- 多行字符串使用 `@""`
 
-```rust
-pub fn parse_script(source: &str) -> Result<Script, ParseError> {
-    // ...
+```csharp
+var message = $"用户 {userName} 创建成功";
+
+var sql = @"
+    SELECT *
+    FROM Users
+    WHERE IsActive = 1
+";
+```
+
+### 异常处理
+
+- 不捕获通用异常 `Exception`，应捕获具体异常
+- 异常消息应使用中文描述
+
+```csharp
+try
+{
+    await SaveUserAsync(user);
+}
+catch (DbUpdateException ex)
+{
+    _logger.LogError(ex, "保存用户失败：{UserId}", user.Id);
+    throw;
 }
 ```
 
-### 自定义错误类型
+### using 声明
 
-```rust
-#[derive(Debug, thiserror::Error)]
-pub enum ParseError {
-    #[error("语法错误: {message} at line {line}")]
-    SyntaxError { message: String, line: usize },
-    
-    #[error("未知指令: {0}")]
-    UnknownCommand(String),
-    
-    #[error("IO 错误: {0}")]
-    Io(#[from] std::io::Error),
+- 使用 `using` 声明替代 `using` 块（当不需要精确控制释放时机时）
+- 多个 using 按长度从短到长排列
+
+```csharp
+using var stream = File.OpenRead(path);
+using var reader = new StreamReader(stream);
+```
+
+### null 检查
+
+- 使用模式匹配进行 null 检查
+- 使用 `??` 和 `?.` 运算符
+
+```csharp
+if (entity is null)
+{
+    return;
+}
+
+var name = entity?.Name ?? "Unknown";
+```
+
+***
+
+## 性能相关规范
+
+### Span 与 Memory
+
+- 处理连续内存时优先使用 `Span<T>` 和 `ReadOnlySpan<T>`
+- 避免不必要的数组分配
+
+```csharp
+public void Process(ReadOnlySpan<byte> data)
+{
+    foreach (var b in data)
+    {
+    }
 }
 ```
 
-### 错误传播
+### 对象池
 
-```rust
-pub fn load_game(path: &Path) -> Result<Game, Error> {
-    let config = fs::read_to_string(path.join("game.toml"))?;
-    let game: GameConfig = toml::from_str(&config)?;
-    Ok(Game::from_config(game))
+- 频繁创建/销毁的对象使用对象池
+- `Gnosis.Core.Collection` 提供了对象池实现
+
+### 避免装箱
+
+- 值类型传递时使用泛型约束而非 `object`
+- 使用 `IEquatable<T>` 而非 `object.Equals`
+
+### ref 结构体
+
+- 仅在栈上使用的类型标记为 `ref struct`
+- 避免将 `ref struct` 传递到异步上下文
+
+***
+
+## 包依赖规范
+
+### 依赖方向
+
+依赖方向必须遵循：**基础层 ← 核心层 ← 子系统层**，绝不允许反向依赖。
+
+```
+基础层:     Gnosis.Core, Gnosis.IR
+               ↑
+核心层:     Gnosis.Runtime, Gnosis.ECS, Gnosis.Asset, ...
+               ↑
+子系统层:   Gnosis.Graphic, Gnosis.Network, Gnosis.Physics, ...
+```
+
+### 依赖检查
+
+1. 这个包是否**必须**依赖另一个包？能否通过接口解耦？
+2. 依赖方向是否与架构层级一致？
+3. 是否引入了**循环依赖**？
+4. 这个包将来是否会被**可选地替换**？如果是，请引入 `Provider` / `Adapter` 接口。
+
+***
+
+## 扩展点模式
+
+| 后缀         | 使用场景               | 示例                  |
+| :--------- | :----------------- | :------------------ |
+| `Adapter`  | 将第三方数据格式或运行时接入现有系统 | `IAnimationAdapter` |
+| `Provider` | 提供数据存储或配置的后端实现     | `IStorageProvider`  |
+| `Driver`   | 硬件或底层库的抽象驱动        | `IAudioDriver`      |
+
+### 接口定义
+
+```csharp
+public interface IAudioDriver
+{
+    string Name { get; }
+    void Initialize();
+    void Shutdown();
 }
 ```
 
-## 类型设计
+### 实现命名
 
-### 结构体
-
-```rust
-/// 弹幕发射器组件。
-#[derive(Debug, Clone)]
-pub struct BulletEmitter {
-    /// 弹幕模式
-    pub pattern: BulletPattern,
-    /// 生成速率（每秒）
-    pub spawn_rate: f32,
-    /// 每次生成的子弹数量
-    pub spawn_count: u32,
-    /// 是否继承发射者速度
-    pub inherit_velocity: bool,
+```csharp
+public sealed class OpenALDriver : IAudioDriver
+{
+    public string Name => "OpenAL";
 }
 ```
 
-### 枚举
-
-```rust
-/// 弹幕模式类型。
-#[derive(Debug, Clone, Copy)]
-pub enum BulletPattern {
-    /// 直线弹幕
-    Straight { angle: f32 },
-    /// 扇形弹幕
-    Spread { start_angle: f32, end_angle: f32, count: u32 },
-    /// 圆形弹幕
-    Circle { count: u32 },
-    /// 螺旋弹幕
-    Spiral { angular_speed: f32, radial_speed: f32 },
-}
-```
-
-### 泛型
-
-```rust
-/// 资源句柄。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Handle<T> {
-    id: u32,
-    _marker: PhantomData<T>,
-}
-```
-
-## 性能考量
-
-### 避免不必要的克隆
-
-```rust
-// 不推荐
-fn process(data: Vec<u8>) {
-    let cloned = data.clone();
-    // ...
-}
-
-// 推荐
-fn process(data: &[u8]) {
-    // ...
-}
-```
-
-### 使用迭代器
-
-```rust
-// 不推荐
-let mut sum = 0;
-for i in 0..items.len() {
-    sum += items[i];
-}
-
-// 推荐
-let sum: i32 = items.iter().sum();
-```
-
-### 避免过度分配
-
-```rust
-// 不推荐
-let mut vec = Vec::new();
-for i in 0..1000 {
-    vec.push(i);
-}
-
-// 推荐
-let vec: Vec<i32> = (0..1000).collect();
-// 或
-let mut vec = Vec::with_capacity(1000);
-```
+***
 
 ## 测试规范
 
-### 单元测试
+### 测试命名
 
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
+```
+{方法名}_{场景}_{预期结果}
 
-    #[test]
-    fn test_bullet_emitter_creation() {
-        let emitter = BulletEmitter::new(BulletPattern::Circle { count: 32 }, 10.0);
-        assert_eq!(emitter.spawn_rate, 10.0);
-    }
+示例：
+CreateEntity_WithValidArchetype_ReturnsEntityId
+Process_WhenQueueIsEmpty_DoesNothing
+```
 
-    #[test]
-    fn test_parse_error() {
-        let result = parse_script("invalid {{{");
-        assert!(result.is_err());
-    }
+### 测试结构 (AAA)
+
+```csharp
+[Fact]
+public void CreateEntity_WithValidArchetype_ReturnsEntityId()
+{
+    // Arrange
+    var world = new World();
+    var archetypeId = world.RegisterArchetype<Position, Velocity>();
+
+    // Act
+    var entityId = world.CreateEntity(archetypeId);
+
+    // Assert
+    Assert.True(entityId.IsValid);
 }
 ```
 
-### 集成测试
+***
 
-集成测试放在 `tests/` 目录下：
+## 禁止事项
 
-```rust
-// tests/integration_test.rs
-use gg_engine_stg::engine::StgEngine;
+| 禁止                     | 原因             |
+| ---------------------- | -------------- |
+| 使用 `System.Reflection` | 运行时反射违反多阶段编程原则 |
+| 使用 `dynamic` 类型        | 破坏类型安全         |
+| 使用 `unsafe` 代码（未经审核）   | 安全风险           |
+| 在引擎代码中使用 `async void`  | 异常无法捕获         |
+| 硬编码文件路径                | 跨平台兼容性         |
+| 提交密钥或凭据                | 安全风险           |
 
-#[test]
-fn test_engine_initialization() {
-    let engine = StgEngine::default();
-    assert!(engine.initialize().is_ok());
-}
-```
-
-## Clippy 规则
-
-项目使用 Clippy 进行代码质量检查：
-
-```bash
-cargo clippy -- -D warnings
-```
-
-### 常见 Clippy 警告处理
-
-```rust
-// 允许特定警告
-#[allow(clippy::too_many_arguments)]
-pub fn complex_function(a: i32, b: i32, c: i32, d: i32, e: i32) {
-    // ...
-}
-```
-
-## 依赖管理
-
-### 添加依赖
-
-在 `Cargo.toml` 中添加：
-
-```toml
-[dependencies]
-serde = { version = "1.0", features = ["derive"] }
-thiserror = "1.0"
-```
-
-### 开发依赖
-
-```toml
-[dev-dependencies]
-criterion = "0.5"
-```
-
-## 最佳实践
-
-### 避免 unwrap
-
-```rust
-// 不推荐
-let value = option.unwrap();
-
-// 推荐
-let value = option.expect("必须提供有效值");
-// 或
-if let Some(value) = option {
-    // ...
-}
-```
-
-### 使用 newtype 模式
-
-```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PlayerId(u32);
-
-impl PlayerId {
-    pub fn new(id: u32) -> Self {
-        Self(id)
-    }
-    
-    pub fn as_u32(&self) -> u32 {
-        self.0
-    }
-}
-```
-
-### 使用 Builder 模式
-
-```rust
-pub struct BulletEmitterBuilder {
-    pattern: Option<BulletPattern>,
-    spawn_rate: f32,
-    spawn_count: u32,
-}
-
-impl BulletEmitterBuilder {
-    pub fn new() -> Self {
-        Self {
-            pattern: None,
-            spawn_rate: 1.0,
-            spawn_count: 1,
-        }
-    }
-    
-    pub fn pattern(mut self, pattern: BulletPattern) -> Self {
-        self.pattern = Some(pattern);
-        self
-    }
-    
-    pub fn spawn_rate(mut self, rate: f32) -> Self {
-        self.spawn_rate = rate;
-        self
-    }
-    
-    pub fn build(self) -> Result<BulletEmitter, &'static str> {
-        Ok(BulletEmitter {
-            pattern: self.pattern.ok_or("必须指定弹幕模式")?,
-            spawn_rate: self.spawn_rate,
-            spawn_count: self.spawn_count,
-            inherit_velocity: false,
-        })
-    }
-}
-```
-
-## 下一步
-
-- 阅读 [测试指南](testing-guide.md) 了解测试策略
-- 阅读 [贡献流程](contributing.md) 了解如何贡献代码

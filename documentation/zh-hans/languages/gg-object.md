@@ -1,10 +1,10 @@
-# ggon 语言语法指南
+# gg-object (gon) 语言语法指南
 
-本文档介绍 ggon 语言的语法特性和使用方法。
+本文档介绍 gg-object (gon) 语言的语法特性和使用方法。
 
 ## 语言概述
 
-ggon 是 gg 引擎的对象配置语言，具有以下特性：
+gon 是 gg 引擎的对象配置语言，位于 `Gnosis.Asset.Format` 子模块中，具有以下特性：
 
 | 特性          | 描述                |
 | :---------- | :---------------- |
@@ -16,9 +16,33 @@ ggon 是 gg 引擎的对象配置语言，具有以下特性：
 
 ## 基础语法
 
+### 注释
+
+gon 支持两种注释语法：
+
+| 语法 | 描述 |
+| :--- | :--- |
+| `#` | 行注释，从 `#` 到行末的内容被忽略 |
+| `<# #>` | 块注释，支持嵌套 |
+
+```gon
+# 这是行注释
+Player {
+    name: "John", # 行末注释
+
+    <# 这是块注释 #>
+    level: 10,
+
+    <# 嵌套
+       <# 内层注释 #>
+    #>
+    score: 95
+}
+```
+
 ### 基本结构
 
-```ggon
+```gon
 # 带类名的对象
 Player {
     name: "John",
@@ -52,7 +76,7 @@ Position3D {
 
 字段名不需要引号包围，直接使用标识符：
 
-```ggon
+```gon
 # 正确的字段定义
 {
     name: "John",
@@ -85,33 +109,33 @@ Position3D {
 
 ### 类型示例
 
-```ggon
+```gon
 {
-    // 字符串
+    # 字符串
     name: "John Doe",
     
-    // 整数 (i32)
+    # 整数 (i32)
     age: 30,
     score: 95,
     
-    // 小数 (f32)
+    # 小数 (f32)
     height: 1.75,
     weight: 68.5,
     
-    // 布尔值
+    # 布尔值
     is_active: true,
     is_admin: false,
     
-    // 空值
+    # 空值
     avatar: null,
     
-    // 对象
+    # 对象
     address: {
         street: "Main St",
         city: "New York"
     },
     
-    // 数组
+    # 数组
     hobbies: ["reading", "gaming", "coding"],
     scores: [95, 88, 92]
 }
@@ -123,7 +147,7 @@ Position3D {
 
 类名是可选的，用于标识对象的类型：
 
-```ggon
+```gon
 # 带类名的对象
 Player {
     name: "John",
@@ -141,7 +165,7 @@ Player {
 
 变体名是必选的，用于区分不同类型的对象：
 
-```ggon
+```gon
 # 位置变体
 Position2D {
     x: 100.0,
@@ -169,7 +193,7 @@ Rectangle {
 
 类和变体可以组合使用：
 
-```ggon
+```gon
 # 带类名和变体的对象
 GameEntity Position3D {
     x: 100.0,
@@ -201,7 +225,7 @@ Character {
 - 变体名使用 PascalCase 命名法
 - 类名使用 PascalCase 命名法
 
-```ggon
+```gon
 # 良好的代码风格
 Player {
     name: "John",
@@ -220,7 +244,7 @@ Player {
 - 字段名使用特殊字符而不加引号
 - 数组和对象末尾多余的逗号
 
-```ggon
+```gon
 # 错误：缺少变体名
 {
     x: 100.0,
@@ -237,7 +261,7 @@ Player {
 
 #### 游戏配置
 
-```ggon
+```gon
 GameConfig {
     player: Player {
         name: "Hero",
@@ -265,7 +289,7 @@ GameConfig {
 
 #### UI 配置
 
-```ggon
+```gon
 UIConfig {
     main_menu: Panel {
         position: Position2D {
@@ -298,13 +322,13 @@ UIConfig {
 
 ## 与引擎集成
 
-### 加载 ggon 文件
+### 加载 gon 文件
 
-在 gg 引擎中，可以使用 `asset.load` 函数加载 ggon 配置文件：
+在 gg 引擎中，可以使用 `asset.load` 函数加载 gon 配置文件：
 
 ```tsx
 # 加载游戏配置
-let game_config = asset.load<GonObject>("configs/game.ggon");
+let game_config = asset.load<gonObject>("configs/game.gon");
 
 # 访问配置数据
 let player_name = game_config.get("player").get("name").as_string();
@@ -344,16 +368,61 @@ if position.variant_name() == "Position2D" {
 
 ### 实时重载
 
-编辑器支持 ggon 文件的热重载，修改配置文件后会自动重新加载：
+编辑器支持 gon 文件的热重载，修改配置文件后会自动重新加载：
 
 ```tsx
 # 监听配置变化
-asset.watch("configs/game.ggon", micro(new_config) {
+asset.watch("configs/game.gon", micro(new_config) {
     console::log("配置已更新:", new_config.get("player").get("name").as_string());
 });
 ```
 
+## 场景文件
+
+`.scene` 文件是 gon 格式的场景数据文件，由 `Gnosis.Scene` 包的场景管理器加载和保存。场景文件描述了场景中的实体、系统和环境设置。
+
+### 场景文件结构
+
+```gon
+Scene {
+    name: "GameMain",
+    entities: [
+        Entity {
+            name: "Player",
+            is_active: true,
+            components: [
+                PlayerTag { player_id: 0 },
+                Position { x: 100.0, y: 200.0 },
+                Velocity { vx: 0.0, vy: 0.0 }
+            ],
+            children: []
+        }
+    ],
+    systems: [
+        SceneSystem {
+            type_name: "MoveSystem",
+            is_enabled: true,
+            settings: {}
+        }
+    ],
+    environment: {
+        background_color: "#1a1a2e",
+        gravity: 9.8,
+        ambient_light: 0.5
+    }
+}
+```
+
+### 场景加载
+
+```tsx
+let scene = asset.load<SceneData>("scenes/game_main.scene");
+scene_manager.load(scene);
+```
+
+> 场景不是脚本语言的声明，而是数据文件。场景的逻辑由系统（`system`）实现，场景的实体和组件配置由 gon 数据描述。
+
 ## 下一步
 
-- 阅读 [资源系统](../development/architecture.md) 了解资源加载机制
+- 阅读 [架构设计](../development/architecture.md) 了解资源加载机制
 - 查看 [示例项目](../../examples/) 了解实际用法

@@ -1,403 +1,280 @@
-# 测试策略与指南
+# 测试指南
 
-本文档定义了 Gnosis 引擎项目的测试策略和指南。
+本文档定义 Gnosis 项目的测试策略与规范，适用于 Layer 1（元引擎）和 Layer 2（游戏引擎）的所有 C# 代码。
 
-## 测试层级
+---
+
+## 测试框架
+
+| 组件 | 选择 | 说明 |
+|------|------|------|
+| 测试框架 | xUnit | .NET 生态主流测试框架 |
+| 断言库 | xUnit Assert | 内置断言 |
+| Mock 框架 | Moq | 接口 Mock |
+| 覆盖率 | coverlet | 跨平台覆盖率收集 |
+
+---
+
+## 项目结构
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     E2E 测试                                  │
-│  完整的游戏流程测试，验证端到端功能                              │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                     集成测试                                  │
-│  模块间交互测试，验证组件协作                                  │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                     单元测试                                  │
-│  函数和类型测试，验证独立功能                                  │
-└─────────────────────────────────────────────────────────────┘
+projects/
+├── Gnosis/                    # 源码
+│   ├── ECS/
+│   ├── Network/
+│   └── ...
+└── Gnosis.Tests/              # 测试项目
+    ├── ECS/
+    │   ├── EntityTests.cs
+    │   ├── ArchetypeTests.cs
+    │   └── QueryTests.cs
+    ├── Network/
+    │   ├── TransportTests.cs
+    │   └── SyncTests.cs
+    └── ...
 ```
 
-## 单元测试
+---
 
-### 测试位置
+## 测试分类
 
-单元测试放在源文件中，使用 `#[cfg(test)]` 模块：
+### 单元测试
 
-```rust
-// src/bullet_pattern.rs
+测试单个类或方法的行为，不依赖外部资源。
 
-pub fn calculate_bullet_position(angle: f32, speed: f32, time: f32) -> (f32, f32) {
-    let x = speed * time * angle.cos();
-    let y = speed * time * angle.sin();
-    (x, y)
-}
+```csharp
+[Fact]
+public void CreateEntity_WithValidArchetype_ReturnsEntityId()
+{
+    // Arrange
+    var world = new World();
+    var archetypeId = world.RegisterArchetype<Position, Velocity>();
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+    // Act
+    var entityId = world.CreateEntity(archetypeId);
 
-    #[test]
-    fn test_calculate_bullet_position_zero_angle() {
-        let (x, y) = calculate_bullet_position(0.0, 100.0, 1.0);
-        assert!((x - 100.0).abs() < 0.001);
-        assert!(y.abs() < 0.001);
-    }
-
-    #[test]
-    fn test_calculate_bullet_position_90_degrees() {
-        let (x, y) = calculate_bullet_position(std::f32::consts::FRAC_PI_2, 100.0, 1.0);
-        assert!(x.abs() < 0.001);
-        assert!((y - 100.0).abs() < 0.001);
-    }
-}
-```
-
-### 测试命名规范
-
-测试函数命名应描述测试场景：
-
-```rust
-#[test]
-fn test_<function>_<scenario>() {
-    // ...
-}
-
-// 示例
-#[test]
-fn test_parse_script_empty_input() { }
-
-#[test]
-fn test_parse_script_invalid_syntax() { }
-
-#[test]
-fn test_bullet_emitter_creates_correct_count() { }
-```
-
-### 测试组织
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod bullet_pattern {
-        use super::*;
-
-        #[test]
-        fn test_circle_pattern() { }
-
-        #[test]
-        fn test_spiral_pattern() { }
-    }
-
-    mod bullet_emitter {
-        use super::*;
-
-        #[test]
-        fn test_spawn_rate() { }
-    }
+    // Assert
+    Assert.True(entityId.IsValid);
 }
 ```
 
-## 集成测试
+### 参数化测试
 
-### 测试位置
+使用 `[Theory]` 和 `[InlineData]` 测试多组输入：
 
-集成测试放在 `tests/` 目录下：
+```csharp
+[Theory]
+[InlineData(0, 0, 0)]
+[InlineData(1, 0, 1)]
+[InlineData(0, 1, 1)]
+[InlineData(3, 4, 7)]
+public void Add_TwoNumbers_ReturnsSum(int a, int b, int expected)
+{
+    var result = a + b;
+    Assert.Equal(expected, result);
+}
+```
+
+### 集成测试
+
+测试多个组件的协作：
+
+```csharp
+[Fact]
+public async Task NetworkSync_ClientServer_StateConsistent()
+{
+    // Arrange
+    var server = new NetworkHost();
+    var client = new NetworkClient();
+    await server.Start(9900);
+    await client.Connect("localhost", 9900);
+
+    // Act
+    server.SetState(new GameState { Score = 100 });
+    await Task.Delay(100);
+
+    // Assert
+    var clientState = client.GetState<GameState>();
+    Assert.Equal(100, clientState.Score);
+}
+```
+
+---
+
+## 运行测试
+
+### 基本命令
+
+```bash
+# 运行所有测试
+dotnet test
+
+# 运行特定项目
+dotnet test projects/Gnosis.Tests
+
+# 运行特定测试
+dotnet test --filter "FullyQualifiedName~EntityTests"
+
+# 详细输出
+dotnet test --logger "console;verbosity=detailed"
+```
+
+### 覆盖率
+
+```bash
+# 收集覆盖率
+dotnet test --collect:"XPlat Code Coverage"
+
+# 生成报告
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage-report
+```
+
+### 持续集成
+
+所有 PR 必须通过完整的测试套件：
+
+```bash
+dotnet test --configuration Release
+```
+
+---
+
+## 测试命名规范
+
+### 格式
 
 ```
-project/
-├── src/
-│   └── lib.rs
-└── tests/
-    ├── common/
-    │   └── mod.rs      # 共享测试工具
-    ├── integration_test.rs
-    └── engine_test.rs
+{方法名}_{场景}_{预期结果}
 ```
 
 ### 示例
 
-```rust
-// tests/engine_test.rs
-use gg_engine_stg::engine::StgEngine;
-use gg_engine_stg::config::StgConfig;
+| 测试名 | 描述 |
+|--------|------|
+| `CreateEntity_WithValidArchetype_ReturnsEntityId` | 正常创建实体 |
+| `CreateEntity_WithInvalidArchetype_ThrowsException` | 无效原型抛异常 |
+| `DestroyEntity_WhenEntityAlive_MarksAsDead` | 销毁活着的实体 |
+| `Query_AllMatchingEntities_ReturnsAll` | 查询所有匹配实体 |
 
-#[test]
-fn test_engine_initialization() {
-    let config = StgConfig::default();
-    let engine = StgEngine::new(config, false);
-    assert!(engine.initialize().is_ok());
+---
+
+## 测试结构 (AAA)
+
+每个测试遵循 Arrange-Act-Assert 模式：
+
+```csharp
+[Fact]
+public void SetComponent_UpdatesValue()
+{
+    // Arrange
+    var world = new World();
+    var entity = world.CreateEntity<Position>();
+    ref var pos = ref world.GetComponent<Position>(entity);
+
+    // Act
+    pos.X = 100;
+
+    // Assert
+    Assert.Equal(100, world.GetComponent<Position>(entity).X);
 }
+```
 
-#[test]
-fn test_engine_run_and_shutdown() {
-    let config = StgConfig::default();
-    let mut engine = StgEngine::new(config, false);
-    engine.initialize().unwrap();
-    
-    // 模拟运行几帧
-    for _ in 0..10 {
-        engine.update(0.016);
-    }
-    
-    engine.shutdown();
+---
+
+## Mock 使用
+
+### 接口 Mock
+
+```csharp
+[Fact]
+public void LoadAsset_WithValidPath_CallsProvider()
+{
+    // Arrange
+    var mockProvider = new Mock<IStorageProvider>();
+    mockProvider
+        .Setup(p => p.Load(It.IsAny<string>()))
+        .Returns(new AssetData());
+
+    var assetManager = new AssetManager(mockProvider.Object);
+
+    // Act
+    assetManager.Load("test.asset");
+
+    // Assert
+    mockProvider.Verify(p => p.Load("test.asset"), Times.Once);
 }
 ```
 
-### 共享测试工具
+---
 
-```rust
-// tests/common/mod.rs
-pub fn create_test_engine() -> StgEngine {
-    let config = StgConfig::default();
-    StgEngine::new(config, false)
-}
+## 各包测试要点
 
-pub fn create_test_player(world: &mut World) -> Entity {
-    world.spawn_entity()
-        .with(Transform::default())
-        .with(Health { current: 100, max: 100 })
-        .build()
-}
-```
+| 包 | 测试重点 |
+|------|----------|
+| `Gnosis.Core` | 数学库精度、集合边界条件、内存分配器正确性 |
+| `Gnosis.IR` | 优化 Pass 正确性、IR 验证、字节码发射 |
+| `Gnosis.Runtime` | VM 指令执行、Interop 调用、协程调度、热重载 |
+| `Gnosis.ECS` | 实体生命周期、Archetype 存储、查询正确性、并行安全 |
+| `Gnosis.Asset` | VFS 路径解析、格式解析、增量构建 |
+| `Gnosis.Graphic` | RHI 后端一致性、着色器编译、管线状态 |
+| `Gnosis.Network` | 传输可靠性、同步一致性、预测和解 |
+| `Gnosis.Database` | 事务 ACID、WAL 恢复、B+ 树正确性 |
+| `Gnosis.Physics` | 碰撞检测精度、约束求解、查询正确性 |
+| `Gnosis.Security` | 加密正确性、完整性校验、混淆不可逆 |
+
+---
 
 ## 性能测试
 
-### Criterion 基准测试
+### BenchmarkDotNet
 
-```rust
-// benches/bullet_bench.rs
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use gg_engine_stg::bullet_pattern::BulletPattern;
+使用 BenchmarkDotNet 进行性能基准测试：
 
-fn bench_bullet_spawn(c: &mut Criterion) {
-    let pattern = BulletPattern::Circle { count: 1000 };
-    
-    c.bench_function("spawn_1000_bullets", |b| {
-        b.iter(|| {
-            spawn_bullets(black_box(&pattern))
-        })
-    });
+```csharp
+[MemoryDiagnoser]
+public class ArchetypeBenchmark
+{
+    private World _world;
+    private EntityQuery _query;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        _world = new World();
+        for (int i = 0; i < 10000; i++)
+        {
+            _world.CreateEntity<Position, Velocity>();
+        }
+        _query = _world.Query<Position, Velocity>();
+    }
+
+    [Benchmark]
+    public void IterateArchetype()
+    {
+        foreach (ref var (pos, vel) in _query)
+        {
+            pos.X += vel.Vx;
+        }
+    }
 }
-
-criterion_group!(benches, bench_bullet_spawn);
-criterion_main!(benches);
 ```
 
 ### 运行基准测试
 
 ```bash
-cargo bench
+dotnet run --project projects/Gnosis.Benchmarks -c Release
 ```
 
-## 测试覆盖率
+---
 
-### 安装 tarpaulin
+## 测试覆盖率目标
 
-```bash
-cargo install cargo-tarpaulin
-```
-
-### 生成覆盖率报告
-
-```bash
-cargo tarpaulin --out Html
-```
-
-### 覆盖率目标
-
-| 模块 | 目标覆盖率 |
-| :--- | :--- |
-| 核心引擎 | 80% |
-| 系统 | 70% |
-| 组件 | 60% |
-| 工具函数 | 90% |
-
-## 模拟测试
-
-### Mock 对象
-
-```rust
-pub trait NetworkBackend {
-    fn send(&mut self, data: &[u8]) -> Result<(), Error>;
-    fn receive(&mut self) -> Result<Vec<u8>, Error>;
-}
-
-pub struct MockNetworkBackend {
-    pub sent_data: Vec<Vec<u8>>,
-    pub receive_queue: VecDeque<Vec<u8>>,
-}
-
-impl NetworkBackend for MockNetworkBackend {
-    fn send(&mut self, data: &[u8]) -> Result<(), Error> {
-        self.sent_data.push(data.to_vec());
-        Ok(())
-    }
-    
-    fn receive(&mut self) -> Result<Vec<u8>, Error> {
-        self.receive_queue.pop_front()
-            .ok_or(Error::NoData)
-    }
-}
-
-#[test]
-fn test_network_manager_send() {
-    let mut backend = MockNetworkBackend::new();
-    let mut manager = NetworkManager::new(Box::new(backend));
-    
-    manager.send(b"test").unwrap();
-    
-    assert_eq!(manager.backend().sent_data.len(), 1);
-    assert_eq!(manager.backend().sent_data[0], b"test");
-}
-```
-
-## 测试夹具
-
-### 使用 fixtures 目录
-
-```
-tests/
-├── fixtures/
-│   ├── scripts/
-│   │   ├── valid.script
-│   │   └── invalid.script
-│   └── configs/
-│       └── test_game.toml
-└── integration_test.rs
-```
-
-### 加载测试资源
-
-```rust
-#[test]
-fn test_parse_valid_script() {
-    let content = include_str!("fixtures/scripts/valid.script");
-    let result = parse_script(content);
-    assert!(result.is_ok());
-}
-```
-
-## CI 测试
-
-### GitHub Actions
-
-```yaml
-name: Test
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - run: cargo test --all
-      - run: cargo clippy -- -D warnings
-```
-
-## 测试最佳实践
-
-### 避免测试私有函数
-
-```rust
-// 不推荐：测试私有函数
-#[test]
-fn test_private_helper() {
-    assert_eq!(private_helper(1), 2);
-}
-
-// 推荐：通过公共接口测试
-#[test]
-fn test_public_function() {
-    assert_eq!(public_function(1), 2);
-}
-```
-
-### 使用有意义的断言
-
-```rust
-// 不推荐
-assert!(result.is_ok());
-
-// 推荐
-assert!(result.is_ok(), "解析脚本失败: {:?}", result.err());
-```
-
-### 测试边界条件
-
-```rust
-#[test]
-fn test_boundary_zero() {
-    let result = calculate(0);
-    assert_eq!(result, 0);
-}
-
-#[test]
-fn test_boundary_max() {
-    let result = calculate(u32::MAX);
-    assert_eq!(result, expected_max);
-}
-
-#[test]
-fn test_boundary_negative() {
-    let result = calculate(-1);
-    assert!(result.is_err());
-}
-```
-
-### 测试错误路径
-
-```rust
-#[test]
-fn test_invalid_input() {
-    let result = parse_script("{{{ invalid");
-    assert!(result.is_err());
-    
-    match result {
-        Err(ParseError::SyntaxError { line, .. }) => {
-            assert_eq!(line, 1);
-        }
-        _ => panic!("期望语法错误"),
-    }
-}
-```
-
-## 运行测试
-
-### 运行所有测试
-
-```bash
-cargo test
-```
-
-### 运行特定测试
-
-```bash
-cargo test test_bullet_pattern
-```
-
-### 运行特定项目的测试
-
-```bash
-cargo test -p gg-engine-stg
-```
-
-### 显示测试输出
-
-```bash
-cargo test -- --nocapture
-```
-
-## 下一步
-
-- 阅读 [编码规范](coding-standards.md) 了解代码风格
-- 阅读 [贡献流程](contributing.md) 了解如何贡献代码
+| 包 | 目标覆盖率 |
+|------|-----------|
+| `Gnosis.Core` | ≥ 90% |
+| `Gnosis.IR` | ≥ 85% |
+| `Gnosis.Runtime` | ≥ 85% |
+| `Gnosis.ECS` | ≥ 90% |
+| `Gnosis.Database` | ≥ 85% |
+| 其他包 | ≥ 80% |

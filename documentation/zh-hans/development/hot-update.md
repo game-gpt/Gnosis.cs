@@ -1,345 +1,160 @@
 # 热更新与热重载
 
-本文档介绍 Gnosis 引擎的热更新机制，包括开发期的热重载和发布后的热更新流程。
+Gnosis 的热更新机制由 `Gnosis.Runtime` 包的 `HotReload` 子模块支持，结合 `Gnosis.Asset` 包的 VFS 实现运行时代码替换。
 
-## 概述
+---
 
-Gnosis 引擎通过**字节码解释**实现热更新能力，完全绕过 JIT 限制，支持 iOS、主机等所有主流平台。
+## 两种热更新模式
 
-### 核心优势
+| 模式 | 场景 | 触发方式 | 机制 |
+|------|------|----------|------|
+| **热重载** | 开发期 | 文件变更自动触发 | 模块替换 + 状态迁移 |
+| **热更新** | 发布后 | 服务器推送 / 客户端拉取 | 字节码下载 + 模块加载 |
 
-| 特性 | 描述 |
-| :--- | :--- |
-| **零 JIT 依赖** | 字节码由 AOT 编译的虚拟机解释执行，无需运行时编译 |
-| **跨平台兼容** | 完全符合 iOS App Store、PlayStation、Xbox 等商店政策 |
-| **增量更新** | 仅下载变更的 `.code` 模块和资产差分文件 |
-| **无缝切换** | 运行时动态加载，无需重启游戏 |
+---
 
 ## 热重载（开发期）
-
-热重载用于开发阶段，当源码变更时自动编译并更新运行中的游戏。
 
 ### 工作流程
 
 ```mermaid
 flowchart LR
-    A[文件变更] --> B[增量编译]
-    B --> C[生成 .code]
-    C --> D[通知虚拟机]
-    D --> E[替换模块定义]
-    E --> F[ECS 世界更新]
-    F --> G[后续实体使用新定义]
+    FileChange["文件变更"] --> Recompile["重新编译"]
+    Recompile --> Diff["差异比对"]
+    Diff --> Migrate["状态迁移"]
+    Migrate --> Swap["模块替换"]
+    Swap --> Resume["继续执行"]
 ```
 
-### C# 元语言热重载服务
+### 状态迁移
 
-```csharp
-public static class HotReloadService
-{
-    public static void on_file_changed(string gg_file)
-    {
-        var new_bytecode = GGCompiler.compile_single(
-            gg_file, 
-            current_arch, 
-            current_macros
-        );
-        
-        EditorVM.call(
-            "vm_reload_module", 
-            Path.GetFileNameWithoutExtension(gg_file), 
-            new_bytecode
-        );
-    }
-}
-```
+热重载时需要将旧模块的状态迁移到新模块：
 
-### 虚拟机热替换逻辑
+| 迁移类型 | 描述 |
+|----------|------|
+| 字段保留 | 同名同类型的字段自动迁移 |
+| 字段新增 | 新字段使用默认值 |
+| 字段删除 | 旧字段数据丢弃 |
+| 字段重命名 | 需要迁移映射表 |
 
-虚拟机内核（C 语言）处理模块替换：
+### Gnosis.Runtime.HotReload 子模块
 
-```c
-void vm_reload_module(
-    VMState* vm, 
-    const char* name, 
-    const uint8_t* new_bytecode, 
-    size_t size
-) {
-    Module* old_mod = find_module(vm, name);
-    Module* new_mod = parse_bytecode(new_bytecode, size);
-    
-    replace_module(vm->modules, name, new_mod);
-    
-    world_update_definitions(vm->world, old_mod, new_mod);
-}
-```
+| 功能 | 描述 |
+|------|------|
+| 元数据比对 | 比较新旧模块的类型、字段、方法签名 |
+| 状态快照 | 保存旧模块的运行时状态 |
+| 状态迁移 | 将快照中的数据映射到新模块 |
+| 模块替换 | 原子性地替换 VM 中的模块 |
 
-### 使用示例
-
-在编辑器中修改组件定义：
-
-```tsx
-export component PlayerStats {
-    health: float;
-    mana: float;
-    // 新增字段
-    stamina: float;
-}
-
-export system CombatSystem {
-    on_update(delta: float) {
-        // 修改逻辑
-        <% foreach (var (stats,) in Query.all(PlayerStats)) { %>
-            stats.stamina += delta * 0.5;
-        <% } %>
-    }
-}
-```
-
-保存后，编辑器自动：
-1. 检测文件变更
-2. 增量编译新模块
-3. 替换内存中的定义
-4. 新创建的实体使用更新后的组件结构
+---
 
 ## 热更新（发布后）
 
-热更新用于已发布的游戏，允许在不重新提交商店审核的情况下更新游戏内容。
+### 合规性说明
 
-### 工作流程
+gg 引擎的热更新机制完全符合 iOS App Store 和各主机平台的政策：
+
+- **虚拟机是 AOT 编译的本地代码**，属于应用程序本体
+- **下载的 `.code` 文件是数据**，由虚拟机解释执行
+- **不涉及可执行代码的动态生成**（无 JIT）
+- **等价于下载新的关卡数据或脚本配置**
+
+### 更新流程
 
 ```mermaid
-flowchart TB
-    subgraph 启动阶段
-        A[游戏启动] --> B[检查更新清单]
-        B --> C{有更新?}
-        C -->|是| D[下载差分文件]
-        C -->|否| G[启动游戏]
-        D --> E[加载字节码模块]
-        E --> F[更新 VFS 资产]
-        F --> G
-    end
+sequenceDiagram
+    participant App as 游戏客户端
+    participant CDN as CDN 服务器
+    participant VM as gg 虚拟机
+
+    App->>CDN: 请求版本清单
+    CDN->>App: 返回最新清单
+    App->>App: 比对本地版本
+    App->>CDN: 下载差异包
+    CDN->>App: 返回字节码
+    App->>VM: 加载新模块
+    VM->>VM: 替换旧模块
+    App->>App: 继续运行
 ```
 
-### 客户端启动流程
-
-```tsx
-export function main() {
-    var manifest = http.get("https://cdn.example.com/latest.json");
-    
-    foreach (var diff in manifest.diffs) {
-        var bytes = http.download(diff.url);
-        vm.load_module(diff.name, bytes);
-    }
-    
-    foreach (var asset_diff in manifest.asset_diffs) {
-        vfs.update_file(
-            asset_diff.path, 
-            http.download(asset_diff.url)
-        );
-    }
-    
-    game.start();
-}
-```
-
-### 更新清单格式
+### 版本清单格式
 
 ```json
 {
     "version": "1.2.3",
-    "diffs": [
+    "modules": [
         {
-            "name": "combat_system",
-            "url": "https://cdn.example.com/v1.2.3/combat_system.code",
-            "hash": "sha256:abc123..."
-        },
-        {
-            "name": "quest_system",
-            "url": "https://cdn.example.com/v1.2.3/quest_system.code",
-            "hash": "sha256:def456..."
-        }
-    ],
-    "asset_diffs": [
-        {
-            "path": "textures/ui/new_panel.texture",
-            "url": "https://cdn.example.com/v1.2.3/new_panel.texture",
-            "hash": "sha256:789..."
+            "name": "game_logic",
+            "hash": "sha256:abc123...",
+            "url": "https://cdn.example.com/v1.2.3/game_logic.code",
+            "size": 102400
         }
     ]
 }
 ```
 
-### 虚拟文件系统 (VFS)
+### 差异更新
 
-VFS 是热更新的基础设施，支持运行时文件覆盖：
+为减少下载量，支持差异更新：
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     VFS 层次结构                              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              热更新覆盖层 (优先级最高)                  │   │
-│  │  combat_system.code  │  new_panel.texture             │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                          ↓                                   │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              基础资产层 (打包时嵌入)                    │   │
-│  │  core.code  │  player.texture  │  ui.texture          │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+| 策略 | 描述 |
+|------|------|
+| 全量替换 | 下载完整模块 |
+| 二进制差异 | 下载 bsdiff 补丁 |
+| 模块级差异 | 仅下载变更的模块 |
 
-## 与 JIT 限制的无关性
+---
 
-### 问题背景
+## 虚拟机层面的支持
 
-iOS、PlayStation、Xbox 等平台禁止或限制 JIT（即时编译）：
+gg 虚拟机（`Gnosis.Runtime.VM`）为热更新提供以下原生支持：
 
-| 平台 | JIT 限制 | 原因 |
-| :--- | :--- | :--- |
-| iOS | 完全禁止 | 安全策略，内存页不可同时可写可执行 |
-| PlayStation | 严格限制 | 安全审查要求 |
-| Xbox | 严格限制 | 安全审查要求 |
-| Nintendo Switch | 严格限制 | 安全审查要求 |
+### 模块加载
 
-### Gnosis 引擎的解决方案
+- 支持运行时动态加载新模块
+- 模块加载是原子操作，不会中断正在执行的代码
+- 旧模块的引用在新模块加载后自动切换
 
-Gnosis 引擎通过**字节码解释**完全绕过 JIT 限制：
+### 栈保存与恢复
 
-```mermaid
-flowchart LR
-    subgraph 构建时
-        A[gg 源码] --> B[gg_compiler]
-        B --> C[.code 字节码]
-        B --> D[VM C 源码]
-        D --> E[AOT 编译]
-        E --> F[本地二进制]
-    end
-    
-    subgraph 运行时
-        C --> G[虚拟机解释执行]
-        F --> G
-    end
-```
+- 协程的栈帧可以保存为快照
+- 热重载时恢复栈帧，继续执行
+- `Gnosis.Runtime.Coroutine` 子模块与热重载深度集成
 
-### 关键设计
+### 类型兼容性
 
-| 设计点 | 说明 |
-| :--- | :--- |
-| **虚拟机 AOT 编译** | 虚拟机内核为纯 C 代码，经 AOT 编译为本地二进制 |
-| **字节码即数据** | `.code` 文件是纯数据，由虚拟机读取解释 |
-| **无动态代码生成** | 运行时不生成任何可执行代码 |
-| **符合商店政策** | 字节码下载被视为资源加载，非代码注入 |
+| 变更类型 | 兼容性 | 处理方式 |
+|----------|--------|----------|
+| 新增方法 | 兼容 | 直接加载 |
+| 删除方法 | 不兼容 | 需要迁移映射 |
+| 修改签名 | 不兼容 | 需要迁移映射 |
+| 新增字段 | 兼容 | 默认值填充 |
+| 删除字段 | 兼容 | 数据丢弃 |
+| 修改字段类型 | 不兼容 | 需要迁移映射 |
 
-### 平台兼容性
+---
 
-```c
-void vm_run(VMState* vm) {
-    const uint8_t* ip = vm->ip;
-    static void* dispatch[] = { 
-        &&OP_HALT, 
-        &&OP_ADD_F, 
-        &&OP_CALL_NATIVE, 
-        ... 
-    };
-    goto *dispatch[*ip++];
-    
-OP_ADD_F: {
-    float b = vm->stack[--vm->sp];
-    float a = vm->stack[--vm->sp];
-    vm->stack[vm->sp++] = a + b;
-    goto *dispatch[*ip++];
-}
-}
-```
+## 沙箱隔离
 
-上述虚拟机代码：
-- 纯 C 语言实现
-- 无外部依赖
-- 可被任何 C 编译器编译
-- 生成的二进制完全符合各平台要求
+`Gnosis.Runtime.Sandbox` 子模块为热更新代码提供安全隔离：
 
-### 与其他方案对比
+| 能力 | 描述 |
+|------|------|
+| 权限控制 | 限制热更新代码的文件/网络访问 |
+| 资源配额 | 限制内存和 CPU 使用 |
+| 异常隔离 | 热更新代码的异常不影响主程序 |
+| 回滚机制 | 加载失败时自动回滚到旧版本 |
 
-| 方案 | iOS 支持 | 主机支持 | 性能 | 热更新能力 |
-| :--- | :--- | :--- | :--- | :--- |
-| **Lua** | ✅ | ✅ | 中等 | 完整 |
-| **ILRuntime** | ⚠️ 受限 | ⚠️ 受限 | 较低 | 完整 |
-| **HybridCLR** | ❌ 禁止 | ❌ 禁止 | 较高 | 完整 |
-| **Gnosis 字节码** | ✅ | ✅ | 高 | 完整 |
+---
 
-## 最佳实践
+## 与 Plugin 系统的关系
 
-### 模块划分
+`Gnosis.Plugin` 包管理插件的加载与隔离，与热更新机制互补：
 
-将游戏逻辑划分为独立模块，便于增量更新：
+| 机制 | 触发时机 | 范围 |
+|------|----------|------|
+| 热重载 | 开发期文件变更 | 已加载模块的替换 |
+| 热更新 | 发布后版本推送 | 已加载模块的替换 |
+| 插件加载 | 运行时按需 | 新插件的首次加载 |
 
-```
-modules/
-├── core/              # 核心系统，更新频率低
-│   ├── ecs_core.scirpt
-│   └── input.scirpt
-├── gameplay/          # 游戏玩法，更新频率高
-│   ├── combat.scirpt
-│   ├── quest.scirpt
-│   └── skill.scirpt
-└── ui/                # UI 系统，更新频率高
-    ├── hud.scirpt
-    └── menu.scirpt
-```
-
-### 版本兼容性
-
-```tsx
-export function check_compatibility(manifest_version: string): bool {
-    var current = vm.get_api_version();
-    var required = parse_version(manifest_version);
-    
-    if (required.major != current.major) {
-        log.error("不兼容的主版本号，需要完整更新");
-        return false;
-    }
-    
-    return true;
-}
-```
-
-### 回滚机制
-
-```tsx
-export function apply_update_with_rollback(manifest: UpdateManifest) {
-    var backup = create_backup();
-    
-    try {
-        apply_update(manifest);
-        if (!verify_integrity()) {
-            throw "完整性校验失败";
-        }
-    } catch (e) {
-        log.error("更新失败: " + e);
-        restore_backup(backup);
-    }
-}
-```
-
-## 总结
-
-Gnosis 引擎的热更新机制通过多阶段编程范式实现：
-
-| 阶段 | 热重载（开发期） | 热更新（发布后） |
-| :--- | :--- | :--- |
-| 触发方式 | 文件变更自动触发 | 启动时检查清单 |
-| 编译时机 | 增量编译 | 预编译好的字节码 |
-| 分发方式 | 本地内存替换 | CDN 下载 |
-| 适用场景 | 开发调试 | 生产环境更新 |
-
-核心优势：
-- **零 JIT 依赖**：字节码解释，无运行时编译
-- **全平台兼容**：iOS、主机、Web 均可使用
-- **增量更新**：仅下载变更部分，节省带宽
-- **无缝体验**：运行时加载，无需重启
-
-## 下一步
-
-- 阅读 [架构设计](architecture.md) 了解多阶段编程模型
-- 阅读 [gg 语言指南](../languages/gg-script.md) 学习模块划分
-- 阅读 [网络架构](network.md) 了解更新分发策略
+详见 [架构详解 - Gnosis.Plugin](../maintenance/architecture.md)。

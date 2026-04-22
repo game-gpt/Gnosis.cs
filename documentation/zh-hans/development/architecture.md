@@ -1,312 +1,398 @@
-# 多阶段编程模型与整体架构
+# 架构设计
 
-本文档介绍 Gnosis 引擎的核心设计理念：多阶段编程（MSP）范式，以及引擎的整体架构。
+本文档描述 Gnosis 引擎的整体架构设计。完整的 25 包结构与子模块说明请参阅 [架构详解](../maintenance/architecture.md)。
 
-## 设计哲学
+---
 
-传统游戏开发面临以下困境：
+## 三层蛋糕模型
 
-| 问题 | 传统方案 | gg 引擎方案 |
-| :--- | :--- | :--- |
-| 引擎绑定特定图形 API | 硬编码依赖 | RHI 抽象层 |
-| 热更新依赖 JIT | iOS/主机限制 | 字节码解释 |
-| 网络同步模型僵化 | 单一模式 | 帧同步/状态同步融合 |
-| 反作弊能力薄弱 | 客户端校验 | 服务器权威 |
+Gnosis 采用严格的三层架构，混淆这三层将导致设计决策的全面偏差。
 
-gg 引擎通过多阶段编程范式解决这些问题。
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Layer 3: 游戏内容层                                   │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐    │
+│  │  Game   │ │  Mod    │ │  DLC    │ │ Plugin  │ │ Editor  │ │ Server  │    │
+│  │ (gg)    │ │ (gg)    │ │ (gg)    │ │ (gg)    │ │ (gg)    │ │ (gg)    │    │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘    │
+│                                                                              │
+│  编写语言: gg-script / gg-shader / gg-widget / gg-neural                     │
+│  责任方: 游戏开发者 / 模组作者 / 第三方工具开发者                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       ↑
+                              (通过 Gnosis 框架层通信)
+                                       ↑
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Layer 2: 游戏引擎层 (官方范例)                         │
+│                                                                              │
+│  一个具体的、基于 Gnosis 元引擎构建的、可独立运行的 C# 应用程序。                  │
+│  它包含: 编辑器界面、资产导入器、构建管线、项目模板、启动器。                       │
+│                                                                              │
+│  编写语言: C# (调用 Gnosis 包)                                                 │
+│  责任方: Gnosis 官方团队 (提供范例实现)                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       ↑
+                              (通过直接 API 调用使用)
+                                       ↑
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Layer 1: Gnosis 元引擎层                              │
+│                                                                              │
+│  25 个 C# 包构成的基础设施。它本身不可运行，必须由游戏引擎层实例化。                │
+│  它提供虚拟机、渲染 RHI、ECS、资产管线等能力。                                   │
+│                                                                              │
+│  编写语言: C# (零外部依赖)                                                      │
+│  责任方: Gnosis 核心团队                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 层间通信规则
+
+| 通信方向 | 方式 | 约束 |
+|----------|------|------|
+| Layer 3 → Layer 2 | 通过 Gnosis 框架层 API | 游戏内容不能直接调用 C# 内部实现 |
+| Layer 2 → Layer 1 | 直接 C# API 调用 | 游戏引擎可自由使用 Gnosis 包 |
+| Layer 1 → Layer 1 | 包间依赖 | 必须遵循基础层 ← 核心层 ← 子系统层方向 |
+
+---
 
 ## 多阶段编程模型
 
-gg 引擎将构建过程划分为六个阶段，每个阶段的输出成为下一阶段的输入：
-
-```
-负二阶段 → 负一阶段 → 阶段〇 → 阶段一 → 阶段二 → 阶段三
-```
-
 ### 阶段划分
 
-| 阶段 | 名称 | 输入 | 输出 | 职责 |
-| :--- | :--- | :--- | :--- | :--- |
-| 负二阶段 | 插件配置 | gg 插件 | 宏表、能力注册表 | 加载插件，注入宏定义 |
-| 负一阶段 | 资产预处理 | 原始资产 | 平台特化资产 | 格式转换、压缩优化 |
-| 阶段〇 | 开发编辑 | gg 源码 | 编辑状态 | 编辑器交互、实时预览 |
-| 阶段一 | 元语言执行 | gg 源码 + 宏 | 字节码 + VM 源码 | 编译、生成虚拟机 |
-| 阶段二 | AOT 编译 | VM 源码 | 本地二进制 | 编译为可执行文件 |
-| 阶段三 | 打包发布 | 字节码 + 资产 + 二进制 | 最终游戏包 | 打包、签名、分发 |
+| 阶段 | 名称 | 执行者 | 输入 | 输出 |
+|------|------|--------|------|------|
+| **负二阶段** | 插件配置 | C# 元语言 | gg 插件 | 全局宏表、能力注册表 |
+| **负一阶段** | 资产预处理 | C# 资产管线 | 原始资产 | 平台特化资产 |
+| **阶段〇** | 开发编辑 | 编辑器 (gg) | gg 源码、资产 | 编辑后的项目 |
+| **阶段一** | 元语言执行 | C# 编译器 | gg 源码 | 字节码 |
+| **阶段二** | 打包构建 | 打包器 | 字节码 + 资产 | 平台包 |
+| **阶段三** | 发布部署 | 部署器 | 平台包 | 最终游戏包 |
 
-### 阶段详细说明
+### 阶段间数据流
 
-#### 负二阶段：插件配置
+```mermaid
+flowchart TB
+    subgraph P2["负二阶段"]
+        P2_IN["gg 插件"] --> P2_OUT["宏表 + 能力表"]
+    end
 
-插件在负二阶段加载，用于向编译环境注入平台能力与宏定义：
+    subgraph P1["负一阶段"]
+        P1_IN["原始资产"] --> P1_OUT["特化资产"]
+    end
 
-```tsx
-plugin WeChatChannel {
-    requires_arch = ["WASM"];
-    provides_macros = ["WECHAT", "WECHAT_SHARE"];
-    provides_capabilities = ["WeChatLogin", "WeChatShare"];
+    subgraph P0["阶段〇"]
+        P0_IN["gg 源码"] --> P0_OUT["编辑项目"]
+    end
 
-    export function login(): Promise<UserInfo> {
-        // 绑定至微信 SDK
-    }
-}
+    subgraph S1["阶段一"]
+        S1_IN["gg 源码 + 宏表"] --> S1_1["词法分析"]
+        S1_1 --> S1_2["语法分析"]
+        S1_2 --> S1_3["元语言块执行"]
+        S1_3 --> S1_4["IR 生成"]
+        S1_4 --> S1_5["优化 Pass"]
+        S1_5 --> S1_6["字节码发射"]
+        S1_6 --> S1_OUT["字节码"]
+    end
+
+    subgraph S2["阶段二"]
+        S2_IN["字节码 + 特化资产"] --> S2_OUT["平台包"]
+    end
+
+    subgraph S3["阶段三"]
+        S3_IN["平台包"] --> S3_OUT["最终游戏包"]
+    end
+
+    P2_OUT --> S1
+    P1_OUT --> S2
+    P0_OUT --> S1
+    S1_OUT --> S2
+    S2_OUT --> S3
 ```
 
-C# 元语言加载插件：
+---
 
-```csharp
-public class PluginLoader
-{
-    public void load_plugin(string gg_plugin_path, ChannelMacros global_macros)
-    {
-        var ast = parse_gg(gg_plugin_path);
-        if (!ast.requires_arch.Contains(current_arch)) return;
-        
-        global_macros.add_range(ast.provides_macros);
-        
-        foreach (var cap in ast.provides_capabilities)
-            CapabilityRegistry.register(cap, ast.name);
-    }
-}
-```
+## 25 包概览
 
-#### 负一阶段：资产预处理
+Gnosis 元引擎由 25 个 C# 包构成，按依赖层级分为三层：
 
-原始资产（.psd、.fbx、.csv）被转换为平台优化的引擎格式：
+### 基础层（零依赖）
 
-```csharp
-public class AssetPipeline
-{
-    public void import_texture(string path, PlatformProfile profile)
-    {
-        var raw = load_image(path);
-        foreach (var arch in profile.target_archs)
-        {
-            var compressed = compress_for_arch(raw, arch);
-            save_as_engine_asset(compressed, arch, "texture");
-        }
-    }
-}
-```
+| 包 | 职责 |
+|:---|:---|
+| `Gnosis.Core` | 数学、集合、事件、线程、IO、内存、哈希、时间、平台、配置、字符串、诊断 |
+| `Gnosis.IR` | IR 图、指令集、分析、变换、Lowering、发射器、验证 |
 
-#### 阶段一：元语言执行
+### 核心层（依赖基础层）
 
-gg 编译器将 gg 源码翻译为平台无关字节码，同时生成特化虚拟机 C 源码：
+| 包 | 职责 |
+|:---|:---|
+| `Gnosis.Runtime` | VM、Interop、协程、热重载、反射、调试、沙箱 |
+| `Gnosis.ECS` | 实体、组件、原型、系统、查询、世界、命令、观察者 |
+| `Gnosis.Asset` | VFS、格式、导入、处理、元数据、缓存、打包、引用 |
+| `Gnosis.Scene` | 图、预制体、序列化、流式加载、层级、场景组件 |
+| `Gnosis.Storage` | 存档、偏好、Provider、云端、迁移、快照 |
+| `Gnosis.Database` | 存储引擎、WAL、事务、查询、索引、压缩、缓存 |
 
-```csharp
-public class GGCompiler
-{
-    public CompilationResult compile(
-        string[] source_files,
-        ArchTarget arch,
-        ChannelMacros macros,
-        bool is_editor_build = false)
-    {
-        var ast = parse_gg_sources(source_files);
-        
-        var meta_evaluator = new MetaLanguageEvaluator(macros);
-        var processed_ast = meta_evaluator.process(ast);
-        
-        var bytecode_gen = new BytecodeGenerator(arch, is_editor_build);
-        var bytecode = bytecode_gen.generate(processed_ast);
-        
-        var vm_src_gen = new VMSourceGenerator(arch, bytecode_gen.used_features);
-        var vm_sources = vm_src_gen.generate();
-        
-        return new CompilationResult(bytecode, vm_sources);
-    }
-}
-```
+### 子系统层（依赖核心层）
 
-#### 阶段二：AOT 编译
+| 包 | 职责 |
+|:---|:---|
+| `Gnosis.Graphic` | RHI、着色器、管线、材质、光照、阴影、后处理、计算、地形、植被、FX、角色、天空、剔除、捕获 |
+| `Gnosis.Geometry` | 集群、剔除、流式加载、光栅化、压缩、构建器 |
+| `Gnosis.Animation` | 片段、状态机、混合、补间、IK、适配器、重定向、事件、压缩 |
+| `Gnosis.Neural` | 运行时、图、模型、绑定、推理、训练 |
+| `Gnosis.Physics` | 形状、碰撞、动力学、查询、载具、破坏、布料、流体、角色 |
+| `Gnosis.Audio` | 驱动、声源、听者、混音、片段、音库、合成 |
+| `Gnosis.Input` | 设备、动作、绑定、手势、模拟、光标 |
+| `Gnosis.Network` | 传输、信道、复制、RPC、大厅、序列化、预测、指标 |
+| `Gnosis.Navigation` | 导航网格、查询、寻路、人群、连接、动态、分块 |
+| `Gnosis.AI` | 行为树、状态机、感知、规划、效用、黑板、生成 |
+| `Gnosis.Widget` | 元素、渲染、样式、布局、绑定、窗口、控件 |
+| `Gnosis.GameUI` | 画布、元素、布局、渲染、字体、动画、输入 |
+| `Gnosis.XR` | 会话、追踪、显示、输入、合成、锚点 |
+| `Gnosis.Profiler` | 标记、采样、内存、网络、导出、实时 |
+| `Gnosis.Security` | 混淆、完整性、反作弊、审核、加密 |
+| `Gnosis.Toolchain` | 资产管线、烹饪、着色器编译、脚本编译、链接、部署 |
+| `Gnosis.Plugin` | 宿主、加载器、隔离、依赖、扩展、清单、上下文 |
 
-生成的虚拟机是纯 C 代码，可经任何 C 编译器生成 iOS、主机平台所需的本机二进制：
+> 每个包的子模块详细说明请参阅 [架构详解](../maintenance/architecture.md)。
 
-```c
-void vm_run(VMState* vm) {
-    const uint8_t* ip = vm->ip;
-    static void* dispatch[] = { &&OP_HALT, &&OP_ADD_F, &&OP_CALL_NATIVE, ... };
-    goto *dispatch[*ip++];
-    
-OP_ADD_F: {
-    float b = vm->stack[--vm->sp];
-    float a = vm->stack[--vm->sp];
-    vm->stack[vm->sp++] = a + b;
-    goto *dispatch[*ip++];
-}
+---
 
-OP_CALL_NATIVE: {
-    uint32_t func_id = *(uint32_t*)ip; ip += 4;
-    native_functions[func_id](vm);
-    goto *dispatch[*ip++];
-}
-}
-```
+## 编译器架构
 
-**关键优势**：
-- **AOT 兼容**：虚拟机为纯 C 代码，无 JIT 限制
-- **零反射**：所有类型信息在构建时解析完毕
+gg 编译器位于 `Gnosis.IR` 和 `Gnosis.Toolchain` 包中，负责将 gg 源码编译为字节码或 SPIR-V。
 
-### 数据流图
+### 编译流水线
 
 ```mermaid
 flowchart LR
-    subgraph 负二阶段["负二阶段：插件配置"]
-        plugins["gg 插件"] --> macro_table["全局宏表"]
-        plugins --> cap_reg["能力注册表"]
-    end
-
-    subgraph 负一阶段["负一阶段：资产预处理"]
-        raw["原始资产"] --> importer["资产导入器"]
-        importer --> cooked_assets["平台特化资产"]
-    end
-
-    subgraph 阶段〇["阶段〇：开发编辑"]
-        editor["编辑器 (gg)"] <--> src["gg 源码"]
-        editor <--> cooked_assets
-    end
-
-    subgraph 阶段一["阶段一：元语言执行"]
-        src --> compiler["gg_compiler"]
-        macro_table --> compiler
-        compiler --> bytecode["gg 字节码 (.code)"]
-        compiler --> vm_src["虚拟机源码 (C)"]
-    end
-
-    subgraph 阶段二["阶段二：AOT 编译"]
-        vm_src --> aot["AOT 编译器"]
-        aot --> kernel["运行时内核 (.exe/.wasm)"]
-    end
-
-    subgraph 阶段三["阶段三：打包发布"]
-        bytecode --> packer["资产打包器"]
-        cooked_assets --> packer
-        kernel --> packer
-        packer --> final["最终游戏包"]
-    end
-
-    负二阶段 --> 阶段〇
-    负一阶段 --> 阶段〇
-    阶段〇 --> 阶段一
-    阶段一 --> 阶段二
-    阶段二 --> 阶段三
+    Source["gg 源码"] --> Lexer["词法分析"]
+    Lexer --> Parser["语法分析"]
+    Parser --> AST["AST"]
+    AST --> Lowering["IR Lowering"]
+    Lowering --> IR["IR (SSA)"]
+    IR --> Optimize["优化 Pass"]
+    Optimize --> Emit["发射器"]
+    Emit --> Bytecode["字节码"]
+    Emit --> SPIRV["SPIR-V"]
 ```
 
-## 整体架构
+### 前端
 
-### 架构层次
+| 前端 | 输入语言 | 对应包 |
+|------|----------|--------|
+| ScriptFrontend | gg-script | `Gnosis.Toolchain.ScriptCompiler` |
+| ShaderFrontend | gg-shader | `Gnosis.Toolchain.ShaderCompiler` |
+
+### IR 优化 Pass
+
+| Pass | 描述 | 对应子模块 |
+|------|------|-----------|
+| 常量折叠 | 编译时计算常量表达式 | `Gnosis.IR.Transform` |
+| 死代码消除 | 移除不可达代码 | `Gnosis.IR.Transform` |
+| 内联 | 函数内联展开 | `Gnosis.IR.Transform` |
+| 循环展开 | 编译时循环展开 | `Gnosis.IR.Transform` |
+| 向量化 | 自动向量化 | `Gnosis.IR.Transform` |
+
+### 发射器
+
+| 发射器 | 目标格式 | 对应子模块 |
+|--------|----------|-----------|
+| 字节码发射器 | gg 字节码 | `Gnosis.IR.Emitter` |
+| SPIR-V 发射器 | SPIR-V | `Gnosis.IR.Emitter` |
+| 文本 IR 输出 | 可读 IR 文本 | `Gnosis.IR.Emitter` |
+
+---
+
+## 虚拟机架构
+
+gg 虚拟机位于 `Gnosis.Runtime` 包中，负责解释执行 gg 字节码。
+
+### VM 核心组件
+
+| 组件 | 职责 | 对应子模块 |
+|------|------|-----------|
+| 字节码解释器 | 指令分发与执行 | `Gnosis.Runtime.VM` |
+| 栈帧管理 | 调用栈与局部变量 | `Gnosis.Runtime.VM` |
+| Interop | C# 原生函数绑定 | `Gnosis.Runtime.Interop` |
+| 协程调度器 | 协程状态机 | `Gnosis.Runtime.Coroutine` |
+| 热重载 | 代码热替换 | `Gnosis.Runtime.HotReload` |
+| 调试接口 | 断点与单步 | `Gnosis.Runtime.Debug` |
+| 沙箱 | 权限控制 | `Gnosis.Runtime.Sandbox` |
+
+### 字节码执行模型
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     游戏逻辑层 (gg 字节码)                     │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              ECS 世界 (组件 + 系统)                    │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                     引擎核心层 (C AOT 内核)                    │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐                 │
-│  │ 虚拟机    │   │ ECS 核心  │   │ 资源管理  │                │
-│  └──────────┘   └──────────┘   └──────────┘                 │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                     平台抽象层                                │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐                 │
-│  │ RHI      │   │ 网络后端  │   │ 平台插件  │                │
-│  └──────────┘   └──────────┘   └──────────┘                 │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                     原生平台层                                │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐                 │
-│  │ Vulkan   │   │ Metal    │   │ DirectX  │                │
-│  └──────────┘   └──────────┘   └──────────┘                 │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│              VM 实例                   │
+│  ┌────────────────────────────────┐  │
+│  │         全局状态                 │  │
+│  │  - 全局变量表                    │  │
+│  │  - 类型注册表                    │  │
+│  │  - 函数表                       │  │
+│  └────────────────────────────────┘  │
+│  ┌────────────────────────────────┐  │
+│  │         调用栈                   │  │
+│  │  ┌──────────────────────────┐  │  │
+│  │  │ 栈帧 N                   │  │  │
+│  │  │  - 返回地址               │  │  │
+│  │  │  - 局部变量               │  │  │
+│  │  │  - 操作数栈               │  │  │
+│  │  ├──────────────────────────┤  │  │
+│  │  │ 栈帧 N-1                 │  │  │
+│  │  │  ...                     │  │  │
+│  │  └──────────────────────────┘  │  │
+│  └────────────────────────────────┘  │
+│  ┌────────────────────────────────┐  │
+│  │         堆                       │  │
+│  │  - 对象实例                     │  │
+│  │  - 字符串池                     │  │
+│  │  - GC 管理区                    │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
 ```
 
-### 核心模块
-
-| 模块 | 描述 |
-| :--- | :--- |
-| `gg_compiler` | gg 语言编译器，生成字节码 |
-| `vm_generator` | 虚拟机源码生成器 |
-| `asset_pipeline` | 资产预处理管线 |
-| `gg_vm` | 字节码解释器 |
-| `ecs_runtime` | ECS 运行时 |
-| `rhi` | 渲染硬件接口抽象层 |
-| `widget` | 编辑器 UI 系统（声明式 Widget 树，按需重绘） |
-| `game_ui` | 游戏运行时 UI 系统（ECS Canvas 批处理，每帧重绘） |
-
-> **注意**：`widget` 与 `game_ui` 是两套完全独立的 UI 体系。`widget` 服务于编辑器界面，走独立于游戏循环的 ImGUI 式绘制；`game_ui` 服务于游戏运行时 UI（HUD、血条等），走 ECS + 材质系统 + 批处理优化路径。二者共享同一 RHI 后端，但渲染策略完全不同。详见 [gg-widget 语言指南](../languages/gg-widget.md)。
+---
 
 ## ECS 架构
 
-gg 引擎采用实体组件系统（ECS）架构管理游戏对象：
+ECS 系统位于 `Gnosis.ECS` 包中，采用 Archetype 存储模型。
 
 ### 核心概念
 
-| 概念 | 描述 |
-| :--- | :--- |
-| Entity | 实体，仅是一个唯一标识符 |
-| Component | 组件，纯数据，无逻辑 |
-| System | 系统，纯逻辑，查询并处理组件 |
-| World | 世界，包含所有实体和组件的容器 |
-| Archetype | 原型，具有相同组件组合的实体集合 |
+| 概念 | 描述 | 对应子模块 |
+|------|------|-----------|
+| 实体 | 轻量 ID + 代际 | `Gnosis.ECS.Entity` |
+| 组件 | 纯数据，按 Archetype 分组存储 | `Gnosis.ECS.Component` |
+| 原型 | 组件组合的存储单元 | `Gnosis.ECS.Archetype` |
+| 系统 | 逻辑处理单元 | `Gnosis.ECS.System` |
+| 查询 | 实体遍历接口 | `Gnosis.ECS.Query` |
+| 世界 | ECS 容器 | `Gnosis.ECS.World` |
+| 命令缓冲 | 延迟操作 | `Gnosis.ECS.Command` |
+| 观察者 | 变更通知 | `Gnosis.ECS.Observer` |
 
-### 查询机制
+### Archetype 内存布局
 
-```tsx
-system MoveSystem {
-    query = Query.all(Position, Velocity);
-
-    on_update(delta: float) {
-        <% foreach (var (pos, vel) in query) { %>
-            pos.x += vel.vx * delta;
-            pos.y += vel.vy * delta;
-        <% } %>
-    }
-}
+```
+Archetype: [Position, Velocity, Health]
+┌─────────────────────────────────────────────────┐
+│ Chunk 0                                         │
+│  ┌──────────┬──────────┬──────────┬──────────┐  │
+│  │ Pos[0]   │ Vel[0]   │ HP[0]    │ Entity   │  │
+│  │ Pos[1]   │ Vel[1]   │ HP[1]    │ Entity   │  │
+│  │ ...      │ ...      │ ...      │ ...      │  │
+│  │ Pos[N]   │ Vel[N]   │ HP[N]    │ Entity   │  │
+│  └──────────┴──────────┴──────────┴──────────┘  │
+├─────────────────────────────────────────────────┤
+│ Chunk 1                                         │
+│  ┌──────────┬──────────┬──────────┬──────────┐  │
+│  │ ...      │ ...      │ ...      │ ...      │  │
+│  └──────────┴──────────┴──────────┴──────────┘  │
+└─────────────────────────────────────────────────┘
 ```
 
-## 插件系统
+**关键优势**：
+- 组件数据连续存储，缓存友好
+- SIMD 友好的线性遍历
+- 无间接寻址，直接数组访问
 
-插件在负二阶段加载，用于注入平台能力和宏定义：
+---
 
-```tsx
-plugin WeChatChannel {
-    requires_arch = ["WASM"];
-    provides_macros = ["WECHAT", "WECHAT_SHARE"];
-    provides_capabilities = ["WeChatLogin", "WeChatShare"];
-}
+## 渲染架构
+
+渲染系统位于 `Gnosis.Graphic` 包中，采用 RHI 抽象层设计。详见 [渲染系统](./rendering.md)。
+
+### 包间协作
+
+```mermaid
+flowchart TB
+    subgraph GameLayer["Layer 3: 游戏内容"]
+        GGShader["gg-shader"]
+    end
+
+    subgraph EngineLayer["Layer 2: 游戏引擎"]
+        Pipeline["渲染管线"]
+        Material["材质系统"]
+    end
+
+    subgraph MetaLayer["Layer 1: Gnosis 包"]
+        RHI["Gnosis.Graphic.RHI"]
+        ShaderCompiler["Gnosis.Toolchain.ShaderCompiler"]
+        SPIRV["SPIR-V 后端"]
+        Vulkan["Vulkan 后端"]
+        Metal["Metal 后端"]
+        D3D12["D3D12 后端"]
+    end
+
+    GGShader -->|编译| ShaderCompiler
+    ShaderCompiler -->|生成| SPIRV
+    Pipeline --> RHI
+    Material --> RHI
+    RHI --> Vulkan
+    RHI --> Metal
+    RHI --> D3D12
 ```
 
-## 热更新机制
+---
 
-### 热重载（开发期）
+## 网络架构
 
-文件变更时：1. 增量编译新 `.code` 模块 2. 通知虚拟机替换内存中的模块定义 3. ECS 世界自动使用新定义创建后续实体
+网络系统位于 `Gnosis.Network` 包中，支持帧同步与状态同步的融合。详见 [网络架构](./network.md)。
 
-> 热重载的完整工作流程、虚拟机热替换逻辑与使用示例请参阅 [热更新与热重载](hot-update.md#热重载开发期)。
+---
 
-### 热更新（发布后）
+## 编辑器架构
 
-游戏启动时：1. 检查更新清单 2. 下载增量 `.code` 字节码与资产差分文件 3. 通过 VFS 覆盖旧版本
+编辑器基于 `Gnosis.Widget` 包构建，UI 使用 `gg-widget` 语言编写。详见 [编辑器架构](./editor.md)。
 
-> 热更新的完整工作流程、更新清单格式与 VFS 架构请参阅 [热更新与热重载](hot-update.md#热更新发布后)。
+---
 
-## 设计原则
+## 热更新架构
 
-| 原则 | 描述 |
-| :--- | :--- |
-| 渲染不可知论 | 引擎内核不绑定任何特定图形 API |
-| 服务器为唯一真相源 | 联网游戏的逻辑边界严格控制在服务端 |
-| 软失败与可观测性 | 防御采用静默降级、延迟惩罚策略 |
-| 可插拔架构 | 网络后端、渲染后端、平台插件均可替换 |
+热更新由 `Gnosis.Runtime.HotReload` 子模块支持。详见 [热更新与热重载](./hot-update.md)。
 
-## 下一步
+---
 
-- 阅读 [gg 语言指南](../languages/gg-script.md) 学习 ECS 编程
-- 阅读 [网络架构](network.md) 了解帧同步与状态同步
-- 阅读 [渲染系统](rendering.md) 了解 RHI 抽象层
+## 安全架构
+
+安全系统位于 `Gnosis.Security` 包中。详见 [反作弊系统](./anti-cheat.md)。
+
+---
+
+## 命名规范
+
+| 规则 | 正确示例 | 错误示例 | 说明 |
+|:---|:---|:---|:---|
+| 包名使用**单数名词** | `Gnosis.Asset` | `Gnosis.Assets` | 表示一个资产系统，而非多个资产 |
+| 子模块不使用主包名 | `Graphic.FX` | `Graphic.Core` | `Core` 是顶级包名，禁止嵌套使用 |
+| 避免动词或 -ing 形式 | `Animation.Tween` | `Animation.Tweening` | `Tween` 是名词 |
+| 适配器模式命名后缀 | `Animation.Adapter` | `Animation.SpinePlugin` | 后缀统一为 `Adapter` / `Provider` / `Driver` |
+
+---
+
+## 包依赖方向
+
+依赖方向必须遵循：**基础层 ← 核心层 ← 子系统层**，绝不允许反向依赖。
+
+```
+基础层:     Gnosis.Core, Gnosis.IR
+               ↑              ↑
+核心层:     Gnosis.Runtime, Gnosis.ECS, Gnosis.Asset, Gnosis.Scene,
+            Gnosis.Storage, Gnosis.Database
+               ↑              ↑
+子系统层:   Gnosis.Graphic, Gnosis.Geometry, Gnosis.Animation, Gnosis.Neural,
+            Gnosis.Physics, Gnosis.Audio, Gnosis.Input, Gnosis.Network,
+            Gnosis.Navigation, Gnosis.AI, Gnosis.Widget, Gnosis.GameUI,
+            Gnosis.XR, Gnosis.Profiler, Gnosis.Security, Gnosis.Toolchain,
+            Gnosis.Plugin
+```
+
+### 依赖检查清单
+
+在添加新包或修改依赖时，请回答以下问题：
+
+1. 这个包是否**必须**依赖另一个包？能否通过接口解耦？
+2. 依赖方向是否与架构层级一致？
+3. 是否引入了**循环依赖**？
+4. 这个包将来是否会被**可选地替换**？如果是，请引入 `Provider` / `Adapter` 接口。

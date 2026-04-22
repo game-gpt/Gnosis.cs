@@ -2,6 +2,16 @@
 
 本文档介绍 gg-widget 语言的语法特性和使用方法。
 
+## ⚠️ 语言归属声明
+
+**gg-widget 是游戏对象语言，不是 C#。** 编辑器 UI 使用 gg-widget 编写，**而非 C#**：
+
+- 编辑器本身完全由 GG 语言族编写，运行于 gg 虚拟机之上。
+- gg-widget 的 `<script setup>` 块使用 GG 语言的类型系统（`f64`、`string`、`bool`），**不是 JavaScript/TypeScript**。
+- Widget 的样式属性（如 `style="bg-blue-500"`）是 HTML 标签属性，**不是 GG 语言的特性标注 (Attribute)**，也不是 C# 的属性 (Property)。
+
+详见 [项目介绍 - 三层蛋糕模型](../overview/introduction.md#⚠️-关键概念三层蛋糕模型)。
+
 ## ⚠️ 关键区分：Widget 与 Game UI
 
 在深入 gg-widget 语言之前，必须首先理解 gg 引擎中 **Widget** 与 **Game UI** 是两套完全不同的 UI 体系，尽管它们共享同一底座（gg 虚拟机 + RHI 渲染后端）。
@@ -414,7 +424,7 @@ import { AppStore } from './store.js';
 ### 在 gg 脚本中使用组件
 
 ```tsx
-// main.ggs
+# main.ggs
 import ui;
 
 micro main() {
@@ -426,7 +436,7 @@ micro main() {
 ### 与 ECS 集成
 
 ```tsx
-// game.ggs
+# game.ggs
 import ui;
 
 component UI {

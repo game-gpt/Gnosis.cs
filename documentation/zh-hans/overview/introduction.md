@@ -2,9 +2,47 @@
 
 ## 什么是 Gnosis 引擎
 
-Gnosis 引擎（以下简称 **gg 引擎**）是一款面向**跨平台游戏开发**的全栈技术方案，旨在为独立开发者至大型团队提供一致的、高性能的、天然支持热更新的运行时环境。
+Gnosis 引擎（以下简称 **gg 引擎**）是一款面向**跨平台游戏开发**的元引擎框架，旨在为独立开发者至大型团队提供一致的、高性能的、天然支持热更新的运行时环境。
 
-其核心思想是将游戏逻辑与底层基础设施彻底解耦，通过自定义字节码与特化虚拟机，实现"一次编写，多端原生运行"。
+Gnosis 本身不是游戏引擎，而是用来构建游戏引擎的 25 个 C# 包。游戏引擎由 Gnosis 包组合实例化而成，游戏逻辑则由 gg 语言族编写。这种分层设计使得 Gnosis 可以服务于不同类型的游戏项目，而不仅限于某一种游戏范式。
+
+---
+
+## ⚠️ 关键概念：三层蛋糕模型
+
+在深入了解 Gnosis 引擎之前，**必须首先理解三层蛋糕模型**。这是整个项目架构的基石，混淆这三层将导致设计决策的全面偏差。详见 [架构详解 - 三层蛋糕模型](../maintenance/architecture.md#一三层蛋糕模型必须牢记)。
+
+### 三层定义
+
+| 层次 | 名称 | 编写语言 | 职责 | 运行时形态 |
+|:---|:---|:---|:---|:---|
+| **Layer 1** | Gnosis 元引擎层 | C#（零外部依赖） | 25 个包构成的基础设施 | 不可独立运行，由 Layer 2 实例化 |
+| **Layer 2** | 游戏引擎层 | C#（调用 Gnosis 包） | 编辑器、资产管线、构建工具、启动器 | 可独立运行的 C# 应用程序 |
+| **Layer 3** | 游戏内容层 | gg 语言族 | 游戏本体、Mod、DLC、插件、编辑器 Widget | gg 字节码，由 Gnosis.Runtime 解释执行 |
+
+### 两类语言的严格区分
+
+| 概念 | 语言 | 用途 | 开发者 |
+|------|------|------|--------|
+| **引擎元语言** | C# | 实现引擎基础设施：编译器、虚拟机、RHI、ECS 运行时、资产管线 | 引擎开发者 |
+| **游戏对象语言** | GGScript (gg-script) | 游戏逻辑编程：组件、系统、插件、场景 | 游戏开发者 |
+| **游戏对象语言** | GGShader (gg-shader) | 着色器编程：顶点/片段/计算/光追着色器 | 游戏开发者 |
+| **游戏对象语言** | GGWidget (gg-widget) | 编辑器 UI 编程：声明式 Widget 树 | 游戏开发者 |
+| **游戏对象语言** | GGNeural (gg-neural) | 神经网络推理：Tensor Core 加速层 | 游戏开发者 |
+| **游戏对象语言** | GGObject (gon) | 对象配置：JSON 超集数据格式 | 游戏开发者 |
+
+### 核心区分原则
+
+1. **游戏开发者使用 GG 语言族编写一切**：无论是游戏本体、插件 (Plugin)、Mod、DLC，还是编辑器 Widget，都使用 GGScript、GGShader、GGWidget 编写，**而非 C#**。
+2. **C# 仅用于 Layer 1 和 Layer 2**：编译器、虚拟机、资产管线、RHI 抽象层等引擎基础设施由 C# 实现，游戏开发者不需要也不应该直接使用 C#。
+3. **特性标注 (Attribute) 是 GG 语言的语法**：GGScript/GGShader 中的 `[Encrypted]`、`[Vertex]`、`[Compute]` 等是 GG 语言的特性标注，**与 C# 的 `System.Attribute` 完全无关**。
+4. **元编程 `<% %>` 是桥梁**：`<% %>` 块内部是 C# 语法，由 C# 元语言层在编译时执行，这是引擎元语言与游戏对象语言之间唯一的交互点。
+
+### 致命错误示例
+
+- ❌ 在 `Gnosis.Core` 中写游戏逻辑 → **游戏逻辑属于 Layer 3，用 gg-script 写**
+- ❌ 在 `gg-script` 中实现渲染管线 → **渲染管线属于 Layer 1/2，用 C# 写**
+- ❌ 认为 Gnosis 包可以直接 Build 出一个游戏 → **必须先构建一个游戏引擎（Layer 2），再用游戏引擎构建游戏项目（Layer 3）**
 
 ---
 
@@ -41,6 +79,7 @@ gg 引擎采用**多阶段编程（Multi-Stage Programming, MSP）**范式，将
 | **编辑器** | C++/C# 编写，与运行时分离 | gg 语言编写，运行于同一虚拟机 |
 | **渲染后端** | 绑定特定 API | RHI 抽象，可插拔后端 |
 | **网络同步** | 单一模式 | 帧同步与状态同步融合 |
+| **引擎形态** | 单体引擎 | 元引擎 + 游戏引擎分层 |
 
 ---
 
@@ -72,54 +111,31 @@ gg 引擎采用**多阶段编程（Multi-Stage Programming, MSP）**范式，将
 
 ```mermaid
 flowchart TB
-    subgraph Meta["C# 元语言层 (构建时)"]
-        compiler["gg_compiler"]
-        vm_gen["vm_generator"]
-        asset_pipe["asset_pipeline"]
-        build["build_orchestrator"]
+    subgraph Layer3["Layer 3: 游戏内容层 (gg 语言族)"]
+        Game["Game (gg)"]
+        Mod["Mod (gg)"]
+        Plugin["Plugin (gg)"]
+        EditorContent["Editor Widget (gg)"]
     end
 
-    subgraph Editor["编辑器 (gg 编写)"]
-        editor_main["editor_main.scirpt"]
-        widgets["Widget 系统"]
-        editor_api["editor_api (C# 绑定)"]
+    subgraph Layer2["Layer 2: 游戏引擎层 (C#)"]
+        EditorApp["编辑器应用"]
+        AssetPipeline["资产管线"]
+        Builder["构建工具"]
+        Launcher["启动器"]
     end
 
-    subgraph Game["游戏运行时 (gg 字节码 + VM)"]
-        vm["gg_vm (C AOT 内核)"]
-        ecs["ECS 运行时"]
-        render["渲染后端"]
-        vfs["虚拟文件系统"]
+    subgraph Layer1["Layer 1: Gnosis 元引擎层 (C#)"]
+        Runtime["Gnosis.Runtime"]
+        ECS["Gnosis.ECS"]
+        Graphic["Gnosis.Graphic"]
+        Asset["Gnosis.Asset"]
+        Network["Gnosis.Network"]
+        Other["... 其他 20 个包"]
     end
 
-    subgraph Assets["资产与代码"]
-        gg_src["gg 源码"]
-        ggc["gg 字节码 (.code)"]
-        raw_assets["原始资产"]
-        cooked["预处理资产"]
-    end
-
-    subgraph External["外部渠道"]
-        steam["Steam"]
-        wechat["微信"]
-        psn["PSN"]
-    end
-
-    Meta -->|生成| vm
-    Meta -->|编译| ggc
-    Meta -->|处理| cooked
-    gg_src --> compiler
-    raw_assets --> asset_pipe
-
-    Editor -->|运行于| vm
-    Editor -->|读写| cooked
-    editor_api --> vm_gen
-
-    Game -->|加载| ggc
-    Game -->|读取| cooked
-    Game -->|调用| External
-
-    build -->|输出| Game
+    Layer3 -->|通过 Gnosis 框架层通信| Layer2
+    Layer2 -->|直接 API 调用| Layer1
 ```
 
 ---

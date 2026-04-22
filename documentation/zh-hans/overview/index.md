@@ -2,7 +2,7 @@
 
 欢迎来到 **Gnosis 引擎（gg 引擎）** 官方文档。
 
-Gnosis 引擎是一款面向跨平台游戏开发的全栈技术方案，采用**多阶段编程（MSP）**范式，将构建时元编程、运行时虚拟机、ECS 数据架构及可插拔渲染后端深度集成，为开发者提供一套从原型到上线的完整技术方案。
+Gnosis 引擎是一款面向跨平台游戏开发的元引擎框架，采用**多阶段编程（MSP）**范式，将构建时元编程、运行时虚拟机、ECS 数据架构及可插拔渲染后端深度集成。Gnosis 本身不是游戏引擎，而是用来构建游戏引擎的 25 个 C# 包；游戏引擎由 Gnosis 包组合实例化，游戏逻辑则由 gg 语言族编写。
 
 ---
 
@@ -27,6 +27,7 @@ Gnosis 引擎是一款面向跨平台游戏开发的全栈技术方案，采用*
 | [编辑器架构](../development/editor.md) | 编辑器架构与 Widget 系统 |
 | [热更新与热重载](../development/hot-update.md) | 热重载与热更新机制 |
 | [反作弊系统](../development/anti-cheat.md) | 分层防御与安全加固 |
+| [配置表系统](../development/config-tables.md) | 配置表格式规范与使用方式 |
 
 ### 语言指南
 
@@ -35,15 +36,18 @@ Gnosis 引擎是一款面向跨平台游戏开发的全栈技术方案，采用*
 | [gg-script](../languages/gg-script.md) | gg 语言语法与 ECS 编程范式 |
 | [gg-shader](../languages/gg-shader.md) | 着色器语言与渲染管线 |
 | [gg-widget](../languages/gg-widget.md) | Widget 与 Game UI 构建语言 |
-| [gg-object](../languages/gg-object.md) | 对象配置语言 (ggon) |
+| [gg-object](../languages/gg-object.md) | 对象配置语言 (gon) |
+| [gg-neural](../languages/gg-neural.md) | 神经着色器编程指南 |
 
 ### 维护指南
 
 | 文档 | 描述 |
 |------|------|
-| [编码规范](../maintenance/coding-standards.md) | Rust/C# 代码风格指南 |
+| [架构详解](../maintenance/architecture.md) | 25 包结构与三层蛋糕模型 |
+| [编码规范](../maintenance/coding-standards.md) | C# 代码风格指南 |
 | [测试指南](../maintenance/testing-guide.md) | 单元测试与集成测试 |
 | [贡献指南](../maintenance/contributing.md) | 如何参与项目开发 |
+| [NoSQL 存储引擎](../maintenance/nosql-database.md) | 嵌入式数据库设计文档 |
 
 ---
 
@@ -73,35 +77,26 @@ Gnosis 引擎是一款面向跨平台游戏开发的全栈技术方案，采用*
 
 ## 架构概览
 
-```mermaid
-flowchart TB
-    subgraph Meta["C# 元语言层 (构建时)"]
-        compiler["gg_compiler"]
-        vm_gen["vm_generator"]
-        asset_pipe["asset_pipeline"]
-    end
+Gnosis 采用**三层蛋糕模型**，详见 [架构详解](../maintenance/architecture.md#一三层蛋糕模型必须牢记)：
 
-    subgraph Editor["编辑器 (gg 编写)"]
-        widgets["Widget 系统"]
-        editor_api["editor_api"]
-    end
-
-    subgraph Game["游戏运行时"]
-        vm["gg_vm (C AOT)"]
-        ecs["ECS 运行时"]
-        render["渲染后端"]
-    end
-
-    subgraph Assets["资产与代码"]
-        gg_src["gg 源码"]
-        ggc["字节码 (.ggc)"]
-        cooked["预处理资产"]
-    end
-
-    Meta -->|生成| vm
-    Meta -->|编译| ggc
-    Editor -->|运行于| vm
-    Game -->|加载| ggc
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Layer 3: 游戏内容层                        │
+│  Game (gg) │ Mod (gg) │ DLC (gg) │ Plugin (gg) │ Editor    │
+│  编写语言: gg-script / gg-shader / gg-widget / gg-neural    │
+└─────────────────────────────────────────────────────────────┘
+                              ↑
+┌─────────────────────────────────────────────────────────────┐
+│                    Layer 2: 游戏引擎层                        │
+│  基于 Gnosis 包构建的 C# 应用程序（编辑器、资产管线、启动器）   │
+│  编写语言: C#                                                │
+└─────────────────────────────────────────────────────────────┘
+                              ↑
+┌─────────────────────────────────────────────────────────────┐
+│                    Layer 1: Gnosis 元引擎层                   │
+│  25 个 C# 包构成的基础设施（零外部依赖）                       │
+│  编写语言: C#                                                │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -128,6 +123,7 @@ flowchart TB
 | 编辑器 | 独立实现 | gg 语言编写 |
 | 渲染后端 | 绑定 API | RHI 抽象 |
 | 网络同步 | 单一模式 | 融合架构 |
+| 引擎形态 | 单体引擎 | 元引擎 + 游戏引擎分层 |
 
 ---
 
@@ -154,7 +150,8 @@ documentation/zh-hans/
 │   ├── gg-script.md        # gg 语言语法与 ECS 编程
 │   ├── gg-shader.md        # gg-shader 着色器语言
 │   ├── gg-widget.md        # gg-widget Widget 与 Game UI
-│   └── gg-object.md        # ggon 对象配置语言
+│   ├── gg-object.md        # gon 对象配置语言
+│   └── gg-neural.md        # gg-neural 神经着色器
 ├── development/            # 开发指南
 │   ├── getting-started.md  # 开发入门
 │   ├── architecture.md     # 架构设计
@@ -162,11 +159,16 @@ documentation/zh-hans/
 │   ├── editor.md           # 编辑器架构
 │   ├── hot-update.md       # 热更新与热重载
 │   ├── network.md          # 网络架构
-│   └── anti-cheat.md       # 反作弊系统
-└── maintenance/            # 维护指南
-    ├── coding-standards.md # 编码规范
-    ├── testing-guide.md    # 测试指南
-    └── contributing.md     # 贡献指南
+│   ├── anti-cheat.md       # 反作弊系统
+│   └── config-tables.md    # 配置表系统
+├── maintenance/            # 维护指南
+│   ├── architecture.md     # 架构详解（25 包结构）
+│   ├── coding-standards.md # C# 编码规范
+│   ├── testing-guide.md    # 测试指南
+│   ├── contributing.md     # 贡献指南
+│   └── nosql-database.md   # NoSQL 存储引擎
+└── examples/               # 示例
+    └── platformer-multiplayer.md
 ```
 
 ---

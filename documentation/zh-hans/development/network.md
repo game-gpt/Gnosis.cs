@@ -1,305 +1,200 @@
-# 网络架构：帧同步与状态同步
+# 网络架构
 
-本文档介绍 gg 引擎的网络架构，包括帧同步（Lockstep）与状态同步（Server Authority）的设计与实现。
+Gnosis 网络系统位于 `Gnosis.Network` 包中，支持帧同步与状态同步的融合架构。
 
-## 设计理念
+---
 
-gg 引擎提供统一的网络抽象层，支持在同一游戏中无缝切换帧同步与状态同步：
+## Gnosis.Network 子模块
 
-| 特性 | 描述 |
-| :--- | :--- |
-| 后端可插拔 | 支持 Steam P2P、WebSocket 等 |
-| 编译时选择 | 通过宏选择网络后端 |
-| 模式切换 | 运行时可切换同步模式 |
-| 服务器权威 | 联网游戏以服务器为唯一真相源 |
+| 子模块 | 职责 | 设计理由 |
+|:---|:---|:---|
+| `Transport` | UDP / WebSocket / KCP 传输层抽象 | 网络通信的基础通道 |
+| `Channel` | 可靠/不可靠信道、有序/无序 | 不同数据类型的传输策略 |
+| `Replication` | 状态同步、增量更新、所有权 | 多人游戏的核心同步机制 |
+| `RPC` | 远程过程调用、序列化、路由 | 客户端与服务器的方法调用 |
+| `Lobby` | 大厅服务接口、房间管理、匹配 | 多人游戏的社交基础设施抽象 |
+| `Serialization` | 网络序列化、比特流、压缩 | 网络传输的数据格式 |
+| `Prediction` | 客户端预测、回滚、和解 | 降低网络延迟的感知 |
+| `Metrics` | 网络延迟、丢包率、带宽统计 | 网络质量的监控 |
 
-## 网络后端抽象
+---
 
-### 后端类型
+## 双模式同步架构
 
-| 后端 | 平台 | 特性 |
-| :--- | :--- | :--- |
-| Steam | PC (Steam) | P2P 可靠/不可靠传输 |
-| WebSocket | Web / 专用服务器 | 客户端-服务器模式 |
-| None | 单机 | 无网络 |
-
-### 编译时选择
-
-```tsx
-<% if (MACRO.NET_BACKEND == "STEAM") { %>
-    import SteamMock;
-    type NetBackend = SteamBackend;
-<% } else if (MACRO.NET_BACKEND == "WEBSOCKET") { %>
-    import WebSocketMock;
-    type NetBackend = WebSocketBackend;
-<% } else { %>
-    type NetBackend = NullBackend;
-<% } %>
-```
-
-### 网络管理器
-
-```tsx
-export class NetworkManager {
-    static var backend: NetBackend;
-    static var local_player_id: int = -1;
-    static var is_server: bool = false;
-
-    static function init() {
-        <% if (MACRO.NET_BACKEND != "NONE") { %>
-            backend = new NetBackend();
-        <% } %>
-    }
-
-    static function send_reliable(target: int, msg_id: int, data: byte[]) {
-        var packet = pack_message(msg_id, data);
-        backend.send_reliable(target, packet);
-    }
-
-    static function send_unreliable(target: int, msg_id: int, data: byte[]) {
-        var packet = pack_message(msg_id, data);
-        backend.send_unreliable(target, packet);
-    }
-
-    static function poll(): Message[] {
-        var raw = backend.receive();
-        return parse_messages(raw);
-    }
-}
-```
-
-## 状态同步
-
-状态同步采用服务器权威模式，客户端进行预测与和解。
-
-### 架构图
-
-```
-┌─────────────┐         ┌─────────────┐
-│   客户端 A   │         │   服务器    │
-│             │         │             │
-│ ┌─────────┐ │  输入   │ ┌─────────┐ │
-│ │预测移动  │ │ ─────→ │ │权威移动  │ │
-│ └─────────┘ │         │ └─────────┘ │
-│             │         │             │
-│ ┌─────────┐ │  状态   │ ┌─────────┐ │
-│ │和解逻辑  │ │ ←───── │ │状态广播  │ │
-│ └─────────┘ │         │ └─────────┘ │
-└─────────────┘         └─────────────┘
-```
-
-### 服务器权威移动
-
-```tsx
-system ServerMovement {
-    query = Query.all(PlayerTag, NetTransform, PlayerInput);
-
-    on_server_update(delta: float) {
-        foreach (var entity in query) {
-            var trans = entity.get<NetTransform>();
-            var input = entity.get<PlayerInput>();
-            
-            // 权威移动计算
-            trans.vx = input.move_dir * MOVE_SPEED;
-            trans.x += trans.vx * delta;
-            trans.y += trans.vy * delta;
-            
-            // 广播状态
-            var snapshot = snapshot_from(trans);
-            NetworkManager.send_unreliable(BROADCAST_ALL, MSG_SERVER_STATE, snapshot);
-        }
-    }
-}
-```
-
-### 客户端预测与和解
-
-```tsx
-system ClientPredictionMovement {
-    query = Query.all(PlayerTag, NetTransform, PlayerInput, PredictedState);
-
-    on_client_update(delta: float) {
-        foreach (var entity in query) {
-            // 本地预测移动（与服务器逻辑一致）
-            var trans = entity.get<NetTransform>();
-            var input = entity.get<PlayerInput>();
-            var pred = entity.get<PredictedState>();
-            
-            // 预测逻辑
-            trans.x += input.move_dir * MOVE_SPEED * delta;
-            pred.predicted_x = trans.x;
-        }
-    }
-    
-    on_receive_server_state(msg: ServerStateMessage) {
-        var entity = get_entity_by_player(msg.player_id);
-        var trans = entity.get<NetTransform>();
-        var pred = entity.get<PredictedState>();
-        
-        // 计算误差
-        var error = abs(msg.x - pred.predicted_x);
-        
-        if (error > 0.1) {
-            // 有显著误差，执行和解
-            trans.x = msg.x;
-            trans.y = msg.y;
-        }
-    }
-}
-```
-
-## 帧同步
-
-帧同步要求所有客户端输入一致，在固定时间步长内执行确定性逻辑。
-
-### 架构图
-
-```
-┌─────────────┐         ┌─────────────┐
-│   客户端 A   │         │   客户端 B   │
-│             │         │             │
-│ ┌─────────┐ │  输入   │ ┌─────────┐ │
-│ │输入收集  │ │ ─────→ │ │输入收集  │ │
-│ └─────────┘ │         │ └─────────┘ │
-│             │         │             │
-│ ┌─────────┐ │  同步   │ ┌─────────┐ │
-│ │确定性逻辑│ │ ←────→ │ │确定性逻辑│ │
-│ └─────────┘ │         │ └─────────┘ │
-│             │         │             │
-│ ┌─────────┐ │  哈希   │ ┌─────────┐ │
-│ │状态哈希  │ │ ←────→ │ │状态哈希  │ │
-│ └─────────┘ │         │ └─────────┘ │
-└─────────────┘         └─────────────┘
-```
-
-### 帧同步系统
-
-```tsx
-[Lockstep(tick_rate = 30)]
-system LockstepCombat {
-    query_players = Query.all(PlayerTag, CombatStats, NetTransform);
-
-    on_lockstep_update(frame: int, inputs: map<int, PlayerInput>) {
-        // 所有客户端执行相同的确定性逻辑
-        foreach (var player in query_players) {
-            var tag = player.get<PlayerTag>();
-            var input = inputs[tag.player_id];
-            var stats = player.get<CombatStats>();
-            
-            // 确定性战斗逻辑
-            if (input.attack && stats.attack_cooldown <= 0) {
-                // 创建攻击事件
-                create_attack_event(tag.player_id, stats.attack_damage);
-                stats.attack_cooldown = 0.5;
-            }
-        }
-        
-        // 发送同步哈希用于调试
-        var hash = calculate_state_hash();
-        NetworkManager.send_reliable(BROADCAST_ALL, MSG_SYNC_HASH, hash);
-    }
-}
-```
-
-### 确定性要求
-
-| 要求 | 描述 |
-| :--- | :--- |
-| 固定时间步长 | 所有客户端使用相同的 `tick_rate` |
-| 输入一致性 | 所有客户端在相同帧收到相同输入 |
-| 浮点确定性 | 避免浮点精度问题，使用定点数或确定性浮点库 |
-| 随机数同步 | 所有客户端使用相同的随机种子 |
-
-## 模式切换
-
-通过 UI Widget 可在运行时切换同步模式，引擎自动启用/禁用对应系统组并重设网络堆栈。
-
-### 模式切换表格
-
-| 模式 | 宏定义 | 后端 | 激活系统 | 权威方 |
-|:---|:---|:---|:---|:---|
-| 单机 | `NET_BACKEND=NONE` | 无 | Input → 直接移动 | 本地 |
-| 状态同步 | `STEAM` 或 `WEBSOCKET` | Steam/WebSocket | ServerMovement + ClientPrediction | 服务器 |
-| 帧同步 | `STEAM` | Steam P2P | LockstepCombat | 输入汇集，本地执行 |
-
-### 模式切换 Widget 示例
-
-```tsx
-widget ModeSwitchPanel {
-    property current_mode: SyncMode = SyncMode.None;
-
-    enum SyncMode {
-        None,       // 单机
-        StateSync,  // 状态同步
-        FrameSync   // 帧同步
-    }
-
-    render() {
-        <panel title="网络模式">
-            <button 
-                text="单机模式" 
-                active={current_mode == SyncMode.None}
-                on_click={() => set_mode(SyncMode.None)}
-            />
-            <button 
-                text="状态同步" 
-                active={current_mode == SyncMode.StateSync}
-                on_click={() => set_mode(SyncMode.StateSync)}
-            />
-            <button 
-                text="帧同步" 
-                active={current_mode == SyncMode.FrameSync}
-                on_click={() => set_mode(SyncMode.FrameSync)}
-            />
-        </panel>
-    }
-
-    function set_mode(mode: SyncMode) {
-        current_mode = mode;
-        game.reload_network_stack(mode);
-    }
-
-    function connect_state_sync() {
-        NetworkManager.init();
-        game.enable_system("ServerMovement");
-        game.enable_system("ClientPredictionMovement");
-        game.disable_system("LockstepCombat");
-    }
-
-    function create_lockstep_lobby() {
-        NetworkManager.init();
-        game.enable_system("LockstepCombat");
-        game.disable_system("ServerMovement");
-        game.set_fixed_timestep(1.0 / 30.0);
-    }
-}
-```
-
-## 模式对比
-
-| 维度 | 状态同步 | 帧同步 |
-| :--- | :--- | :--- |
-| 权威方 | 服务器 | 各客户端 |
-| 网络流量 | 高频位置快照 | 低频输入包 |
-| 延迟容忍 | 通过预测掩盖 | 必须等待最慢玩家 |
-| 作弊防护 | 服务器校验 | 需要额外机制 |
-| 适用场景 | MMO、FPS | RTS、格斗 |
-
-## 最佳实践
+Gnosis 支持帧同步与状态同步两种模式，可在同一游戏中无缝切换。
 
 ### 状态同步
 
+```mermaid
+sequenceDiagram
+    participant C as 客户端
+    participant S as 服务器
+
+    C->>S: 输入指令
+    S->>S: 权威计算
+    S->>C: 状态快照
+    C->>C: 和解校正
+```
+
+**特点**：
 - 服务器是唯一真相源
-- 客户端预测逻辑与服务器逻辑保持一致
-- 使用差值压缩减少带宽
+- 客户端仅发送输入，接收状态
+- 天然反作弊（服务器校验一切）
+- 适用于 RPG、FPS 等需要服务器权威的场景
 
 ### 帧同步
 
-- 确保逻辑确定性
-- 使用状态哈希检测不同步
-- 实现回滚机制处理延迟
+```mermaid
+sequenceDiagram
+    participant C1 as 客户端1
+    participant C2 as 客户端2
+    participant S as 服务器
 
-## 下一步
+    C1->>S: 输入帧 N
+    C2->>S: 输入帧 N
+    S->>S: 汇集输入
+    S->>C1: 所有输入帧 N
+    S->>C2: 所有输入帧 N
+    C1->>C1: 确定性执行
+    C2->>C2: 确定性执行
+```
 
-- 阅读 [反作弊体系](anti-cheat.md) 了解安全防护
-- 查看 [示例项目](../../examples/) 了解实际用法
+**特点**：
+- 所有客户端执行相同逻辑
+- 服务器仅转发输入
+- 带宽需求低
+- 适用于 RTS、格斗等确定性逻辑场景
+
+### 模式对比
+
+| 特性 | 状态同步 | 帧同步 |
+|------|----------|--------|
+| **权威方** | 服务器 | 输入汇集后本地执行 |
+| **带宽需求** | 较高（状态快照） | 较低（仅输入） |
+| **延迟容忍** | 较高 | 较低 |
+| **反作弊** | 天然服务器校验 | 需要同步哈希校验 |
+| **适用场景** | RPG、FPS | RTS、格斗 |
+| **回滚** | 不需要 | 需要状态回滚 |
+
+---
+
+## 传输层
+
+### 传输后端
+
+| 后端 | 协议 | 适用场景 |
+|------|------|----------|
+| UDP | 无连接 | 实时游戏数据 |
+| WebSocket | TCP | Web 平台 |
+| KCP | 可靠 UDP | 需要可靠性的实时数据 |
+
+### 信道类型
+
+| 信道 | 可靠性 | 有序性 | 适用数据 |
+|------|--------|--------|----------|
+| 可靠有序 | 保证 | 保证 | RPC、状态同步 |
+| 可靠无序 | 保证 | 不保证 | 独立状态更新 |
+| 不可靠有序 | 不保证 | 保证 | 输入帧 |
+| 不可靠无序 | 不保证 | 不保证 | 语音、动画 |
+
+---
+
+## 客户端预测与和解
+
+### 预测流程
+
+```tsx
+system ClientPredictionMovement {
+    on_client_update(delta: f32) {
+        # 立即应用本地输入
+        trans.x += input.move_x * speed * delta;
+    }
+    
+    on_receive_server_state(msg: ServerStateMessage) {
+        # 计算误差
+        var error_x = abs(trans.x - msg.x);
+        
+        # 超过阈值则回滚
+        if (error_x > 0.1) {
+            trans.x = msg.x;
+        }
+    }
+}
+```
+
+### 和解策略
+
+| 策略 | 描述 | 适用场景 |
+|------|------|----------|
+| 即时校正 | 直接设置服务器状态 | 小误差 |
+| 插值校正 | 平滑过渡到服务器状态 | 中等误差 |
+| 回滚重放 | 回滚到服务器状态后重放输入 | 大误差 |
+
+---
+
+## RPC 系统
+
+### RPC 类型
+
+| 类型 | 方向 | 可靠性 | 适用场景 |
+|------|------|--------|----------|
+| Server RPC | 客户端 → 服务器 | 可靠 | 请求操作 |
+| Client RPC | 服务器 → 特定客户端 | 可靠 | 个人通知 |
+| Multicast RPC | 服务器 → 所有客户端 | 可靠/不可靠 | 广播事件 |
+
+### 序列化
+
+网络序列化使用比特流格式，最小化传输数据量：
+
+- 变量精度：根据范围自动选择最小位数
+- 增量编码：仅传输变化的部分
+- 压缩：可选的 LZ4 / Zstd 压缩
+
+---
+
+## 大厅系统
+
+### 大厅接口
+
+`Gnosis.Network.Lobby` 提供大厅服务的抽象接口，具体实现由游戏引擎层或第三方服务提供：
+
+| 接口 | 描述 |
+|------|------|
+| `ILobbyService` | 大厅服务接口 |
+| `IMatchmaker` | 匹配接口 |
+| `IRoomManager` | 房间管理接口 |
+
+### 扩展点
+
+大厅系统遵循 `Provider` 扩展点模式，允许接入不同的大厅后端：
+
+| Provider | 描述 |
+|----------|------|
+| `LobbyProvider.Steam` | Steam 大厅 |
+| `LobbyProvider.Custom` | 自定义服务器 |
+
+---
+
+## 网络指标
+
+`Gnosis.Network.Metrics` 子模块提供网络质量监控：
+
+| 指标 | 描述 |
+|------|------|
+| RTT | 往返延迟 |
+| 丢包率 | 丢包百分比 |
+| 带宽 | 上行/下行带宽 |
+| 抖动 | 延迟方差 |
+
+---
+
+## 安全考虑
+
+网络系统与 `Gnosis.Security` 包协作，提供：
+
+- 传输加密
+- 消息完整性校验
+- 速率限制
+- 输入验证
+
+详见 [反作弊系统](./anti-cheat.md)。
