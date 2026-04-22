@@ -2,6 +2,9 @@ using Gnosis.Graphic.RHI;
 
 namespace Gnosis.Graphic.PostProcess;
 
+/// <summary>
+/// 后处理栈，管理后处理效果的执行顺序和中间资源
+/// </summary>
 public sealed class PostProcessStack : IDisposable
 {
     #region 字段
@@ -39,6 +42,9 @@ public sealed class PostProcessStack : IDisposable
 
     public T AddEffect<T>(T effect) where T : PostProcessEffect
     {
+        effect.SetDevice(_device);
+        effect.Initialize();
+
         _effects.Add(effect);
         _effectsByName[effect.Name] = effect;
         _effects.Sort((a, b) => a.Order.CompareTo(b.Order));
@@ -50,6 +56,7 @@ public sealed class PostProcessStack : IDisposable
         if (_effects.Remove(effect))
         {
             _effectsByName.Remove(effect.Name);
+            effect.Dispose();
             return true;
         }
         return false;
@@ -71,6 +78,11 @@ public sealed class PostProcessStack : IDisposable
 
     public void ClearEffects()
     {
+        foreach (var effect in _effects)
+        {
+            effect.Dispose();
+        }
+
         _effects.Clear();
         _effectsByName.Clear();
     }
@@ -186,6 +198,8 @@ public sealed class PostProcessStack : IDisposable
         {
             return;
         }
+
+        ClearEffects();
 
         _intermediateTextureA?.Dispose();
         _intermediateTextureB?.Dispose();
