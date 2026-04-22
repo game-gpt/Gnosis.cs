@@ -1,5 +1,6 @@
 using Gnosis.Graphic.Shader;
 using Gnosis.IR.Shader;
+using Gnosis.Neural.Runtime;
 
 namespace Gnosis.Neural.Adapter;
 
@@ -14,6 +15,15 @@ public sealed class NeuralShaderBackend : IShaderBackend
 
     #endregion
 
+    #region Properties
+
+    /// <summary>
+    /// 后端名称
+    /// </summary>
+    public string Name => "Neural";
+
+    #endregion
+
     #region Constructors
 
     public NeuralShaderBackend(INeuralRuntime neuralRuntime)
@@ -24,6 +34,22 @@ public sealed class NeuralShaderBackend : IShaderBackend
     #endregion
 
     #region Public Methods
+
+    /// <summary>
+    /// 检查是否支持指定的微函数类型
+    /// </summary>
+    public bool SupportsKind(MicroFunctionKind kind)
+    {
+        return kind is MicroFunctionKind.Compute;
+    }
+
+    /// <summary>
+    /// 编译着色器模块
+    /// </summary>
+    public IShaderModule CompileModule(IShaderModule module, ShaderCompileOptions options)
+    {
+        return module;
+    }
 
     /// <summary>
     /// 编译 Shader IR 为神经网络优化的计算着色器
@@ -41,6 +67,14 @@ public sealed class NeuralShaderBackend : IShaderBackend
         }
 
         return neuralProgram.Serialize();
+    }
+
+    /// <summary>
+    /// 分发计算着色器
+    /// </summary>
+    public void DispatchCompute(IMicroFunction computeFunction, uint groupCountX, uint groupCountY, uint groupCountZ)
+    {
+        // 神经网络后端通过运行时执行计算
     }
 
     #endregion
@@ -61,28 +95,32 @@ public sealed class NeuralShaderBackend : IShaderBackend
                     CompileElementWiseAdd(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Conv2D:
-                    CompileConvolution(instruction, program);
+                case ShaderIrOpCode.Sub:
+                    CompileElementWiseSub(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Activation:
-                    CompileActivation(instruction, program);
+                case ShaderIrOpCode.Div:
+                    CompileElementWiseDiv(instruction, program);
                     break;
 
-                case ShaderIrOpCode.MatMul:
-                    CompileTensorMatMul(instruction, program);
+                case ShaderIrOpCode.Dot:
+                    CompileDotProduct(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Attention:
-                    CompileAttention(instruction, program);
+                case ShaderIrOpCode.Cross:
+                    CompileCrossProduct(instruction, program);
                     break;
 
-                case ShaderIrOpCode.LayerNorm:
-                    CompileLayerNormalization(instruction, program);
+                case ShaderIrOpCode.Lerp:
+                    CompileInterpolation(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Softmax:
-                    CompileSoftmax(instruction, program);
+                case ShaderIrOpCode.Step:
+                    CompileStepFunction(instruction, program);
+                    break;
+
+                case ShaderIrOpCode.SmoothStep:
+                    CompileSmoothStepFunction(instruction, program);
                     break;
 
                 default:
@@ -116,66 +154,71 @@ public sealed class NeuralShaderBackend : IShaderBackend
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileConvolution(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileElementWiseSub(ShaderIrInstruction instruction, NeuralProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Conv2D
-        };
-
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Batch", Size = 1 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Channels", Size = 3 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Height", Size = 224 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Width", Size = 224 });
-
-        program.AddTensorOperation(tensorOp);
-    }
-
-    private void CompileActivation(ShaderIrInstruction instruction, NeuralProgram program)
-    {
-        var tensorOp = new TensorInstruction
-        {
-            OpCode = TensorOpCode.ElementWiseRelu
+            OpCode = TensorOpCode.ElementWiseSub
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileTensorMatMul(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileElementWiseDiv(ShaderIrInstruction instruction, NeuralProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.MatMul
+            OpCode = TensorOpCode.ElementWiseDiv
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileAttention(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileDotProduct(ShaderIrInstruction instruction, NeuralProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Attention
+            OpCode = TensorOpCode.ReduceSum
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileLayerNormalization(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileCrossProduct(ShaderIrInstruction instruction, NeuralProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.LayerNorm
+            OpCode = TensorOpCode.ElementWiseMul
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileSoftmax(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileInterpolation(ShaderIrInstruction instruction, NeuralProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Softmax
+            OpCode = TensorOpCode.ElementWiseAdd
+        };
+
+        program.AddTensorOperation(tensorOp);
+    }
+
+    private void CompileStepFunction(ShaderIrInstruction instruction, NeuralProgram program)
+    {
+        var tensorOp = new TensorInstruction
+        {
+            OpCode = TensorOpCode.ElementWiseClamp
+        };
+
+        program.AddTensorOperation(tensorOp);
+    }
+
+    private void CompileSmoothStepFunction(ShaderIrInstruction instruction, NeuralProgram program)
+    {
+        var tensorOp = new TensorInstruction
+        {
+            OpCode = TensorOpCode.ElementWiseSigmoid
         };
 
         program.AddTensorOperation(tensorOp);

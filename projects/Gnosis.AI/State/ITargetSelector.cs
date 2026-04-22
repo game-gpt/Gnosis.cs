@@ -8,4 +8,5 @@ public interface ITargetSelector
     void ClearTarget();
     bool HasTarget { get; }
     float TargetDistance { get; }
+    void Update(float delta);
 }

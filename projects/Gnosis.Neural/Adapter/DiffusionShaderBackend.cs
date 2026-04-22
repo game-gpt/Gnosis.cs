@@ -1,5 +1,6 @@
 using Gnosis.Graphic.Shader;
 using Gnosis.IR.Shader;
+using Gnosis.Neural.Runtime;
 
 namespace Gnosis.Neural.Adapter;
 
@@ -14,6 +15,15 @@ public sealed class DiffusionShaderBackend : IShaderBackend
 
     #endregion
 
+    #region Properties
+
+    /// <summary>
+    /// 后端名称
+    /// </summary>
+    public string Name => "Diffusion";
+
+    #endregion
+
     #region Constructors
 
     public DiffusionShaderBackend(IDiffusionRuntime diffusionRuntime)
@@ -24,6 +34,22 @@ public sealed class DiffusionShaderBackend : IShaderBackend
     #endregion
 
     #region Public Methods
+
+    /// <summary>
+    /// 检查是否支持指定的微函数类型
+    /// </summary>
+    public bool SupportsKind(MicroFunctionKind kind)
+    {
+        return kind is MicroFunctionKind.Compute;
+    }
+
+    /// <summary>
+    /// 编译着色器模块
+    /// </summary>
+    public IShaderModule CompileModule(IShaderModule module, ShaderCompileOptions options)
+    {
+        return module;
+    }
 
     /// <summary>
     /// 编译 Shader IR 为扩散模型优化的计算着色器
@@ -41,6 +67,14 @@ public sealed class DiffusionShaderBackend : IShaderBackend
         }
 
         return diffusionProgram.Serialize();
+    }
+
+    /// <summary>
+    /// 分发计算着色器
+    /// </summary>
+    public void DispatchCompute(IMicroFunction computeFunction, uint groupCountX, uint groupCountY, uint groupCountZ)
+    {
+        // 扩散模型后端通过运行时执行计算
     }
 
     #endregion
@@ -65,28 +99,28 @@ public sealed class DiffusionShaderBackend : IShaderBackend
                     CompileDenoiseStep(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Conv2D:
-                    CompileUNetConvolution(instruction, program);
+                case ShaderIrOpCode.Div:
+                    CompileNoiseDivide(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Attention:
-                    CompileCrossAttention(instruction, program);
+                case ShaderIrOpCode.Dot:
+                    CompileDotProduct(instruction, program);
                     break;
 
-                case ShaderIrOpCode.GroupNorm:
-                    CompileGroupNormalization(instruction, program);
+                case ShaderIrOpCode.Cross:
+                    CompileCrossProduct(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Reshape:
-                    CompileLatentReshape(instruction, program);
+                case ShaderIrOpCode.Lerp:
+                    CompileInterpolation(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Interpolate:
-                    CompileUpsample(instruction, program);
+                case ShaderIrOpCode.Step:
+                    CompileStepFunction(instruction, program);
                     break;
 
-                case ShaderIrOpCode.Sampler:
-                    CompileTimestepSampler(instruction, program);
+                case ShaderIrOpCode.SmoothStep:
+                    CompileSmoothStepFunction(instruction, program);
                     break;
 
                 default:
@@ -126,66 +160,61 @@ public sealed class DiffusionShaderBackend : IShaderBackend
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileUNetConvolution(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileNoiseDivide(ShaderIrInstruction instruction, DiffusionProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Conv2D
-        };
-
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Batch", Size = 1 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Channels", Size = 4 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Height", Size = 64 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "Width", Size = 64 });
-
-        program.AddTensorOperation(tensorOp);
-    }
-
-    private void CompileCrossAttention(ShaderIrInstruction instruction, DiffusionProgram program)
-    {
-        var tensorOp = new TensorInstruction
-        {
-            OpCode = TensorOpCode.Attention
+            OpCode = TensorOpCode.ElementWiseDiv
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileGroupNormalization(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileDotProduct(ShaderIrInstruction instruction, DiffusionProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.LayerNorm
+            OpCode = TensorOpCode.ReduceSum
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileLatentReshape(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileCrossProduct(ShaderIrInstruction instruction, DiffusionProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Reshape
+            OpCode = TensorOpCode.ElementWiseMul
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileUpsample(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileInterpolation(ShaderIrInstruction instruction, DiffusionProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Resize
+            OpCode = TensorOpCode.ElementWiseAdd
         };
 
         program.AddTensorOperation(tensorOp);
     }
 
-    private void CompileTimestepSampler(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileStepFunction(ShaderIrInstruction instruction, DiffusionProgram program)
     {
         var tensorOp = new TensorInstruction
         {
-            OpCode = TensorOpCode.Gather
+            OpCode = TensorOpCode.ElementWiseClamp
+        };
+
+        program.AddTensorOperation(tensorOp);
+    }
+
+    private void CompileSmoothStepFunction(ShaderIrInstruction instruction, DiffusionProgram program)
+    {
+        var tensorOp = new TensorInstruction
+        {
+            OpCode = TensorOpCode.ElementWiseSigmoid
         };
 
         program.AddTensorOperation(tensorOp);

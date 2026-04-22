@@ -4,6 +4,7 @@ public interface IAIPerception
 {
     IReadOnlyList<IAISenseConfig> SenseConfigs { get; }
     IReadOnlyList<IAIStimulusSource> PerceivedTargets { get; }
+    IPerceptionMemory Memory { get; }
     void AddSense(IAISenseConfig config);
     void RemoveSense(AISenseType senseType);
     void Update(float delta);
