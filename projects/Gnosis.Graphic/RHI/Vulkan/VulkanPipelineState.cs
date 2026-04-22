@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Gnosis.Graphic.Shader;
+using Gnosis.IR.Shader;
 
 namespace Gnosis.Graphic.RHI.Vulkan;
 
