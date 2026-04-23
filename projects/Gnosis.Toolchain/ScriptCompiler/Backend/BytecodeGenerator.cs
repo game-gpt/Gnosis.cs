@@ -1,7 +1,6 @@
 using System.Text;
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Core.Diagnostic;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;
@@ -179,7 +178,7 @@ public class BytecodeGenerator : IBytecodeGenerator
             GenerateQueryRegistration(query);
         }
 
-        foreach (var method in decl.LifecycleMethods)
+        foreach (var method in decl.Methods)
         {
             GenerateFunctionDecl(method);
         }
@@ -531,7 +530,7 @@ public class BytecodeGenerator : IBytecodeGenerator
                 GenerateMetaBlock((MetaBlock)expr);
                 break;
             case NodeType.SwizzleExpr:
-                GenerateExpression(((SwizzleExpr)expr).Object);
+                GenerateExpression(((SwizzleExpr)expr).Target);
                 break;
         }
     }
@@ -707,7 +706,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateMemberCall(MemberAccessExpr memberExpr, IReadOnlyList<AstNode> arguments)
     {
-        GenerateExpression(memberExpr.Object);
+        GenerateExpression(memberExpr.Target);
 
         foreach (var arg in arguments)
         {
@@ -743,14 +742,14 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateMemberAccessExpr(MemberAccessExpr expr)
     {
-        GenerateExpression(expr.Object);
+        GenerateExpression(expr.Target);
         Emit(OpCode.GetField);
         EmitInt(AddConstant(expr.MemberName));
     }
 
     private void GenerateIndexExpr(TermIndexExpression expression)
     {
-        GenerateExpression(expression.Object);
+        GenerateExpression(expression.Target);
         GenerateExpression(expression.Index);
         Emit(OpCode.GetField);
         EmitInt(AddConstant("index"));
@@ -794,7 +793,7 @@ public class BytecodeGenerator : IBytecodeGenerator
         }
         else if (expr.Target is MemberAccessExpr memberExpr)
         {
-            GenerateExpression(memberExpr.Object);
+            GenerateExpression(memberExpr.Target);
             Emit(OpCode.SetField);
             EmitInt(AddConstant(memberExpr.MemberName));
         }

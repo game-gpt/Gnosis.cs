@@ -1,96 +1,57 @@
-using System.Text.Json;
+using System.Buffers.Binary;
+using Acorn.Gltf.Data;
+using Acorn.Gltf.Decode;
 
 namespace Gnosis.Asset.Format.MeshParsers;
 
-public sealed class GltfParser
+/// <summary>
+///     GLTF/GLB 网格数据适配器，使用 Acorn.Gltf 解码并转换为 Gnosis MeshData
+/// </summary>
+public sealed class GltfMeshAdapter
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    /// <summary>
+    ///     从 GLTF JSON 文件加载网格数据
+    /// </summary>
+    public MeshData LoadGltf(string jsonContent, string? basePath = null)
     {
-        PropertyNameCaseInsensitive = true
-    };
-
-    public GltfParseResult ParseGltf(ReadOnlySpan<byte> jsonBytes, string? basePath = null)
-    {
-        var gltf = JsonSerializer.Deserialize<GltfDocument>(jsonBytes, JsonOptions)
-            ?? throw new InvalidDataException("glTF JSON 反序列化失败");
-
-        return BuildMeshData(gltf, null, basePath);
+        var decoder = new GltfDecoder();
+        var model = decoder.DecodeJson(jsonContent);
+        return ExtractMeshData(model, basePath);
     }
 
-    public GltfParseResult ParseGlb(ReadOnlySpan<byte> glbBytes, string? basePath = null)
+    /// <summary>
+    ///     从 GLB 二进制数据加载网格数据
+    /// </summary>
+    public MeshData LoadGlb(byte[] data, string? basePath = null)
     {
-        if (glbBytes.Length < 12)
-        {
-            throw new InvalidDataException("GLB 文件过小");
-        }
-
-        var magic = BitConverter.ToUInt32(glbBytes[..4]);
-        if (magic != 0x46546C67)
-        {
-            throw new InvalidDataException("GLB 魔数无效");
-        }
-
-        var version = BitConverter.ToUInt32(glbBytes[4..8]);
-        if (version != 2)
-        {
-            throw new InvalidDataException($"不支持的 GLB 版本：{version}");
-        }
-
-        var totalLength = (int)BitConverter.ToUInt32(glbBytes[8..12]);
-        if (glbBytes.Length < totalLength)
-        {
-            throw new InvalidDataException("GLB 文件截断");
-        }
-
-        var offset = 12;
-        byte[]? jsonChunk = null;
-        byte[]? binChunk = null;
-
-        while (offset + 8 <= totalLength)
-        {
-            var chunkLength = (int)BitConverter.ToUInt32(glbBytes[offset..(offset + 4)]);
-            var chunkType = BitConverter.ToUInt32(glbBytes[(offset + 4)..(offset + 8)]);
-            offset += 8;
-
-            if (chunkType == 0x4E4F534A)
-            {
-                jsonChunk = glbBytes[offset..(offset + chunkLength)].ToArray();
-            }
-            else if (chunkType == 0x004E4942)
-            {
-                binChunk = glbBytes[offset..(offset + chunkLength)].ToArray();
-            }
-
-            offset += chunkLength;
-        }
-
-        if (jsonChunk == null)
-        {
-            throw new InvalidDataException("GLB 缺少 JSON 块");
-        }
-
-        var gltf = JsonSerializer.Deserialize<GltfDocument>(jsonChunk, JsonOptions)
-            ?? throw new InvalidDataException("glTF JSON 反序列化失败");
-
-        return BuildMeshData(gltf, binChunk, basePath);
+        var decoder = new GltfDecoder();
+        var model = decoder.DecodeGlb(data);
+        return ExtractMeshData(model, basePath);
     }
 
-    private static GltfParseResult BuildMeshData(GltfDocument gltf, byte[]? glbBinChunk, string? basePath)
+    private static MeshData ExtractMeshData(GltfModelData model, string? basePath)
     {
         var allVertices = new List<MeshVertex>();
         var allIndices = new List<int>();
         var subMeshes = new List<MeshSubMesh>();
 
-        foreach (var mesh in gltf.Meshes ?? [])
+        var bufferDataList = new List<byte[]>();
+
+        foreach (var buffer in model.Buffers)
         {
-            foreach (var primitive in mesh.Primitives ?? [])
+            bufferDataList.Add(LoadBufferData(buffer, basePath));
+        }
+
+        foreach (var mesh in model.Meshes)
+        {
+            foreach (var primitive in mesh.Primitives)
             {
                 var indexStart = allIndices.Count;
                 var vertexOffset = allVertices.Count;
 
-                var positionData = GetAccessorData(gltf, glbBinChunk, basePath, primitive.Attributes?.Position);
-                var normalData = GetAccessorData(gltf, glbBinChunk, basePath, primitive.Attributes?.Normal);
-                var uvData = GetAccessorData(gltf, glbBinChunk, basePath, primitive.Attributes?.TexCoord0);
+                var positionData = GetAccessorData(model, bufferDataList, primitive.Attributes.GetValueOrDefault("POSITION"));
+                var normalData = GetAccessorData(model, bufferDataList, primitive.Attributes.GetValueOrDefault("NORMAL"));
+                var uvData = GetAccessorData(model, bufferDataList, primitive.Attributes.GetValueOrDefault("TEXCOORD_0"));
 
                 var vertexCount = positionData.Length / 12;
 
@@ -98,7 +59,7 @@ public sealed class GltfParser
                 {
                     var position = new float[3];
 
-                    if (i * 12 + 8 <= positionData.Length)
+                    if (i * 12 + 8 < positionData.Length)
                     {
                         position[0] = BitConverter.ToSingle(positionData, i * 12);
                         position[1] = BitConverter.ToSingle(positionData, i * 12 + 4);
@@ -107,7 +68,7 @@ public sealed class GltfParser
 
                     float[]? normal = null;
 
-                    if (normalData.Length > 0 && i * 12 + 8 <= normalData.Length)
+                    if (normalData.Length > 0 && i * 12 + 8 < normalData.Length)
                     {
                         normal = new float[3];
                         normal[0] = BitConverter.ToSingle(normalData, i * 12);
@@ -117,7 +78,7 @@ public sealed class GltfParser
 
                     float[]? uv = null;
 
-                    if (uvData.Length > 0 && i * 8 + 4 <= uvData.Length)
+                    if (uvData.Length > 0 && i * 8 + 4 < uvData.Length)
                     {
                         uv = new float[2];
                         uv[0] = BitConverter.ToSingle(uvData, i * 8);
@@ -134,8 +95,8 @@ public sealed class GltfParser
 
                 if (primitive.Indices.HasValue)
                 {
-                    var indexData = GetAccessorData(gltf, glbBinChunk, basePath, primitive.Indices.Value);
-                    var indexAccessor = gltf.Accessors![primitive.Indices.Value];
+                    var indexData = GetAccessorData(model, bufferDataList, primitive.Indices.Value);
+                    var indexAccessor = model.Accessors[primitive.Indices.Value];
                     var componentType = indexAccessor.ComponentType;
 
                     for (var i = 0; i < indexAccessor.Count; i++)
@@ -144,15 +105,15 @@ public sealed class GltfParser
 
                         if (componentType == 5121)
                         {
-                            index = (int)indexData[i];
+                            index = indexData[i];
                         }
                         else if (componentType == 5123)
                         {
-                            index = BitConverter.ToUInt16(indexData, i * 2);
+                            index = BinaryPrimitives.ReadUInt16LittleEndian(indexData.AsSpan(i * 2));
                         }
                         else if (componentType == 5125)
                         {
-                            index = (int)BitConverter.ToUInt32(indexData, i * 4);
+                            index = (int)BinaryPrimitives.ReadUInt32LittleEndian(indexData.AsSpan(i * 4));
                         }
                         else
                         {
@@ -183,7 +144,7 @@ public sealed class GltfParser
 
         var bounds = ComputeBounds(allVertices);
 
-        return new GltfParseResult
+        return new MeshData
         {
             Vertices = allVertices,
             Indices = allIndices,
@@ -192,17 +153,17 @@ public sealed class GltfParser
         };
     }
 
-    private static byte[] GetAccessorData(GltfDocument gltf, byte[]? glbBinChunk, string? basePath, int? accessorIndex)
+    private static byte[] GetAccessorData(GltfModelData model, List<byte[]> bufferDataList, int? accessorIndex)
     {
-        if (!accessorIndex.HasValue || gltf.Accessors == null || gltf.BufferViews == null)
+        if (!accessorIndex.HasValue || model.Accessors == null || model.BufferViews == null)
         {
             return [];
         }
 
-        var accessor = gltf.Accessors[accessorIndex.Value];
-        var bufferView = gltf.BufferViews[accessor.BufferView];
+        var accessor = model.Accessors[accessorIndex.Value];
+        var bufferView = model.BufferViews[accessor.BufferView];
 
-        var bufferData = GetBufferData(gltf, glbBinChunk, basePath, bufferView.Buffer);
+        var bufferData = bufferDataList[bufferView.Buffer];
         var offset = accessor.ByteOffset + bufferView.ByteOffset;
         var length = accessor.Count * GetComponentSize(accessor.ComponentType) * GetNumComponents(accessor.Type);
 
@@ -217,18 +178,11 @@ public sealed class GltfParser
         return result;
     }
 
-    private static byte[] GetBufferData(GltfDocument gltf, byte[]? glbBinChunk, string? basePath, int bufferIndex)
+    private static byte[] LoadBufferData(GltfBuffer buffer, string? basePath)
     {
-        var buffer = gltf.Buffers![bufferIndex];
-
-        if (bufferIndex == 0 && glbBinChunk != null)
-        {
-            return glbBinChunk;
-        }
-
         if (buffer.Uri == null)
         {
-            return glbBinChunk ?? [];
+            return [];
         }
 
         if (buffer.Uri.StartsWith("data:"))
@@ -315,68 +269,4 @@ public sealed class GltfParser
 
         return new MeshBounds { Center = center, Extents = extents };
     }
-}
-
-public class GltfParseResult
-{
-    public List<MeshVertex> Vertices { get; init; } = [];
-    public List<int> Indices { get; init; } = [];
-    public List<MeshSubMesh> SubMeshes { get; init; } = [];
-    public MeshBounds Bounds { get; init; } = new();
-}
-
-internal class GltfDocument
-{
-    public List<GltfAccessor>? Accessors { get; init; }
-    public List<GltfBuffer>? Buffers { get; init; }
-    public List<GltfBufferView>? BufferViews { get; init; }
-    public List<GltfMesh>? Meshes { get; init; }
-}
-
-internal class GltfAccessor
-{
-    public int BufferView { get; init; }
-    public int ByteOffset { get; init; }
-    public int ComponentType { get; init; }
-    public int Count { get; init; }
-    public string Type { get; init; } = "SCALAR";
-}
-
-internal class GltfBuffer
-{
-    public string? Uri { get; init; }
-    public int ByteLength { get; init; }
-}
-
-internal class GltfBufferView
-{
-    public int Buffer { get; init; }
-    public int ByteOffset { get; init; }
-    public int ByteLength { get; init; }
-    public int? Target { get; init; }
-}
-
-internal class GltfMesh
-{
-    public string? Name { get; init; }
-    public List<GltfMeshPrimitive>? Primitives { get; init; }
-}
-
-internal class GltfMeshPrimitive
-{
-    public GltfMeshPrimitiveAttributes? Attributes { get; init; }
-    public int? Indices { get; init; }
-    public int? Material { get; init; }
-    public int Mode { get; init; } = 4;
-}
-
-internal class GltfMeshPrimitiveAttributes
-{
-    public int? Position { get; init; }
-    public int? Normal { get; init; }
-    public int? TexCoord0 { get; init; }
-    public int? TexCoord1 { get; init; }
-    public int? Color0 { get; init; }
-    public int? Joints0 { get; init; }
-    public int? Weights0 { get; init; }
 }

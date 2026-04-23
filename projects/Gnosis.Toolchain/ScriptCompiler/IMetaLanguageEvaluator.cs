@@ -1,3 +1,5 @@
+using Oak.GGScript.AST;
+
 namespace Gnosis.Toolchain.ScriptCompiler;
 
 public interface IMetaLanguageEvaluator

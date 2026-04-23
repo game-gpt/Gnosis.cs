@@ -1,3 +1,5 @@
+using Oak.Csv;
+
 namespace Gnosis.Asset.Format.ConfigTables;
 
 public sealed record TableField

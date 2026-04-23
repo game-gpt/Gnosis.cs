@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Gnosis.Asset.Format.MeshOptimization;
 using Gnosis.Asset.Format.MeshParsers;
+using Oak.Obj;
 
 namespace Gnosis.Asset.Format;
 
@@ -189,16 +190,30 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
         var content = System.Text.Encoding.UTF8.GetString(data);
         var fileName = Path.GetFileNameWithoutExtension(path);
 
-        var parser = new ObjParser();
+        var parser = new Oak.Obj.ObjParser();
         var result = parser.Parse(content.AsSpan(), fileName);
 
         return new MeshData
         {
             Name = fileName,
-            Vertices = result.Vertices,
+            Vertices = result.Vertices.Select(v => new MeshVertex
+            {
+                Position = v.Position,
+                Normal = v.Normal ?? [],
+                Uv = v.Uv ?? []
+            }).ToList(),
             Indices = result.Indices,
-            SubMeshes = result.SubMeshes,
-            Bounds = result.Bounds
+            SubMeshes = result.SubMeshes.Select(s => new MeshSubMesh
+            {
+                IndexStart = s.IndexStart,
+                IndexCount = s.IndexCount,
+                MaterialPath = s.MaterialPath
+            }).ToList(),
+            Bounds = new MeshBounds
+            {
+                Center = result.Bounds.Center,
+                Extents = result.Bounds.Extents
+            }
         };
     }
 
@@ -252,17 +267,10 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
         var basePath = Path.GetDirectoryName(path);
         var fileName = Path.GetFileNameWithoutExtension(path);
 
-        var parser = new GltfParser();
-        var result = parser.ParseGltf(data, basePath);
+        var adapter = new GltfMeshAdapter();
+        var result = adapter.LoadGltf(System.Text.Encoding.UTF8.GetString(data), basePath);
 
-        return new MeshData
-        {
-            Name = fileName,
-            Vertices = result.Vertices,
-            Indices = result.Indices,
-            SubMeshes = result.SubMeshes,
-            Bounds = result.Bounds
-        };
+        return result with { Name = fileName };
     }
 
     private async Task<MeshData> LoadGlbAsync(string path, CancellationToken cancellationToken)
@@ -270,17 +278,10 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
         var data = await ReadAsync(path, cancellationToken);
         var fileName = Path.GetFileNameWithoutExtension(path);
 
-        var parser = new GltfParser();
-        var result = parser.ParseGlb(data, basePath: null);
+        var adapter = new GltfMeshAdapter();
+        var result = adapter.LoadGlb(data);
 
-        return new MeshData
-        {
-            Name = fileName,
-            Vertices = result.Vertices,
-            Indices = result.Indices,
-            SubMeshes = result.SubMeshes,
-            Bounds = result.Bounds
-        };
+        return result with { Name = fileName };
     }
 
     private async Task<bool> ValidateGltfAsync(string path, CancellationToken cancellationToken)

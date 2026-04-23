@@ -25,5 +25,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Csv\Oak.Csv.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Obj\Oak.Obj.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Ktx\Oak.Ktx.csproj" />
     </ItemGroup>
 </Project>

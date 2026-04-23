@@ -1,9 +1,9 @@
-using Gnosis.Toolchain.ScriptCompiler.AST;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
+using Oak.GGScript.Lexer;
+using Oak.GGScript.Parser;
 using Gnosis.Toolchain.ScriptCompiler.Backend;
 using Gnosis.Toolchain.ScriptCompiler.Cache;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Toolchain.ScriptCompiler.Lexer;
-using Gnosis.Toolchain.ScriptCompiler.Parser;
 using MetaLanguageEvaluator = Gnosis.Toolchain.ScriptCompiler.ScriptFrontend.MetaLanguageEvaluator;
 
 namespace Gnosis.Toolchain.ScriptCompiler;
@@ -97,10 +97,10 @@ public class Compiler : ICompiler
         ChannelMacros macros,
         bool isEditorBuild)
     {
-        var lexer = new GameScriptLexer(_diagnostics);
+        var lexer = new GGScriptLexer();
         var tokens = lexer.Tokenize(source);
 
-        var parser = new GameScriptParser(_diagnostics);
+        var parser = new GGScriptParser();
         return parser.Parse(tokens);
     }
 

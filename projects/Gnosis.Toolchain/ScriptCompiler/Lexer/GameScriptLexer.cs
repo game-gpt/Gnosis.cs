@@ -3,7 +3,7 @@ namespace Gnosis.Toolchain.ScriptCompiler.Lexer;
 /// <summary>
 ///     GameScript 词法分析器（基于 Oak.GGScript 的适配层）
 /// </summary>
-public sealed class GameScriptLexer : ILexer
+public sealed class GameScriptLexer
 {
     /// <summary>
     ///     对源代码进行词法分析，生成 Token 序列

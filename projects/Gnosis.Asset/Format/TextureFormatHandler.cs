@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.Processing.Processors.Transforms;
 using Gnosis.Asset.Format.AstcCompression;
 using Gnosis.Asset.Format.BcCompression;
 using Gnosis.Asset.Format.EtcCompression;
-using Gnosis.Asset.Format.TextureParsers;
+using Oak.Ktx;
 
 namespace Gnosis.Asset.Format;
 

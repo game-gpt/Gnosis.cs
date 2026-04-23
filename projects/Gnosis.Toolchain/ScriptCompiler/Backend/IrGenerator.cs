@@ -1,11 +1,10 @@
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Core.Diagnostic;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;
 
-public sealed class IrGenerator : IAstVisitor<int>
+public sealed class IrGenerator
 {
     #region 字段
 
@@ -52,7 +51,7 @@ public sealed class IrGenerator : IAstVisitor<int>
 
         foreach (var decl in ast.Declarations)
         {
-            decl.Accept(this);
+            Visit(decl);
         }
 
         return new BytecodeUnit(
@@ -66,19 +65,69 @@ public sealed class IrGenerator : IAstVisitor<int>
 
     #endregion
 
-    #region IAstVisitor 声明
+    #region 调度方法
 
-    public int VisitCompilationUnit(CompilationUnit node)
+    private int Visit(AstNode node)
+    {
+        return node.Type switch
+        {
+            NodeType.CompilationUnit => VisitCompilationUnit((CompilationUnit)node),
+            NodeType.FunctionDecl => VisitFunctionDecl((FunctionDecl)node),
+            NodeType.VariableDecl => VisitVariableDecl((VariableDecl)node),
+            NodeType.StructDecl => VisitStructDecl((StructDecl)node),
+            NodeType.ComponentDecl => VisitComponentDecl((ComponentDecl)node),
+            NodeType.ImportDecl => VisitImportDecl((ImportDecl)node),
+            NodeType.UsingDecl => VisitUsingDecl((UsingDecl)node),
+            NodeType.FieldDecl => VisitFieldDecl((FieldDecl)node),
+            NodeType.ParameterDecl => VisitParameterDecl((ParameterDecl)node),
+            NodeType.TypeAnnotation => VisitTypeAnnotation((TypeAnnotation)node),
+            NodeType.AttributeDecl => VisitAttributeDecl((AttributeDecl)node),
+            NodeType.UniformBindingDecl => VisitUniformBindingDecl((UniformBindingDecl)node),
+            NodeType.NeuralDecl => VisitNeuralDecl((NeuralDecl)node),
+            NodeType.SystemDecl => VisitSystemDecl((SystemDecl)node),
+            NodeType.WidgetDecl => VisitWidgetDecl((WidgetDecl)node),
+            NodeType.PluginDecl => VisitPluginDecl((PluginDecl)node),
+            NodeType.LoopStmt => VisitLoopStmt((LoopStmt)node),
+            NodeType.WhileStmt => VisitWhileStmt((WhileStmt)node),
+            NodeType.ForStmt => VisitForStmt((ForStmt)node),
+            NodeType.IfStmt => VisitIfStmt((IfStatement)node),
+            NodeType.ReturnStmt => VisitReturnStmt((ReturnStatement)node),
+            NodeType.BlockStmt => VisitBlockStmt((BlockStmt)node),
+            NodeType.DiscardStmt => VisitDiscardStmt((DiscardStmt)node),
+            NodeType.ExprStmt => VisitExprStmt((TermExpressionStatement)node),
+            NodeType.BinaryExpr => VisitBinaryExpr((BinaryExpr)node),
+            NodeType.UnaryExpr => VisitUnaryExpr((TermUnaryExpression)node),
+            NodeType.LiteralExpr => VisitLiteralExpr((LiteralExpr)node),
+            NodeType.IdentifierExpr => VisitIdentifierExpr((IdentifierNode)node),
+            NodeType.CallExpr => VisitCallExpr((TermCallExpression)node),
+            NodeType.AssignmentExpr => VisitAssignmentExpr((AssignmentExpr)node),
+            NodeType.MemberAccessExpr => VisitMemberAccessExpr((MemberAccessExpr)node),
+            NodeType.IndexExpr => VisitIndexExpr((TermIndexExpression)node),
+            NodeType.SwizzleExpr => VisitSwizzleExpr((SwizzleExpr)node),
+            NodeType.LambdaExpr => VisitLambdaExpr((LambdaExpr)node),
+            NodeType.QueryExpr => VisitQueryExpr((QueryExpr)node),
+            NodeType.MetaBlock => VisitMetaBlock((MetaBlock)node),
+            NodeType.TensorTypeExpr => VisitTensorTypeExpr((TensorTypeExpr)node),
+            NodeType.TensorDimension => VisitTensorDimension((TensorDimension)node),
+            _ => 0
+        };
+    }
+
+    #endregion
+
+    #region 声明
+
+    private int VisitCompilationUnit(CompilationUnit node)
     {
         foreach (var decl in node.Declarations)
         {
-            decl.Accept(this);
+            Visit(decl);
         }
 
         return 0;
     }
 
-    public int VisitFunctionDecl(FunctionDecl node)
+    private int VisitFunctionDecl(FunctionDecl node)
     {
         _currentInstructions.Clear();
         _currentLocals.Clear();
@@ -95,7 +144,7 @@ public sealed class IrGenerator : IAstVisitor<int>
 
         if (node.Body != null)
         {
-            node.Body.Accept(this);
+            Visit(node.Body);
         }
 
         Emit(OpCode.Return);
@@ -111,13 +160,13 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitVariableDecl(VariableDecl node)
+    private int VisitVariableDecl(VariableDecl node)
     {
         _currentLocals[node.Name] = _currentLocalCount++;
 
         if (node.Initializer != null)
         {
-            var stackEffect = node.Initializer.Accept(this);
+            var stackEffect = Visit(node.Initializer);
             Emit(OpCode.StoreLocal, _currentLocals[node.Name]);
             return stackEffect - 1;
         }
@@ -125,7 +174,7 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitStructDecl(StructDecl node)
+    private int VisitStructDecl(StructDecl node)
     {
         var fields = new List<StructFieldInfo>();
         var offset = 0;
@@ -140,7 +189,7 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitComponentDecl(ComponentDecl node)
+    private int VisitComponentDecl(ComponentDecl node)
     {
         var fields = new List<StructFieldInfo>();
         var offset = 0;
@@ -155,81 +204,69 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitImportDecl(ImportDecl node)
+    private int VisitImportDecl(ImportDecl node)
     {
         _imports.Add(node.ModulePath);
         return 0;
     }
 
-    public int VisitUsingDecl(UsingDecl node)
+    private int VisitUsingDecl(UsingDecl node)
     {
         _imports.Add(node.NamespacePath);
         return 0;
     }
 
-    public int VisitFieldDecl(FieldDecl node)
-    {
-        return 0;
-    }
+    private int VisitFieldDecl(FieldDecl node) => 0;
 
-    public int VisitParameterDecl(ParameterDecl node)
-    {
-        return 0;
-    }
+    private int VisitParameterDecl(ParameterDecl node) => 0;
 
-    public int VisitTypeAnnotation(TypeAnnotation node)
-    {
-        return 0;
-    }
+    private int VisitTypeAnnotation(TypeAnnotation node) => 0;
 
-    public int VisitAttributeDecl(AttributeDecl node)
-    {
-        return 0;
-    }
+    private int VisitAttributeDecl(AttributeDecl node) => 0;
 
-    public int VisitUniformBindingDecl(UniformBindingDecl node)
+    private int VisitUniformBindingDecl(UniformBindingDecl node)
     {
         var globalIndex = _globalVariables.Count;
         _globalVariables[node.Name] = globalIndex;
         return 0;
     }
 
-    public int VisitNeuralDecl(NeuralDecl node)
+    private int VisitNeuralDecl(NeuralDecl node)
     {
-        node.ForwardFunction.Accept(this);
+        Visit(node.ForwardFunction);
         return 0;
     }
 
-    public int VisitSystemDecl(SystemDecl node)
+    private int VisitSystemDecl(SystemDecl node)
     {
         foreach (var query in node.Queries)
         {
-            query.Accept(this);
+            Visit(query);
         }
 
-        foreach (var method in node.LifecycleMethods)
+        foreach (var method in node.Methods)
         {
-            method.Accept(this);
+            Visit(method);
         }
 
         return 0;
     }
 
-    public int VisitWidgetDecl(WidgetDecl node)
+    private int VisitWidgetDecl(WidgetDecl node)
     {
         if (node.RenderMethod != null)
         {
-            node.RenderMethod.Accept(this);
+            Visit(node.RenderMethod);
         }
 
         return 0;
     }
 
-    public int VisitPluginDecl(PluginDecl node)
+    private int VisitPluginDecl(PluginDecl node)
     {
         foreach (var func in node.Functions)
         {
-            func.Accept(this);
+            Visit(func);
         }
 
         return 0;
@@ -237,9 +274,9 @@ public sealed class IrGenerator : IAstVisitor<int>
 
     #endregion
 
-    #region IAstVisitor 语句
+    #region 语句
 
-    public int VisitLoopStmt(LoopStmt node)
+    private int VisitLoopStmt(LoopStmt node)
     {
         var loopStartLabel = NewLabel();
         var loopExitLabel = NewLabel();
@@ -248,12 +285,12 @@ public sealed class IrGenerator : IAstVisitor<int>
         {
             _currentLocals[node.IteratorName] = _currentLocalCount++;
 
-            node.Iterable.Accept(this);
+            Visit(node.Iterable);
             Emit(OpCode.StoreLocal, _currentLocals[node.IteratorName]);
 
             PlaceLabel(loopStartLabel);
 
-            node.Body.Accept(this);
+            Visit(node.Body);
 
             Emit(OpCode.LoadLocal, _currentLocals[node.IteratorName]);
             Emit(OpCode.Jump, ResolveLabel(loopStartLabel));
@@ -263,7 +300,7 @@ public sealed class IrGenerator : IAstVisitor<int>
         {
             PlaceLabel(loopStartLabel);
 
-            node.Body.Accept(this);
+            Visit(node.Body);
 
             Emit(OpCode.Jump, ResolveLabel(loopStartLabel));
             PlaceLabel(loopExitLabel);
@@ -272,17 +309,17 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitWhileStmt(WhileStmt node)
+    private int VisitWhileStmt(WhileStmt node)
     {
         var loopStartLabel = NewLabel();
         var loopExitLabel = NewLabel();
 
         PlaceLabel(loopStartLabel);
 
-        node.Condition.Accept(this);
+        Visit(node.Condition);
         EmitJump(OpCode.JumpIfFalse, loopExitLabel);
 
-        node.Body.Accept(this);
+        Visit(node.Body);
 
         Emit(OpCode.Jump, ResolveLabel(loopStartLabel));
         PlaceLabel(loopExitLabel);
@@ -290,29 +327,29 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitForStmt(ForStmt node)
+    private int VisitForStmt(ForStmt node)
     {
         var loopStartLabel = NewLabel();
         var loopExitLabel = NewLabel();
 
         if (node.Initializer != null)
         {
-            node.Initializer.Accept(this);
+            Visit(node.Initializer);
         }
 
         PlaceLabel(loopStartLabel);
 
         if (node.Condition != null)
         {
-            node.Condition.Accept(this);
+            Visit(node.Condition);
             EmitJump(OpCode.JumpIfFalse, loopExitLabel);
         }
 
-        node.Body.Accept(this);
+        Visit(node.Body);
 
         if (node.Update != null)
         {
-            node.Update.Accept(this);
+            Visit(node.Update);
         }
 
         Emit(OpCode.Jump, ResolveLabel(loopStartLabel));
@@ -321,22 +358,22 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitIfStmt(IfStatement node)
+    private int VisitIfStmt(IfStatement node)
     {
         var elseLabel = NewLabel();
         var endLabel = NewLabel();
 
-        node.Condition.Accept(this);
+        Visit(node.Condition);
         EmitJump(OpCode.JumpIfFalse, elseLabel);
 
-        node.ThenBlock.Accept(this);
+        Visit(node.ThenBlock);
         EmitJump(OpCode.Jump, endLabel);
 
         PlaceLabel(elseLabel);
 
         if (node.ElseBlock != null)
         {
-            node.ElseBlock.Accept(this);
+            Visit(node.ElseBlock);
         }
 
         PlaceLabel(endLabel);
@@ -344,37 +381,37 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 0;
     }
 
-    public int VisitReturnStmt(ReturnStatement node)
+    private int VisitReturnStmt(ReturnStatement node)
     {
         if (node.Value != null)
         {
-            node.Value.Accept(this);
+            Visit(node.Value);
         }
 
         Emit(OpCode.Return);
         return 0;
     }
 
-    public int VisitBlockStmt(BlockStmt node)
+    private int VisitBlockStmt(BlockStmt node)
     {
         foreach (var stmt in node.Statements)
         {
-            stmt.Accept(this);
+            Visit(stmt);
         }
 
         return 0;
     }
 
-    public int VisitDiscardStmt(DiscardStmt node)
+    private int VisitDiscardStmt(DiscardStmt node)
     {
         _diagnostics.AddWarning(_currentFilePath, node.Span, "IR001", "脚本上下文中不支持 discard 语句");
         Emit(OpCode.Halt);
         return 0;
     }
 
-    public int VisitExprStmt(TermExpressionStatement node)
+    private int VisitExprStmt(TermExpressionStatement node)
     {
-        var stackEffect = node.Expression.Accept(this);
+        var stackEffect = Visit(node.Expression);
 
         if (stackEffect > 0)
         {
@@ -386,12 +423,12 @@ public sealed class IrGenerator : IAstVisitor<int>
 
     #endregion
 
-    #region IAstVisitor 表达式
+    #region 表达式
 
-    public int VisitBinaryExpr(BinaryExpr node)
+    private int VisitBinaryExpr(BinaryExpr node)
     {
-        node.Left.Accept(this);
-        node.Right.Accept(this);
+        Visit(node.Left);
+        Visit(node.Right);
 
         var opCode = MapBinaryOp(node.Operator);
         Emit(opCode);
@@ -399,9 +436,9 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitUnaryExpr(TermUnaryExpression node)
+    private int VisitUnaryExpr(TermUnaryExpression node)
     {
-        node.Operand.Accept(this);
+        Visit(node.Operand);
 
         if (node.Operator == "-")
         {
@@ -415,7 +452,7 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitLiteralExpr(LiteralExpr node)
+    private int VisitLiteralExpr(LiteralExpr node)
     {
         switch (node.LiteralKind)
         {
@@ -461,7 +498,7 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitIdentifierExpr(IdentifierNode node)
+    private int VisitIdentifierExpr(IdentifierNode node)
     {
         if (_currentLocals.TryGetValue(node.Name, out var localIndex))
         {
@@ -480,11 +517,11 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitCallExpr(TermCallExpression node)
+    private int VisitCallExpr(TermCallExpression node)
     {
         foreach (var arg in node.Arguments)
         {
-            arg.Accept(this);
+            Visit(arg);
         }
 
         if (node.Callee is IdentifierNode ident)
@@ -502,9 +539,9 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitAssignmentExpr(AssignmentExpr node)
+    private int VisitAssignmentExpr(AssignmentExpr node)
     {
-        node.Value.Accept(this);
+        Visit(node.Value);
 
         if (node.Target is IdentifierNode ident)
         {
@@ -523,7 +560,7 @@ public sealed class IrGenerator : IAstVisitor<int>
         }
         else if (node.Target is MemberAccessExpr memberAccess)
         {
-            memberAccess.Object.Accept(this);
+            Visit(memberAccess.Target);
             var fieldIndex = ResolveFieldIndex(memberAccess);
             Emit(OpCode.SetField, fieldIndex);
         }
@@ -531,9 +568,9 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitMemberAccessExpr(MemberAccessExpr node)
+    private int VisitMemberAccessExpr(MemberAccessExpr node)
     {
-        node.Object.Accept(this);
+        Visit(node.Target);
 
         var fieldIndex = ResolveFieldIndex(node);
         Emit(OpCode.GetField, fieldIndex);
@@ -541,21 +578,21 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitIndexExpr(TermIndexExpression node)
+    private int VisitIndexExpr(TermIndexExpression node)
     {
-        node.Object.Accept(this);
-        node.Index.Accept(this);
+        Visit(node.Target);
+        Visit(node.Index);
 
         Emit(OpCode.LoadField, 0);
 
         return 1;
     }
 
-    public int VisitSwizzleExpr(SwizzleExpr node)
+    private int VisitSwizzleExpr(SwizzleExpr node)
     {
-        node.Object.Accept(this);
+        Visit(node.Target);
 
-        var components = ParseSwizzleComponents(node.Components);
+        var components = ParseSwizzleComponents(node.Pattern);
         if (components != null)
         {
             foreach (var comp in components)
@@ -567,13 +604,13 @@ public sealed class IrGenerator : IAstVisitor<int>
         return 1;
     }
 
-    public int VisitLambdaExpr(LambdaExpr node)
+    private int VisitLambdaExpr(LambdaExpr node)
     {
         _diagnostics.AddWarning(_currentFilePath, node.Span, "IR004", "字节码 IR 中不支持 Lambda 表达式");
         return 0;
     }
 
-    public int VisitQueryExpr(QueryExpr node)
+    private int VisitQueryExpr(QueryExpr node)
     {
         var componentCount = node.ComponentTypes.Count;
 
@@ -596,22 +633,13 @@ public sealed class IrGenerator : IAstVisitor<int>
 
     #endregion
 
-    #region IAstVisitor 其他
+    #region 其他
 
-    public int VisitMetaBlock(MetaBlock node)
-    {
-        return 0;
-    }
+    private int VisitMetaBlock(MetaBlock node) => 0;
 
-    public int VisitTensorTypeExpr(TensorTypeExpr node)
-    {
-        return 0;
-    }
+    private int VisitTensorTypeExpr(TensorTypeExpr node) => 0;
 
-    public int VisitTensorDimension(TensorDimension node)
-    {
-        return 0;
-    }
+    private int VisitTensorDimension(TensorDimension node) => 0;
 
     #endregion
 
@@ -694,7 +722,7 @@ public sealed class IrGenerator : IAstVisitor<int>
 
     private long ResolveFieldIndex(MemberAccessExpr node)
     {
-        if (node.Object is IdentifierNode ident && _structTypes.TryGetValue(ident.Name, out var structInfo))
+        if (node.Target is IdentifierNode ident && _structTypes.TryGetValue(ident.Name, out var structInfo))
         {
             var field = structInfo.Fields.Find(f => f.Name == node.MemberName);
             if (field != null)
