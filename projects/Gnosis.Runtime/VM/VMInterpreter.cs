@@ -1,4 +1,4 @@
-using Gnosis.Core;
+using System.Runtime.CompilerServices;
 using Gnosis.ECS;
 using Gnosis.ECS.Entity;
 using Gnosis.ECS.World;
@@ -129,13 +129,13 @@ public class VMInterpreter
                 ExecutePushFloat64();
                 break;
             case OpCode.PushTrue:
-                _state.Push(true);
+                _state.Push(GGValue.FromBool(true));
                 break;
             case OpCode.PushFalse:
-                _state.Push(false);
+                _state.Push(GGValue.FromBool(false));
                 break;
             case OpCode.PushNull:
-                _state.Push(null);
+                _state.Push(GGValue.Null);
                 break;
 
             #endregion
@@ -423,51 +423,59 @@ public class VMInterpreter
 
     #region 常量加载
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePushInt8()
     {
         var value = ReadByte();
-        _state.Push((long)value);
+        _state.Push(GGValue.FromInt(value));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePushInt16()
     {
         var value = ReadInt16();
-        _state.Push((long)value);
+        _state.Push(GGValue.FromInt(value));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePushInt32()
     {
         var value = ReadInt32();
-        _state.Push((long)value);
+        _state.Push(GGValue.FromInt(value));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePushInt64()
     {
         var value = ReadInt64();
-        _state.Push(value);
+        _state.Push(GGValue.FromInt(value));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePushFloat32()
     {
         var value = ReadFloat32();
-        _state.Push((double)value);
+        _state.Push(GGValue.FromFloat(value));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePushFloat64()
     {
         var value = ReadFloat64();
-        _state.Push(value);
+        _state.Push(GGValue.FromFloat(value));
     }
 
     #endregion
 
     #region 栈操作
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecutePop()
     {
         _state.Pop();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteDup()
     {
         _state.StackInternal.Dup();
@@ -477,204 +485,227 @@ public class VMInterpreter
 
     #region 整数算术
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteAddInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a + b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromInt(a + b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteSubInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a - b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromInt(a - b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteMulInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a * b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromInt(a * b));
     }
 
     private void ExecuteDivInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
 
         if (b == 0)
         {
             throw new VMDivideByZeroException();
         }
 
-        _state.Push(a / b);
+        _state.Push(GGValue.FromInt(a / b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteNegInt()
     {
-        var a = ToInt64(_state.Pop());
-        _state.Push(-a);
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromInt(-a));
     }
 
     #endregion
 
     #region 浮点算术
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteAddFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a + b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromFloat(a + b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteSubFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a - b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromFloat(a - b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteMulFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a * b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromFloat(a * b));
     }
 
     private void ExecuteDivFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
 
         if (b == 0.0)
         {
             throw new VMDivideByZeroException();
         }
 
-        _state.Push(a / b);
+        _state.Push(GGValue.FromFloat(a / b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteNegFloat()
     {
-        var a = ToFloat64(_state.Pop());
-        _state.Push(-a);
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromFloat(-a));
     }
 
     #endregion
 
     #region 整数比较
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteEqualInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a == b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromBool(a == b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteNotEqualInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a != b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromBool(a != b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteLessInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a < b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromBool(a < b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteGreaterInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a > b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromBool(a > b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteLessEqualInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a <= b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromBool(a <= b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteGreaterEqualInt()
     {
-        var b = ToInt64(_state.Pop());
-        var a = ToInt64(_state.Pop());
-        _state.Push(a >= b);
+        var b = _state.Pop().IntValue;
+        var a = _state.Pop().IntValue;
+        _state.Push(GGValue.FromBool(a >= b));
     }
 
     #endregion
 
     #region 浮点比较
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteEqualFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(Math.Abs(a - b) < double.Epsilon);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromBool(Math.Abs(a - b) < double.Epsilon));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteNotEqualFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(Math.Abs(a - b) >= double.Epsilon);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromBool(Math.Abs(a - b) >= double.Epsilon));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteLessFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a < b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromBool(a < b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteGreaterFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a > b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromBool(a > b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteLessEqualFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a <= b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromBool(a <= b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteGreaterEqualFloat()
     {
-        var b = ToFloat64(_state.Pop());
-        var a = ToFloat64(_state.Pop());
-        _state.Push(a >= b);
+        var b = _state.Pop().FloatValue;
+        var a = _state.Pop().FloatValue;
+        _state.Push(GGValue.FromBool(a >= b));
     }
 
     #endregion
 
     #region 逻辑运算
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteAnd()
     {
-        var b = IsTruthy(_state.Pop());
-        var a = IsTruthy(_state.Pop());
-        _state.Push(a && b);
+        var b = _state.Pop().IsTruthy();
+        var a = _state.Pop().IsTruthy();
+        _state.Push(GGValue.FromBool(a && b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteOr()
     {
-        var b = IsTruthy(_state.Pop());
-        var a = IsTruthy(_state.Pop());
-        _state.Push(a || b);
+        var b = _state.Pop().IsTruthy();
+        var a = _state.Pop().IsTruthy();
+        _state.Push(GGValue.FromBool(a || b));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ExecuteNot()
     {
-        var a = IsTruthy(_state.Pop());
-        _state.Push(!a);
+        var a = _state.Pop().IsTruthy();
+        _state.Push(GGValue.FromBool(!a));
     }
 
     #endregion
@@ -690,7 +721,7 @@ public class VMInterpreter
     {
         var target = ReadInt32();
 
-        if (IsTruthy(_state.Pop()))
+        if (_state.Pop().IsTruthy())
         {
             _state.IP = target;
         }
@@ -700,7 +731,7 @@ public class VMInterpreter
     {
         var target = ReadInt32();
 
-        if (!IsTruthy(_state.Pop()))
+        if (!_state.Pop().IsTruthy())
         {
             _state.IP = target;
         }
@@ -712,7 +743,7 @@ public class VMInterpreter
         var paramCount = ReadInt32();
         var localCount = ReadInt32();
 
-        var args = new object?[paramCount];
+        var args = new GGValue[paramCount];
         for (var i = paramCount - 1; i >= 0; i--)
         {
             args[i] = _state.Pop();
@@ -739,18 +770,19 @@ public class VMInterpreter
 
         if (func is not null)
         {
-            var args = new object?[func.ParameterCount];
+            var args = new GGValue[func.ParameterCount];
 
             for (var i = func.ParameterCount - 1; i >= 0; i--)
             {
                 args[i] = _state.Pop();
             }
 
-            func.Execute(_state, args);
+            var result = func.Execute(_state, args);
+            _state.Push(result);
         }
         else
         {
-            _state.Push(null);
+            _state.Push(GGValue.Null);
         }
     }
 
@@ -775,7 +807,7 @@ public class VMInterpreter
         }
         else
         {
-            _state.Push(null);
+            _state.Push(GGValue.Null);
         }
     }
 
@@ -809,21 +841,17 @@ public class VMInterpreter
         var idx = ReadInt32();
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGObject>(target, out var obj))
         {
-            var obj = _state.MemoryManager.GetObject<GGObject>((int)objectId);
-            if (obj is not null)
+            var fieldName = $"field_{idx}";
+            if (obj.HasField(fieldName))
             {
-                var fieldName = $"field_{idx}";
-                if (obj.HasField(fieldName))
-                {
-                    _state.Push(obj.GetField(fieldName));
-                    return;
-                }
+                _state.Push(obj.GetField(fieldName));
+                return;
             }
         }
 
-        _state.Push(null);
+        _state.Push(GGValue.Null);
     }
 
     private void ExecuteStoreField()
@@ -832,13 +860,9 @@ public class VMInterpreter
         var value = _state.Pop();
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGObject>(target, out var obj))
         {
-            var obj = _state.MemoryManager.GetObject<GGObject>((int)objectId);
-            if (obj is not null)
-            {
-                obj.SetField($"field_{idx}", value);
-            }
+            obj.SetField($"field_{idx}", value);
         }
     }
 
@@ -852,7 +876,7 @@ public class VMInterpreter
         var typeName = ReadConstant()?.ToString();
         var obj = new GGObject(typeName ?? "object");
         var objectId = _state.MemoryManager.Allocate(obj);
-        _state.Push((long)objectId);
+        _state.Push(GGValue.FromInt(objectId));
     }
 
     private void ExecuteGetField()
@@ -861,18 +885,13 @@ public class VMInterpreter
         var fieldName = ReadConstant()?.ToString() ?? $"field_{fieldIdx}";
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGObject>(target, out var obj) && obj.HasField(fieldName))
         {
-            var obj = _state.MemoryManager.GetObject<GGObject>((int)objectId);
-
-            if (obj is not null && obj.HasField(fieldName))
-            {
-                _state.Push(obj.GetField(fieldName));
-                return;
-            }
+            _state.Push(obj.GetField(fieldName));
+            return;
         }
 
-        _state.Push(null);
+        _state.Push(GGValue.Null);
     }
 
     private void ExecuteSetField()
@@ -882,14 +901,9 @@ public class VMInterpreter
         var value = _state.Pop();
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGObject>(target, out var obj))
         {
-            var obj = _state.MemoryManager.GetObject<GGObject>((int)objectId);
-
-            if (obj is not null)
-            {
-                obj.SetField(fieldName, value);
-            }
+            obj.SetField(fieldName, value);
         }
     }
 
@@ -902,11 +916,11 @@ public class VMInterpreter
         if (_world is not null)
         {
             var id = _world.CreateEntity();
-            _state.Push(id);
+            _state.Push(GGValue.FromEntity(id));
         }
         else
         {
-            _state.Push(0L);
+            _state.Push(GGValue.FromInt(0));
         }
     }
 
@@ -916,9 +930,13 @@ public class VMInterpreter
         {
             var value = _state.Pop();
 
-            if (value is EntityId entityId)
+            if (value.IsEntity)
             {
-                _world.DestroyEntity(entityId);
+                _world.DestroyEntity(new EntityId(value.EntityId));
+            }
+            else if (value.IsInt)
+            {
+                _world.DestroyEntity(new EntityId((int)value.IntValue));
             }
         }
         else
@@ -937,7 +955,7 @@ public class VMInterpreter
     {
         var typeIdx = ReadInt32();
         _state.Pop();
-        _state.Push(null);
+        _state.Push(GGValue.Null);
     }
 
     private void ExecuteRemoveComponent()
@@ -955,7 +973,7 @@ public class VMInterpreter
             ReadInt32();
         }
 
-        _state.Push(0L);
+        _state.Push(GGValue.FromInt(0));
     }
 
     private void ExecuteQueryAny()
@@ -967,7 +985,7 @@ public class VMInterpreter
             ReadInt32();
         }
 
-        _state.Push(0L);
+        _state.Push(GGValue.FromInt(0));
     }
 
     #endregion
@@ -980,39 +998,44 @@ public class VMInterpreter
 
         if (_state.CurrentModule?.Constants.TryGetValue(idx.ToString(), out var value) == true)
         {
-            _state.Push(value?.ToString());
+            var str = value?.ToString();
+            _state.Push(str is not null ? GGValue.FromString(new GGString(str)) : GGValue.Null);
         }
         else
         {
-            _state.Push(null);
+            _state.Push(GGValue.Null);
         }
     }
 
     private void ExecuteConcatString()
     {
-        var b = _state.Pop()?.ToString() ?? "";
-        var a = _state.Pop()?.ToString() ?? "";
-        _state.Push(string.Concat(a, b));
+        var bVal = _state.Pop();
+        var aVal = _state.Pop();
+        var b = bVal.Type == GGValueType.String ? bVal.StringValue?.Value ?? "" : bVal.ToString() ?? "";
+        var a = aVal.Type == GGValueType.String ? aVal.StringValue?.Value ?? "" : aVal.ToString() ?? "";
+        _state.Push(GGValue.FromString(new GGString(string.Concat(a, b))));
     }
 
     private void ExecuteStringLength()
     {
-        var str = _state.Pop()?.ToString() ?? "";
-        _state.Push((long)str.Length);
+        var val = _state.Pop();
+        var str = val.Type == GGValueType.String ? val.StringValue?.Value ?? "" : val.ToString() ?? "";
+        _state.Push(GGValue.FromInt(str.Length));
     }
 
     private void ExecuteStringGetChar()
     {
-        var idx = ToInt32(_state.Pop());
-        var str = _state.Pop()?.ToString() ?? "";
+        var idx = _state.Pop().IntValue;
+        var val = _state.Pop();
+        var str = val.Type == GGValueType.String ? val.StringValue?.Value ?? "" : val.ToString() ?? "";
 
         if (idx >= 0 && idx < str.Length)
         {
-            _state.Push(str[idx].ToString());
+            _state.Push(GGValue.FromString(new GGString(str[idx].ToString())));
         }
         else
         {
-            _state.Push(null);
+            _state.Push(GGValue.Null);
         }
     }
 
@@ -1025,42 +1048,32 @@ public class VMInterpreter
         var size = ReadInt32();
         var arr = new GGArray(size);
         var objectId = _state.MemoryManager.Allocate(arr);
-        _state.Push((long)objectId);
+        _state.Push(GGValue.FromInt(objectId));
     }
 
     private void ExecuteArrayGet()
     {
-        var index = ToInt32(_state.Pop());
+        var index = (int)_state.Pop().IntValue;
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGArray>(target, out var arr) && index >= 0 && index < arr.Count)
         {
-            var arr = _state.MemoryManager.GetObject<GGArray>((int)objectId);
-
-            if (arr is not null && index >= 0 && index < arr.Count)
-            {
-                _state.Push(arr[index]);
-                return;
-            }
+            _state.Push(arr[index]);
+            return;
         }
 
-        _state.Push(null);
+        _state.Push(GGValue.Null);
     }
 
     private void ExecuteArraySet()
     {
         var value = _state.Pop();
-        var index = ToInt32(_state.Pop());
+        var index = (int)_state.Pop().IntValue;
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGArray>(target, out var arr) && index >= 0 && index < arr.Capacity)
         {
-            var arr = _state.MemoryManager.GetObject<GGArray>((int)objectId);
-
-            if (arr is not null && index >= 0 && index < arr.Capacity)
-            {
-                arr[index] = value;
-            }
+            arr[index] = value;
         }
     }
 
@@ -1068,18 +1081,13 @@ public class VMInterpreter
     {
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGArray>(target, out var arr))
         {
-            var arr = _state.MemoryManager.GetObject<GGArray>((int)objectId);
-
-            if (arr is not null)
-            {
-                _state.Push((long)arr.Count);
-                return;
-            }
+            _state.Push(GGValue.FromInt(arr.Count));
+            return;
         }
 
-        _state.Push(0L);
+        _state.Push(GGValue.FromInt(0));
     }
 
     #endregion
@@ -1091,42 +1099,32 @@ public class VMInterpreter
         var funcAddr = ReadInt32();
         var closure = new GGClosure(funcAddr, 0);
         var objectId = _state.MemoryManager.Allocate(closure);
-        _state.Push((long)objectId);
+        _state.Push(GGValue.FromInt(objectId));
     }
 
     private void ExecuteGetUpvalue()
     {
-        var idx = ToInt32(_state.Pop());
+        var idx = (int)_state.Pop().IntValue;
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGClosure>(target, out var closure))
         {
-            var closure = _state.MemoryManager.GetObject<GGClosure>((int)objectId);
-
-            if (closure is not null)
-            {
-                _state.Push(closure.GetUpvalue(idx));
-                return;
-            }
+            _state.Push(closure.GetUpvalue(idx));
+            return;
         }
 
-        _state.Push(null);
+        _state.Push(GGValue.Null);
     }
 
     private void ExecuteSetUpvalue()
     {
         var value = _state.Pop();
-        var idx = ToInt32(_state.Pop());
+        var idx = (int)_state.Pop().IntValue;
         var target = _state.Pop();
 
-        if (target is long objectId)
+        if (TryGetHeapObject<GGClosure>(target, out var closure))
         {
-            var closure = _state.MemoryManager.GetObject<GGClosure>((int)objectId);
-
-            if (closure is not null)
-            {
-                closure.SetUpvalue(idx, value);
-            }
+            closure.SetUpvalue(idx, value);
         }
     }
 
@@ -1137,7 +1135,7 @@ public class VMInterpreter
     private void ExecuteIsNull()
     {
         var value = _state.Pop();
-        _state.Push(value is null);
+        _state.Push(GGValue.FromBool(value.IsNull));
     }
 
     private void ExecuteIsType()
@@ -1146,18 +1144,19 @@ public class VMInterpreter
         var typeName = ReadConstant()?.ToString() ?? "";
         var value = _state.Pop();
 
-        bool result = typeName switch
+        var result = typeName switch
         {
-            "int" or "i32" or "i64" => value is long,
-            "float" or "f32" or "f64" => value is double,
-            "bool" => value is bool,
-            "string" => value is GGString,
-            "array" => value is long id && _state.MemoryManager.GetObject<GGArray>((int)id) is not null,
-            "object" => value is long id2 && _state.MemoryManager.GetObject<GGObject>((int)id2) is not null,
+            "int" or "i32" or "i64" => value.IsInt,
+            "float" or "f32" or "f64" => value.IsFloat,
+            "bool" => value.IsBool,
+            "string" => value.Type == GGValueType.String,
+            "array" => value.Type == GGValueType.Array,
+            "object" => value.Type == GGValueType.Object,
+            "entity" => value.IsEntity,
             _ => false
         };
 
-        _state.Push(result);
+        _state.Push(GGValue.FromBool(result));
     }
 
     private void ExecuteTypeOf()
@@ -1165,17 +1164,22 @@ public class VMInterpreter
         var typeIdx = ReadInt32();
         var value = _state.Pop();
 
-        string typeName = value switch
+        var typeName = value.Type switch
         {
-            null => "null",
-            long => "int",
-            double => "float",
-            bool => "bool",
-            GGString => "string",
+            GGValueType.Null => "null",
+            GGValueType.Int => "int",
+            GGValueType.Float => "float",
+            GGValueType.Bool => "bool",
+            GGValueType.String => "string",
+            GGValueType.Object => "object",
+            GGValueType.Array => "array",
+            GGValueType.Struct => "struct",
+            GGValueType.Closure => "closure",
+            GGValueType.Entity => "entity",
             _ => "unknown"
         };
 
-        _state.Push((long)typeName.GetHashCode());
+        _state.Push(GGValue.FromInt(typeName.GetHashCode()));
     }
 
     #endregion
@@ -1234,63 +1238,24 @@ public class VMInterpreter
         return null;
     }
 
-    private static bool IsTruthy(object? value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool TryGetHeapObject<T>(GGValue value, out T? obj) where T : class, IGCObject
     {
-        return value switch
-        {
-            null => false,
-            0L => false,
-            0 => false,
-            false => false,
-            0.0 => false,
-            "" => false,
-            _ => true
-        };
-    }
+        obj = null;
 
-    private static long ToInt64(object? value)
-    {
-        return value switch
+        if (value.IsInt)
         {
-            long l => l,
-            int i => i,
-            short s => s,
-            byte b => b,
-            double d => (long)d,
-            float f => (long)f,
-            bool bo => bo ? 1 : 0,
-            _ => 0
-        };
-    }
+            obj = _state.MemoryManager.GetObject<T>((int)value.IntValue);
+            return obj is not null;
+        }
 
-    private static int ToInt32(object? value)
-    {
-        return value switch
+        if (value.IsReference && value.Reference is T direct)
         {
-            int i => i,
-            long l => (int)l,
-            short s => s,
-            byte b => b,
-            double d => (int)d,
-            float f => (int)f,
-            bool bo => bo ? 1 : 0,
-            _ => 0
-        };
-    }
+            obj = direct;
+            return true;
+        }
 
-    private static double ToFloat64(object? value)
-    {
-        return value switch
-        {
-            double d => d,
-            float f => f,
-            long l => l,
-            int i => i,
-            short s => s,
-            byte b => b,
-            bool bo => bo ? 1.0 : 0.0,
-            _ => 0.0
-        };
+        return false;
     }
 
     #endregion

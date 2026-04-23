@@ -5,7 +5,7 @@ namespace Gnosis.Runtime.VM;
 /// </summary>
 public class GGArray : IGCObject
 {
-    private object?[] _elements;
+    private GGValue[] _elements;
     private int _count;
 
     #region 属性
@@ -41,7 +41,7 @@ public class GGArray : IGCObject
     /// <summary>
     /// 按索引访问元素
     /// </summary>
-    public object? this[int index]
+    public GGValue this[int index]
     {
         get
         {
@@ -70,10 +70,9 @@ public class GGArray : IGCObject
     /// <summary>
     /// 使用初始容量初始化数组
     /// </summary>
-    /// <param name="capacity">初始容量</param>
     public GGArray(int capacity)
     {
-        _elements = new object?[capacity];
+        _elements = new GGValue[capacity];
         _count = 0;
         IsMarked = false;
     }
@@ -85,8 +84,7 @@ public class GGArray : IGCObject
     /// <summary>
     /// 添加元素到数组末尾
     /// </summary>
-    /// <param name="value">要添加的元素</param>
-    public void Add(object? value)
+    public void Add(GGValue value)
     {
         if (_count >= _elements.Length)
         {
@@ -103,23 +101,9 @@ public class GGArray : IGCObject
     {
         for (var i = 0; i < _count; i++)
         {
-            if (_elements[i] is IGCObject gcObj)
+            if (_elements[i].Reference is IGCObject gcObj)
             {
                 yield return gcObj;
-            }
-        }
-    }
-
-    /// <summary>
-    /// 获取所有引用（包括非 GC 对象）
-    /// </summary>
-    public IEnumerable<object?> GetReferences()
-    {
-        for (var i = 0; i < _count; i++)
-        {
-            if (_elements[i] is GGObject or GGArray or GGString or GGStruct or GGClosure)
-            {
-                yield return _elements[i];
             }
         }
     }

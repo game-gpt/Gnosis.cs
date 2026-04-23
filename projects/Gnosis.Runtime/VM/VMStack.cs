@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Gnosis.Runtime.VM;
 
 /// <summary>
@@ -18,7 +20,7 @@ public struct CallFrame
     /// <summary>
     /// 局部变量表
     /// </summary>
-    public object?[] Locals;
+    public GGValue[] Locals;
 
     /// <summary>
     /// 初始化调用帧
@@ -27,7 +29,7 @@ public struct CallFrame
     {
         ReturnAddress = returnAddress;
         BasePointer = basePointer;
-        Locals = new object?[localCount];
+        Locals = new GGValue[localCount];
     }
 }
 
@@ -38,7 +40,7 @@ public class VMStack
 {
     #region Fields
 
-    private readonly object?[] _operandStack;
+    private GGValue[] _operandStack;
     private int _sp;
     private readonly List<CallFrame> _callFrames;
     private const int DefaultStackSize = 1024;
@@ -52,7 +54,7 @@ public class VMStack
     /// </summary>
     public VMStack(int size = DefaultStackSize)
     {
-        _operandStack = new object?[size];
+        _operandStack = new GGValue[size];
         _sp = 0;
         _callFrames = [];
     }
@@ -93,11 +95,12 @@ public class VMStack
     /// <summary>
     /// 压入值到操作数栈
     /// </summary>
-    public void Push(object? value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Push(GGValue value)
     {
         if (_sp >= _operandStack.Length)
         {
-            throw new VMStackOverflowException();
+            Array.Resize(ref _operandStack, _operandStack.Length * 2);
         }
 
         _operandStack[_sp++] = value;
@@ -106,7 +109,8 @@ public class VMStack
     /// <summary>
     /// 从操作数栈弹出值
     /// </summary>
-    public object? Pop()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public GGValue Pop()
     {
         if (_sp <= 0)
         {
@@ -114,14 +118,15 @@ public class VMStack
         }
 
         var value = _operandStack[--_sp];
-        _operandStack[_sp] = null;
+        _operandStack[_sp] = default;
         return value;
     }
 
     /// <summary>
     /// 查看栈顶值但不弹出
     /// </summary>
-    public object? Peek()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public GGValue Peek()
     {
         if (_sp <= 0)
         {
@@ -134,6 +139,7 @@ public class VMStack
     /// <summary>
     /// 复制栈顶值并压入
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dup()
     {
         if (_sp <= 0)
@@ -147,7 +153,8 @@ public class VMStack
     /// <summary>
     /// 获取指定索引的值（相对于栈底）
     /// </summary>
-    public object? GetAt(int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public GGValue GetAt(int index)
     {
         if (index < 0 || index >= _sp)
         {
@@ -160,7 +167,8 @@ public class VMStack
     /// <summary>
     /// 设置指定索引的值
     /// </summary>
-    public void SetAt(int index, object? value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetAt(int index, GGValue value)
     {
         if (index < 0 || index >= _sp)
         {
@@ -169,6 +177,11 @@ public class VMStack
 
         _operandStack[index] = value;
     }
+
+    /// <summary>
+    /// 获取操作数栈内部数组的直接引用（用于 GC Roots 收集）
+    /// </summary>
+    public GGValue[] GetRawStack() => _operandStack;
 
     #endregion
 

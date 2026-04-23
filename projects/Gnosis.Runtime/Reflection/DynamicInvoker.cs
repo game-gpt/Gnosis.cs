@@ -1,3 +1,6 @@
+using Gnosis.Runtime.Interop;
+using Gnosis.Runtime.VM;
+
 namespace Gnosis.Runtime.Reflection;
 
 /// <summary>
@@ -7,14 +10,14 @@ public sealed class DynamicInvoker
 {
     #region Fields
 
-    private readonly VM.VMState _vmState;
-    private readonly VM.NativeFunctionRegistry _nativeRegistry;
+    private readonly VMState _vmState;
+    private readonly NativeFunctionRegistry _nativeRegistry;
 
     #endregion
 
     #region Constructors
 
-    public DynamicInvoker(VM.VMState vmState, VM.NativeFunctionRegistry nativeRegistry)
+    public DynamicInvoker(VMState vmState, NativeFunctionRegistry nativeRegistry)
     {
         _vmState = vmState;
         _nativeRegistry = nativeRegistry;
@@ -27,20 +30,20 @@ public sealed class DynamicInvoker
     /// <summary>
     /// 按名称动态调用模块内的 gg 函数
     /// </summary>
-    public object? InvokeFunction(string moduleName, string functionName, params object?[] args)
+    public GGValue InvokeFunction(string moduleName, string functionName, params GGValue[] args)
     {
         var module = _vmState.GetModule(moduleName);
 
         if (module is null)
         {
-            throw new VM.VMModuleNotFoundException(moduleName);
+            throw new VMModuleNotFoundException(moduleName);
         }
 
         var funcInfo = FindFunction(module, functionName);
 
         if (funcInfo is null)
         {
-            throw new VM.VMRuntimeException($"函数未找到：{moduleName}::{functionName}");
+            throw new VMRuntimeException($"函数未找到：{moduleName}::{functionName}");
         }
 
         return InvokeAtOffset(module, funcInfo.EntryOffset, funcInfo.ParameterCount, args);
@@ -49,7 +52,7 @@ public sealed class DynamicInvoker
     /// <summary>
     /// 按偏移量动态调用函数
     /// </summary>
-    public object? InvokeAtOffset(VM.IModule module, int entryOffset, int paramCount, params object?[] args)
+    public GGValue InvokeAtOffset(IModule module, int entryOffset, int paramCount, params GGValue[] args)
     {
         _vmState.StackInternal.PushFrame(_vmState.IP, _vmState.StackInternal.SP, Math.Max(paramCount, args.Length));
 
@@ -60,7 +63,7 @@ public sealed class DynamicInvoker
 
         _vmState.IP = entryOffset;
 
-        return null;
+        return GGValue.Null;
     }
 
     #endregion
@@ -70,16 +73,16 @@ public sealed class DynamicInvoker
     /// <summary>
     /// 按 ID 动态调用原生函数
     /// </summary>
-    public object? InvokeNative(int functionId, params object?[] args)
+    public GGValue InvokeNative(int functionId, params GGValue[] args)
     {
         var func = _nativeRegistry.Get(functionId);
 
         if (func is null)
         {
-            throw new VM.VMRuntimeException($"原生函数未找到，ID: {functionId}");
+            throw new VMRuntimeException($"原生函数未找到，ID: {functionId}");
         }
 
-        var actualArgs = new object?[func.ParameterCount];
+        var actualArgs = new GGValue[func.ParameterCount];
 
         for (var i = 0; i < Math.Min(args.Length, actualArgs.Length); i++)
         {
@@ -93,16 +96,16 @@ public sealed class DynamicInvoker
     /// <summary>
     /// 按名称动态调用原生函数
     /// </summary>
-    public object? InvokeNative(string functionName, params object?[] args)
+    public GGValue InvokeNative(string functionName, params GGValue[] args)
     {
         var func = _nativeRegistry.Get(functionName);
 
         if (func is null)
         {
-            throw new VM.VMRuntimeException($"原生函数未找到：{functionName}");
+            throw new VMRuntimeException($"原生函数未找到：{functionName}");
         }
 
-        var actualArgs = new object?[func.ParameterCount];
+        var actualArgs = new GGValue[func.ParameterCount];
 
         for (var i = 0; i < Math.Min(args.Length, actualArgs.Length); i++)
         {
@@ -115,9 +118,33 @@ public sealed class DynamicInvoker
 
     #endregion
 
+    #region C# 互操作便捷方法
+
+    /// <summary>
+    /// 使用 C# 对象参数调用原生函数（自动封送）
+    /// </summary>
+    public object? InvokeNativeBoxed(int functionId, params object?[] args)
+    {
+        var ggArgs = Marshaller.ToGGValues(args);
+        var result = InvokeNative(functionId, ggArgs);
+        return ReferenceMarshaller.MarshalFromGG(result);
+    }
+
+    /// <summary>
+    /// 使用 C# 对象参数按名称调用原生函数（自动封送）
+    /// </summary>
+    public object? InvokeNativeBoxed(string functionName, params object?[] args)
+    {
+        var ggArgs = Marshaller.ToGGValues(args);
+        var result = InvokeNative(functionName, ggArgs);
+        return ReferenceMarshaller.MarshalFromGG(result);
+    }
+
+    #endregion
+
     #region 辅助方法
 
-    private static VM.ModuleFunctionInfo? FindFunction(VM.IModule module, string name)
+    private static ModuleFunctionInfo? FindFunction(IModule module, string name)
     {
         foreach (var func in module.Functions)
         {

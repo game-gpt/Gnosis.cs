@@ -1,36 +1,25 @@
+using Gnosis.Runtime.VM;
+
 namespace Gnosis.Runtime.Interop;
 
+/// <summary>
+/// 值类型封送器，处理 C# 值与 GGValue 之间的双向转换
+/// </summary>
 public static class Marshaller
 {
-    public static object? ToGGValue(object? value)
+    public static GGValue ToGGValue(object? value)
     {
-        return value switch
-        {
-            null => null,
-            int i => (long)i,
-            long l => l,
-            float f => (double)f,
-            double d => d,
-            bool b => b ? 1L : 0L,
-            string s => s,
-            _ => value
-        };
+        return ReferenceMarshaller.MarshalToGG(value);
     }
 
-    public static object? FromGGValue(object? value)
+    public static object? FromGGValue(GGValue value)
     {
-        return value switch
-        {
-            long l => l,
-            double d => d,
-            string s => s,
-            _ => value
-        };
+        return ReferenceMarshaller.MarshalFromGG(value);
     }
 
-    public static object?[] ToGGValues(object?[] values)
+    public static GGValue[] ToGGValues(object?[] values)
     {
-        var result = new object?[values.Length];
+        var result = new GGValue[values.Length];
         for (var i = 0; i < values.Length; i++)
         {
             result[i] = ToGGValue(values[i]);
@@ -38,7 +27,7 @@ public static class Marshaller
         return result;
     }
 
-    public static object?[] FromGGValues(object?[] values)
+    public static object?[] FromGGValues(GGValue[] values)
     {
         var result = new object?[values.Length];
         for (var i = 0; i < values.Length; i++)
@@ -48,48 +37,23 @@ public static class Marshaller
         return result;
     }
 
-    public static long ToInt64(object? value)
+    public static long ToInt64(GGValue value)
     {
-        return value switch
-        {
-            long l => l,
-            int i => i,
-            short s => s,
-            byte b => b,
-            double d => (long)d,
-            float f => (long)f,
-            bool b2 => b2 ? 1 : 0,
-            _ => 0
-        };
+        if (value.IsInt) return value.IntValue;
+        if (value.IsFloat) return (long)value.FloatValue;
+        if (value.IsBool) return value.BoolValue ? 1 : 0;
+        return 0;
     }
 
-    public static double ToFloat64(object? value)
+    public static double ToFloat64(GGValue value)
     {
-        return value switch
-        {
-            double d => d,
-            float f => f,
-            long l => l,
-            int i => i,
-            _ => 0.0
-        };
+        if (value.IsFloat) return value.FloatValue;
+        if (value.IsInt) return value.IntValue;
+        return 0.0;
     }
 
-    public static bool ToBool(object? value)
+    public static bool ToBool(GGValue value)
     {
-        return value switch
-        {
-            bool b => b,
-            long l => l != 0,
-            int i => i != 0,
-            double d => d != 0.0,
-            null => false,
-            _ => true
-        };
-    }
-
-    public static string? ToString(object? value)
-    {
-        return value?.ToString();
+        return value.IsTruthy();
     }
 }

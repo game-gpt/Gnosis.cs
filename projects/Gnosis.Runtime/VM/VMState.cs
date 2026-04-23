@@ -1,3 +1,9 @@
+using System.Runtime.CompilerServices;
+using Gnosis.Core;
+using Gnosis.ECS;
+using Gnosis.ECS.Entity;
+using Gnosis.ECS.World;
+
 namespace Gnosis.Runtime.VM;
 
 /// <summary>
@@ -10,7 +16,7 @@ public class VMState : IVMState
     private readonly VMStack _stack;
     private readonly List<IModule> _modules;
     private readonly MemoryManager _memoryManager;
-    private readonly Dictionary<int, object?> _globals;
+    private readonly Dictionary<int, GGValue> _globals;
     private int _ip;
     private IModule? _currentModule;
 
@@ -26,7 +32,7 @@ public class VMState : IVMState
         _stack = new VMStack();
         _modules = [];
         _memoryManager = new MemoryManager();
-        _globals = new Dictionary<int, object?>();
+        _globals = new Dictionary<int, GGValue>();
         _ip = 0;
         _currentModule = null;
     }
@@ -56,11 +62,11 @@ public class VMState : IVMState
     /// <summary>
     /// 操作数栈快照
     /// </summary>
-    public object?[] Stack
+    public GGValue[] Stack
     {
         get
         {
-            var snapshot = new object?[_stack.Count];
+            var snapshot = new GGValue[_stack.Count];
 
             for (var i = 0; i < _stack.Count; i++)
             {
@@ -108,7 +114,8 @@ public class VMState : IVMState
     /// <summary>
     /// 压入值到操作数栈
     /// </summary>
-    public void Push(object? value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Push(GGValue value)
     {
         _stack.Push(value);
     }
@@ -116,7 +123,8 @@ public class VMState : IVMState
     /// <summary>
     /// 从操作数栈弹出值
     /// </summary>
-    public object? Pop()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public GGValue Pop()
     {
         return _stack.Pop();
     }
@@ -124,7 +132,8 @@ public class VMState : IVMState
     /// <summary>
     /// 查看栈顶值但不弹出
     /// </summary>
-    public object? Peek()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public GGValue Peek()
     {
         return _stack.Peek();
     }
@@ -211,7 +220,7 @@ public class VMState : IVMState
     /// <summary>
     /// 获取全局变量
     /// </summary>
-    public object? GetGlobal(int index)
+    public GGValue GetGlobal(int index)
     {
         return _globals.GetValueOrDefault(index);
     }
@@ -219,7 +228,7 @@ public class VMState : IVMState
     /// <summary>
     /// 设置全局变量
     /// </summary>
-    public void SetGlobal(int index, object? value)
+    public void SetGlobal(int index, GGValue value)
     {
         _globals[index] = value;
     }

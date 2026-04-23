@@ -2,7 +2,7 @@ namespace Gnosis.Runtime.VM;
 
 public class GGObject : IGCObject
 {
-    private readonly Dictionary<string, object?> _fields = new();
+    private readonly Dictionary<string, GGValue> _fields = new();
     public string TypeName { get; }
     public int ObjectId { get; set; }
     public bool IsMarked { get; set; }
@@ -13,12 +13,12 @@ public class GGObject : IGCObject
         IsMarked = false;
     }
 
-    public void SetField(string name, object? value)
+    public void SetField(string name, GGValue value)
     {
         _fields[name] = value;
     }
 
-    public object? GetField(string name)
+    public GGValue GetField(string name)
     {
         return _fields.GetValueOrDefault(name);
     }
@@ -28,10 +28,16 @@ public class GGObject : IGCObject
         return _fields.ContainsKey(name);
     }
 
-    public IReadOnlyDictionary<string, object?> Fields => _fields;
+    public IReadOnlyDictionary<string, GGValue> Fields => _fields;
 
     public IEnumerable<IGCObject?> GetGCReferences()
     {
-        return _fields.Values.OfType<IGCObject>();
+        foreach (var field in _fields.Values)
+        {
+            if (field.Reference is IGCObject gcObj)
+            {
+                yield return gcObj;
+            }
+        }
     }
 }

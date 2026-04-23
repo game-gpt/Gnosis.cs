@@ -2,7 +2,7 @@ namespace Gnosis.Runtime.VM;
 
 public class GGStruct : IGCObject
 {
-    private readonly object?[] _fields;
+    private readonly GGValue[] _fields;
     public string TypeName { get; }
     public string[] FieldNames { get; }
     public int ObjectId { get; set; }
@@ -12,12 +12,12 @@ public class GGStruct : IGCObject
     {
         TypeName = typeName;
         FieldNames = fieldNames;
-        _fields = new object?[fieldNames.Length];
+        _fields = new GGValue[fieldNames.Length];
         IsMarked = false;
         ObjectId = 0;
     }
 
-    public object? GetField(int index)
+    public GGValue GetField(int index)
     {
         if (index < 0 || index >= _fields.Length)
         {
@@ -26,7 +26,7 @@ public class GGStruct : IGCObject
         return _fields[index];
     }
 
-    public void SetField(int index, object? value)
+    public void SetField(int index, GGValue value)
     {
         if (index < 0 || index >= _fields.Length)
         {
@@ -42,11 +42,12 @@ public class GGStruct : IGCObject
 
     public IEnumerable<IGCObject?> GetGCReferences()
     {
-        return _fields.OfType<IGCObject>();
-    }
-
-    public IEnumerable<object?> GetReferences()
-    {
-        return _fields.Where(v => v is GGObject or GGArray or GGString or GGStruct or GGClosure);
+        foreach (var field in _fields)
+        {
+            if (field.Reference is IGCObject gcObj)
+            {
+                yield return gcObj;
+            }
+        }
     }
 }

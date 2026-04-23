@@ -1,3 +1,5 @@
+using Gnosis.Runtime.VM;
+
 namespace Gnosis.Runtime.Debug;
 
 /// <summary>
@@ -233,9 +235,9 @@ public sealed class Debugger
     /// <summary>
     /// 获取所有监视变量的当前值
     /// </summary>
-    public IReadOnlyDictionary<string, object?> GetWatchValues()
+    public IReadOnlyDictionary<string, GGValue> GetWatchValues()
     {
-        var result = new Dictionary<string, object?>();
+        var result = new Dictionary<string, GGValue>();
 
         foreach (var watch in _watches)
         {
@@ -248,9 +250,9 @@ public sealed class Debugger
     /// <summary>
     /// 获取当前调用栈的局部变量
     /// </summary>
-    public IReadOnlyDictionary<string, object?> GetLocalVariables()
+    public IReadOnlyDictionary<string, GGValue> GetLocalVariables()
     {
-        var result = new Dictionary<string, object?>();
+        var result = new Dictionary<string, GGValue>();
         var frames = _vmState.CallFrames;
 
         if (frames.Count == 0)
@@ -271,15 +273,15 @@ public sealed class Debugger
     /// <summary>
     /// 获取全局变量
     /// </summary>
-    public IReadOnlyDictionary<int, object?> GetGlobalVariables()
+    public IReadOnlyDictionary<int, GGValue> GetGlobalVariables()
     {
-        var result = new Dictionary<int, object?>();
+        var result = new Dictionary<int, GGValue>();
 
         for (var i = 0; i < _vmState.GlobalCount; i++)
         {
             var value = _vmState.GetGlobal(i);
 
-            if (value is not null)
+            if (!value.IsNull)
             {
                 result[i] = value;
             }
@@ -291,7 +293,7 @@ public sealed class Debugger
     /// <summary>
     /// 获取操作数栈内容
     /// </summary>
-    public object?[] GetStackContents()
+    public GGValue[] GetStackContents()
     {
         return _vmState.Stack;
     }
@@ -396,33 +398,33 @@ public sealed class Debugger
         return bp;
     }
 
-    private object? ResolveWatchValue(VariableWatch watch)
+    private GGValue ResolveWatchValue(VariableWatch watch)
     {
         return watch.Scope switch
         {
             VariableScope.Local => ResolveLocal(watch.Index),
             VariableScope.Global => _vmState.GetGlobal(watch.Index),
             VariableScope.Stack => ResolveStack(watch.Index),
-            _ => null
+            _ => GGValue.Null
         };
     }
 
-    private object? ResolveLocal(int index)
+    private GGValue ResolveLocal(int index)
     {
         var frames = _vmState.CallFrames;
 
         if (frames.Count == 0)
         {
-            return null;
+            return GGValue.Null;
         }
 
         var currentFrame = frames[^1];
-        return index >= 0 && index < currentFrame.Locals.Length ? currentFrame.Locals[index] : null;
+        return index >= 0 && index < currentFrame.Locals.Length ? currentFrame.Locals[index] : GGValue.Null;
     }
 
-    private static object? ResolveStack(int index)
+    private static GGValue ResolveStack(int index)
     {
-        return index >= 0 ? null : null;
+        return GGValue.Null;
     }
 
     #endregion

@@ -20,7 +20,7 @@ public sealed class VMStateSnapshot
     /// <summary>
     /// 操作数栈快照
     /// </summary>
-    public object?[] Stack { get; init; }
+    public GGValue[] Stack { get; init; }
 
     /// <summary>
     /// 调用帧快照
@@ -53,16 +53,10 @@ public sealed class VMStateSnapshot
     /// <summary>
     /// 使用完整参数初始化快照
     /// </summary>
-    /// <param name="ip">指令指针</param>
-    /// <param name="sp">栈指针</param>
-    /// <param name="stack">操作数栈快照</param>
-    /// <param name="callFrames">调用帧快照</param>
-    /// <param name="currentModuleName">当前模块名称</param>
-    /// <param name="moduleCount">模块数量</param>
     public VMStateSnapshot(
         int ip,
         int sp,
-        object?[] stack,
+        GGValue[] stack,
         CallFrameInfo[] callFrames,
         string? currentModuleName,
         int moduleCount)

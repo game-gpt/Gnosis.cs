@@ -15,7 +15,7 @@ public class GGClosure : IGCObject
     /// <summary>
     /// Upvalues 数组
     /// </summary>
-    public object?[] Upvalues { get; }
+    public GGValue[] Upvalues { get; }
 
     #endregion
 
@@ -38,12 +38,10 @@ public class GGClosure : IGCObject
     /// <summary>
     /// 使用函数地址和 Upvalue 数量初始化闭包
     /// </summary>
-    /// <param name="functionAddress">函数地址</param>
-    /// <param name="upvalueCount">Upvalue 数量</param>
     public GGClosure(int functionAddress, int upvalueCount)
     {
         FunctionAddress = functionAddress;
-        Upvalues = new object?[upvalueCount];
+        Upvalues = new GGValue[upvalueCount];
         IsMarked = false;
     }
 
@@ -54,9 +52,7 @@ public class GGClosure : IGCObject
     /// <summary>
     /// 获取指定索引的 Upvalue
     /// </summary>
-    /// <param name="index">Upvalue 索引</param>
-    /// <returns>Upvalue 值</returns>
-    public object? GetUpvalue(int index)
+    public GGValue GetUpvalue(int index)
     {
         if (index < 0 || index >= Upvalues.Length)
         {
@@ -69,9 +65,7 @@ public class GGClosure : IGCObject
     /// <summary>
     /// 设置指定索引的 Upvalue
     /// </summary>
-    /// <param name="index">Upvalue 索引</param>
-    /// <param name="value">Upvalue 值</param>
-    public void SetUpvalue(int index, object? value)
+    public void SetUpvalue(int index, GGValue value)
     {
         if (index < 0 || index >= Upvalues.Length)
         {
@@ -88,19 +82,11 @@ public class GGClosure : IGCObject
     {
         foreach (var v in Upvalues)
         {
-            if (v is IGCObject gcObj)
+            if (v.Reference is IGCObject gcObj)
             {
                 yield return gcObj;
             }
         }
-    }
-
-    /// <summary>
-    /// 获取所有引用（包括非 GC 对象）
-    /// </summary>
-    public IEnumerable<object?> GetReferences()
-    {
-        return Upvalues.Where(v => v is GGObject or GGArray or GGString or GGStruct or GGClosure);
     }
 
     #endregion

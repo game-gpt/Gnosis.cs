@@ -70,15 +70,20 @@ public class NativeFunctionBinder
             _target = target;
         }
 
-        public object? Execute(IVMState vm, object?[] args)
+        public GGValue Execute(IVMState vm, GGValue[] args)
         {
             var parameters = new object?[args.Length + 1];
             parameters[0] = vm;
-            Array.Copy(args, 0, parameters, 1, args.Length);
+
+            for (var i = 0; i < args.Length; i++)
+            {
+                parameters[i + 1] = ReferenceMarshaller.MarshalFromGG(args[i]);
+            }
 
             try
             {
-                return _method.Invoke(_target, parameters);
+                var result = _method.Invoke(_target, parameters);
+                return ReferenceMarshaller.MarshalToGG(result);
             }
             catch (TargetInvocationException ex)
             {

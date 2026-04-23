@@ -99,22 +99,22 @@ public class MemoryManager
         _roots.Clear();
     }
 
-    public void SetRootsFromStack(object?[] stackValues, int count)
+    public void SetRootsFromStack(GGValue[] stackValues, int count)
     {
         for (var i = 0; i < count; i++)
         {
-            if (stackValues[i] is IGCObject gcObj)
+            if (stackValues[i].Reference is IGCObject gcObj)
             {
                 AddRoot(gcObj);
             }
         }
     }
 
-    public void SetRootsFromLocals(object?[] locals)
+    public void SetRootsFromLocals(GGValue[] locals)
     {
         foreach (var local in locals)
         {
-            if (local is IGCObject gcObj)
+            if (local.Reference is IGCObject gcObj)
             {
                 AddRoot(gcObj);
             }
@@ -181,7 +181,7 @@ public class MemoryManager
         return obj switch
         {
             GGString => 64,
-            GGArray arr => 48 + arr.Capacity * 8,
+            GGArray arr => 48 + arr.Capacity * 16,
             GGObject => 128,
             GGStruct => 64,
             GGClosure => 48,
