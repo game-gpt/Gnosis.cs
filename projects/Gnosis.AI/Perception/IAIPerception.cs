@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 public interface IAIPerception
@@ -9,5 +11,5 @@ public interface IAIPerception
     void RemoveSense(AISenseType senseType);
     void Update(float delta);
     bool IsTargetPerceived(IAIStimulusSource target);
-    float[] GetLastKnownPosition(IAIStimulusSource target);
+    Vector3 GetLastKnownPosition(IAIStimulusSource target);
 }

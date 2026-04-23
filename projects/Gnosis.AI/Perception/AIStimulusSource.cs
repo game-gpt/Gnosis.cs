@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 /// <summary>
@@ -7,7 +9,7 @@ public sealed class AIStimulusSource : IAIStimulusSource
 {
     #region 字段
 
-    private float[] _position;
+    private Vector3 _position;
     private float _strength;
 
     #endregion
@@ -22,7 +24,7 @@ public sealed class AIStimulusSource : IAIStimulusSource
     /// <summary>
     /// 刺激源位置（3D 坐标）
     /// </summary>
-    public float[] Position
+    public Vector3 Position
     {
         get => _position;
         set => _position = value;
@@ -50,7 +52,7 @@ public sealed class AIStimulusSource : IAIStimulusSource
     /// <summary>
     /// 刺激源朝向（归一化方向向量），用于视觉感知的视野检测
     /// </summary>
-    public float[]? Forward { get; set; }
+    public Vector3? Forward { get; set; }
 
     /// <summary>
     /// 刺激源半径，用于触觉感知的碰撞检测
@@ -68,7 +70,7 @@ public sealed class AIStimulusSource : IAIStimulusSource
     /// <param name="position">位置</param>
     /// <param name="strength">强度</param>
     /// <param name="senseType">刺激类型</param>
-    public AIStimulusSource(int id, float[] position, float strength, AISenseType senseType)
+    public AIStimulusSource(int id, Vector3 position, float strength, AISenseType senseType)
     {
         Id = id;
         _position = position;
@@ -85,18 +87,9 @@ public sealed class AIStimulusSource : IAIStimulusSource
     /// </summary>
     /// <param name="otherPosition">目标位置</param>
     /// <returns>距离</returns>
-    public float DistanceTo(float[] otherPosition)
+    public float DistanceTo(Vector3 otherPosition)
     {
-        if (_position.Length < 3 || otherPosition.Length < 3)
-        {
-            return 0f;
-        }
-
-        float dx = _position[0] - otherPosition[0];
-        float dy = _position[1] - otherPosition[1];
-        float dz = _position[2] - otherPosition[2];
-
-        return MathF.Sqrt(dx * dx + dy * dy + dz * dz);
+        return Vector3.Distance(_position, otherPosition);
     }
 
     #endregion

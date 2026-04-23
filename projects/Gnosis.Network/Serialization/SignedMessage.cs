@@ -167,22 +167,16 @@ public sealed class SignedMessage : INetworkMessage
 
     private static void WriteInt32(byte[] buffer, ref int offset, int value)
     {
-        buffer[offset++] = (byte)value;
-        buffer[offset++] = (byte)(value >> 8);
-        buffer[offset++] = (byte)(value >> 16);
-        buffer[offset++] = (byte)(value >> 24);
+        var bytes = ByteOrderConverter.GetBytes(value, Endianness.LittleEndian);
+        Buffer.BlockCopy(bytes, 0, buffer, offset, 4);
+        offset += 4;
     }
 
     private static void WriteInt64(byte[] buffer, ref int offset, long value)
     {
-        buffer[offset++] = (byte)value;
-        buffer[offset++] = (byte)(value >> 8);
-        buffer[offset++] = (byte)(value >> 16);
-        buffer[offset++] = (byte)(value >> 24);
-        buffer[offset++] = (byte)(value >> 32);
-        buffer[offset++] = (byte)(value >> 40);
-        buffer[offset++] = (byte)(value >> 48);
-        buffer[offset++] = (byte)(value >> 56);
+        var bytes = ByteOrderConverter.GetBytes(value, Endianness.LittleEndian);
+        Buffer.BlockCopy(bytes, 0, buffer, offset, 8);
+        offset += 8;
     }
 
     private static void WriteGuid(byte[] buffer, ref int offset, Guid value)
@@ -193,17 +187,16 @@ public sealed class SignedMessage : INetworkMessage
 
     private static int ReadInt32(ReadOnlySpan<byte> data, ref int offset)
     {
-        var value = data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24);
+        var value = ByteOrderConverter.ToInt32(data.Slice(offset, 4), Endianness.LittleEndian);
         offset += 4;
         return value;
     }
 
     private static long ReadInt64(ReadOnlySpan<byte> data, ref int offset)
     {
-        var low = (uint)(data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16) | (data[offset + 3] << 24));
-        var high = (uint)(data[offset + 4] | (data[offset + 5] << 8) | (data[offset + 6] << 16) | (data[offset + 7] << 24));
+        var value = ByteOrderConverter.ToInt64(data.Slice(offset, 8), Endianness.LittleEndian);
         offset += 8;
-        return (long)((ulong)high << 32) | low;
+        return value;
     }
 
     private static Guid ReadGuid(ReadOnlySpan<byte> data, ref int offset)

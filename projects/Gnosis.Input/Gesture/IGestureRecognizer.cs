@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Input.Device;
 
 namespace Gnosis.Input.Gesture;
@@ -8,7 +9,7 @@ public interface IGestureRecognizer
 
     void ProcessTouch(in TouchPoint touch);
 
-    void ProcessMouse(float[] position, bool isPressed);
+    void ProcessMouse(Vector2 position, bool isPressed);
 
     void Reset();
 }

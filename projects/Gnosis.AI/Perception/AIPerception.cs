@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 /// <summary>
@@ -12,6 +14,7 @@ public sealed class AIPerception : IAIPerception
     private readonly Dictionary<AISenseType, IAISense> _senses = new();
     private readonly List<IAIStimulusSource> _perceivedTargets = new();
     private readonly HashSet<IAIStimulusSource> _perceivedSet = new();
+    private readonly IAISenseFactory _senseFactory;
 
     #endregion
 
@@ -35,17 +38,17 @@ public sealed class AIPerception : IAIPerception
     /// <summary>
     /// 感知者位置
     /// </summary>
-    public float[] OwnerPosition { get; set; } = [0, 0, 0];
+    public Vector3 OwnerPosition { get; set; } = new(0, 0, 0);
 
     /// <summary>
     /// 感知者朝向（归一化方向向量）
     /// </summary>
-    public float[] OwnerForward { get; set; } = [0, 0, 1];
+    public Vector3 OwnerForward { get; set; } = new(0, 0, 1);
 
     /// <summary>
     /// 视线检测回调，返回 true 表示无遮挡
     /// </summary>
-    public Func<float[], float[], bool>? LineOfSightCheck { get; set; }
+    public Func<Vector3, Vector3, bool>? LineOfSightCheck { get; set; }
 
     #endregion
 
@@ -57,8 +60,8 @@ public sealed class AIPerception : IAIPerception
     /// <param name="memoryCapacity">记忆最大容量</param>
     /// <param name="memoryDecayTime">记忆衰减时间（秒）</param>
     public AIPerception(int memoryCapacity = 16, float memoryDecayTime = 5.0f)
+        : this(new PerceptionMemory(memoryCapacity, memoryDecayTime), DefaultAISenseFactory.Instance)
     {
-        Memory = new PerceptionMemory(memoryCapacity, memoryDecayTime);
     }
 
     /// <summary>
@@ -66,8 +69,19 @@ public sealed class AIPerception : IAIPerception
     /// </summary>
     /// <param name="memory">感知记忆</param>
     public AIPerception(IPerceptionMemory memory)
+        : this(memory, DefaultAISenseFactory.Instance)
+    {
+    }
+
+    /// <summary>
+    /// 创建 AI 感知系统（使用自定义工厂）
+    /// </summary>
+    /// <param name="memory">感知记忆</param>
+    /// <param name="senseFactory">感知通道工厂</param>
+    public AIPerception(IPerceptionMemory memory, IAISenseFactory senseFactory)
     {
         Memory = memory;
+        _senseFactory = senseFactory;
     }
 
     #endregion
@@ -87,7 +101,7 @@ public sealed class AIPerception : IAIPerception
 
         _senseConfigs.Add(config);
 
-        IAISense sense = CreateSense(config);
+        IAISense sense = _senseFactory.Create(config);
         _senses[config.SenseType] = sense;
     }
 
@@ -116,23 +130,10 @@ public sealed class AIPerception : IAIPerception
         {
             IAISense sense = kvp.Value;
             sense.Update(delta);
-
-            if (sense is AISight sight)
-            {
-                CollectPerceivedTargets(sight.PerceivedTargets);
-            }
-            else if (sense is AIHearing hearing)
-            {
-                CollectPerceivedTargets(hearing.PerceivedTargets);
-            }
-            else if (sense is AITouch touch)
-            {
-                CollectPerceivedTargets(touch.PerceivedTargets);
-            }
+            CollectPerceivedTargets(sense.PerceivedTargets);
         }
 
         UpdateMemory();
-
         Memory.Update(delta);
     }
 
@@ -150,8 +151,8 @@ public sealed class AIPerception : IAIPerception
     /// 获取目标的最后已知位置（优先从当前感知获取，其次从记忆获取）
     /// </summary>
     /// <param name="target">目标刺激源</param>
-    /// <returns>最后已知位置，未感知则返回空数组</returns>
-    public float[] GetLastKnownPosition(IAIStimulusSource target)
+    /// <returns>最后已知位置，未感知则返回零向量</returns>
+    public Vector3 GetLastKnownPosition(IAIStimulusSource target)
     {
         if (_perceivedSet.Contains(target))
         {
@@ -164,7 +165,7 @@ public sealed class AIPerception : IAIPerception
             return memoryEntry.Value.LastKnownPosition;
         }
 
-        return [];
+        return new Vector3(0, 0, 0);
     }
 
     /// <summary>
@@ -218,40 +219,13 @@ public sealed class AIPerception : IAIPerception
     #region 私有方法
 
     /// <summary>
-    /// 根据配置创建感知通道实例
-    /// </summary>
-    private IAISense CreateSense(IAISenseConfig config)
-    {
-        return config switch
-        {
-            AISightConfig sightConfig => new AISight(sightConfig),
-            AIHearingConfig hearingConfig => new AIHearing(hearingConfig),
-            AITouchConfig touchConfig => new AITouch(touchConfig),
-            _ => throw new ArgumentException($"不支持的感知配置类型: {config.GetType().Name}")
-        };
-    }
-
-    /// <summary>
     /// 同步感知者状态到各感知通道
     /// </summary>
     private void SyncOwnerState()
     {
         foreach (var kvp in _senses)
         {
-            switch (kvp.Value)
-            {
-                case AISight sight:
-                    sight.OwnerPosition = OwnerPosition;
-                    sight.OwnerForward = OwnerForward;
-                    sight.LineOfSightCheck = LineOfSightCheck;
-                    break;
-                case AIHearing hearing:
-                    hearing.OwnerPosition = OwnerPosition;
-                    break;
-                case AITouch touch:
-                    touch.OwnerPosition = OwnerPosition;
-                    break;
-            }
+            kvp.Value.OwnerPosition = OwnerPosition;
         }
     }
 

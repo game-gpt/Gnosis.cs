@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Animation.IK;
 
 public interface IIKSolver
@@ -11,8 +13,8 @@ public interface IIKConstraint
 {
     string Name { get; }
     IKConstraintType Type { get; }
-    float[] TargetPosition { get; set; }
-    float[] TargetRotation { get; set; }
+    Vector3 TargetPosition { get; set; }
+    Quaternion TargetRotation { get; set; }
     int ChainLength { get; set; }
     float Weight { get; set; }
 }

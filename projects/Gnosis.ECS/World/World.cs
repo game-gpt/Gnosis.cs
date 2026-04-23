@@ -8,8 +8,9 @@ using Gnosis.ECS.System;
 namespace Gnosis.ECS.World;
 
 /// <summary>
-/// 世界容器，ECS 的顶层入口，整合 EntityManager、ComponentManager、ArchetypeManager、
-/// ComponentVersionTracker，支持变更追踪的查询和组件操作
+/// 世界容器，ECS 的顶层入口。
+/// 作为薄层 Facade，将所有实体/组件操作委托给专门的处理器，
+/// 自身只负责协调和提供统一入口。
 /// </summary>
 public sealed class World : IWorld
 {
@@ -21,7 +22,7 @@ public sealed class World : IWorld
     private readonly SystemScheduler _systemScheduler;
     private readonly ComponentVersionTracker _versionTracker;
     private readonly EntityObserver _observer;
-    private readonly Dictionary<EntityId, HashSet<Type>> _entityComponentTypes = new();
+    private readonly EntityCommandProcessor _commandProcessor;
 
     #endregion
 
@@ -75,6 +76,14 @@ public sealed class World : IWorld
         _systemScheduler = new SystemScheduler();
         _versionTracker = new ComponentVersionTracker();
         _observer = new EntityObserver();
+        _commandProcessor = new EntityCommandProcessor(
+            _entityManager,
+            _componentManager,
+            _archetypeManager,
+            _versionTracker,
+            _observer);
+
+        _systemScheduler.SetWorld(this);
     }
 
     #endregion
@@ -86,12 +95,7 @@ public sealed class World : IWorld
     /// </summary>
     public EntityId CreateEntity()
     {
-        var entityId = _entityManager.CreateEntity();
-        _entityComponentTypes[entityId] = new HashSet<Type>();
-        var archetype = _archetypeManager.GetOrCreate(_entityComponentTypes[entityId]);
-        _archetypeManager.AssignArchetype(entityId, archetype);
-
-        return entityId;
+        return _commandProcessor.CreateEntity();
     }
 
     /// <summary>
@@ -99,23 +103,7 @@ public sealed class World : IWorld
     /// </summary>
     public void DestroyEntity(EntityId entityId)
     {
-        if (!_entityManager.IsAlive(entityId)) return;
-
-        var componentTypes = _entityComponentTypes.GetValueOrDefault(entityId);
-
-        if (componentTypes != null)
-        {
-            foreach (var type in componentTypes)
-            {
-                _observer.NotifyRemoved(type, entityId);
-            }
-        }
-
-        _archetypeManager.RemoveEntity(entityId);
-        _componentManager.OnEntityDestroyed(entityId);
-        _versionTracker.OnEntityDestroyed(entityId);
-        _entityManager.DestroyEntity(entityId);
-        _entityComponentTypes.Remove(entityId);
+        _commandProcessor.DestroyEntity(entityId);
     }
 
     #endregion
@@ -127,18 +115,7 @@ public sealed class World : IWorld
     /// </summary>
     public void AddComponent<T>(EntityId entityId, T component) where T : struct
     {
-        if (!_entityManager.IsAlive(entityId)) return;
-
-        _componentManager.Add(entityId, component);
-
-        if (_entityComponentTypes.TryGetValue(entityId, out var types))
-        {
-            types.Add(typeof(T));
-            _archetypeManager.MigrateEntity(entityId, types);
-        }
-
-        _versionTracker.MarkChanged<T>(entityId);
-        _observer.NotifyAdded<T>(entityId);
+        _commandProcessor.AddComponent(entityId, component);
     }
 
     /// <summary>
@@ -154,19 +131,7 @@ public sealed class World : IWorld
     /// </summary>
     public void SetComponent<T>(EntityId entityId, T component) where T : struct
     {
-        if (!_entityManager.IsAlive(entityId)) return;
-
-        _componentManager.Add(entityId, component);
-
-        var archetype = _archetypeManager.GetArchetypeForEntity(entityId);
-
-        if (archetype != null)
-        {
-            archetype.SetComponent(entityId, component);
-        }
-
-        _versionTracker.MarkChanged<T>(entityId);
-        _observer.NotifyChanged<T>(entityId);
+        _commandProcessor.SetComponent(entityId, component);
     }
 
     /// <summary>
@@ -174,17 +139,7 @@ public sealed class World : IWorld
     /// </summary>
     public void RemoveComponent<T>(EntityId entityId) where T : struct
     {
-        if (!_entityManager.IsAlive(entityId)) return;
-
-        _observer.NotifyRemoved<T>(entityId);
-
-        _componentManager.Remove<T>(entityId);
-
-        if (_entityComponentTypes.TryGetValue(entityId, out var types))
-        {
-            types.Remove(typeof(T));
-            _archetypeManager.MigrateEntity(entityId, types);
-        }
+        _commandProcessor.RemoveComponent<T>(entityId);
     }
 
     /// <summary>

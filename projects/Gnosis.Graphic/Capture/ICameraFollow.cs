@@ -1,9 +1,11 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Graphic.Capture;
 
 public interface ICameraFollow
 {
-    float[] TargetPosition { get; set; }
-    float[] Offset { get; set; }
+    Vector3 TargetPosition { get; set; }
+    Vector3 Offset { get; set; }
     float FollowSpeed { get; set; }
     float Damping { get; set; }
     bool IsFollowing { get; }

@@ -20,6 +20,6 @@
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.Graphic\Gnosis.Graphic.csproj" />
-        <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Tensor\Acorn.Tensor.csproj" />
+        <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.SafeTensors\Acorn.SafeTensors.csproj" />
     </ItemGroup>
 </Project>

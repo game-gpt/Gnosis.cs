@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Tile;
 
 /// <summary>
@@ -23,12 +25,12 @@ public interface INavMeshTile
     /// <summary>
     /// 分块边界（最小点）
     /// </summary>
-    float[] BoundsMin { get; }
+    Vector3 BoundsMin { get; }
 
     /// <summary>
     /// 分块边界（最大点）
     /// </summary>
-    float[] BoundsMax { get; }
+    Vector3 BoundsMax { get; }
 
     /// <summary>
     /// 加载分块数据

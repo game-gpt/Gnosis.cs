@@ -1,7 +1,9 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 /// <summary>
-/// 听觉感知实现，支持声音衰减和方向感知
+/// 听觉感知实现，基于距离和声音强度检测
 /// </summary>
 public sealed class AIHearing : IAISense
 {
@@ -29,7 +31,7 @@ public sealed class AIHearing : IAISense
     /// <summary>
     /// 感知者位置
     /// </summary>
-    public float[] OwnerPosition { get; set; } = [0, 0, 0];
+    public Vector3 OwnerPosition { get; set; } = new(0, 0, 0);
 
     #endregion
 
@@ -111,59 +113,26 @@ public sealed class AIHearing : IAISense
         _perceivedTargets.Remove(source);
     }
 
-    /// <summary>
-    /// 计算指定目标在当前感知者位置的感知强度
-    /// </summary>
-    /// <param name="target">目标刺激源</param>
-    /// <returns>感知强度，0 表示不可感知</returns>
-    public float ComputePerceivedStrength(IAIStimulusSource target)
-    {
-        float distance = ComputeDistance(OwnerPosition, target.Position);
-
-        if (distance > _config.Range)
-        {
-            return 0f;
-        }
-
-        if (distance < 0.001f)
-        {
-            return target.Strength;
-        }
-
-        float attenuation = 1.0f / (1.0f + _config.AttenuationFactor * distance);
-
-        return target.Strength * attenuation;
-    }
-
     #endregion
 
     #region 私有方法
 
     /// <summary>
-    /// 检测目标是否可被听到
+    /// 检测目标是否可听见
     /// </summary>
     private bool IsTargetAudible(IAIStimulusSource target)
     {
-        float perceivedStrength = ComputePerceivedStrength(target);
+        float distance = Vector3.Distance(OwnerPosition, target.Position);
 
-        return perceivedStrength >= _config.MinSoundStrength;
-    }
-
-    /// <summary>
-    /// 计算两点间距离
-    /// </summary>
-    private static float ComputeDistance(float[] a, float[] b)
-    {
-        if (a.Length < 3 || b.Length < 3)
+        if (distance > _config.Range)
         {
-            return 0f;
+            return false;
         }
 
-        float dx = a[0] - b[0];
-        float dy = a[1] - b[1];
-        float dz = a[2] - b[2];
+        float attenuation = 1.0f / (1.0f + distance * distance * _config.Attenuation);
+        float audibleStrength = target.Strength * attenuation;
 
-        return MathF.Sqrt(dx * dx + dy * dy + dz * dz);
+        return audibleStrength >= _config.Threshold;
     }
 
     #endregion

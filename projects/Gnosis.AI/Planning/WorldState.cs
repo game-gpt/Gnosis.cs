@@ -65,6 +65,15 @@ public sealed class WorldState : IWorldState
     }
 
     /// <summary>
+    /// 获取所有状态键
+    /// </summary>
+    /// <returns>状态键列表</returns>
+    public IReadOnlyList<string> GetKeys()
+    {
+        return _state.Keys.ToList().AsReadOnly();
+    }
+
+    /// <summary>
     /// 与另一个世界状态的差异
     /// </summary>
     /// <param name="other">另一个世界状态</param>
@@ -73,11 +82,19 @@ public sealed class WorldState : IWorldState
     {
         var diff = new List<string>();
 
-        foreach (var kvp in _state)
+        foreach (var key in GetKeys())
         {
-            if (!other.Has(kvp.Key) || other.Get(kvp.Key) != kvp.Value)
+            if (!other.Has(key) || other.Get(key) != Get(key))
             {
-                diff.Add(kvp.Key);
+                diff.Add(key);
+            }
+        }
+
+        foreach (var key in other.GetKeys())
+        {
+            if (!Has(key))
+            {
+                diff.Add(key);
             }
         }
 
@@ -91,22 +108,9 @@ public sealed class WorldState : IWorldState
     /// <returns>是否满足</returns>
     public bool Satisfies(IWorldState other)
     {
-        if (other is not WorldState otherState)
+        foreach (var key in other.GetKeys())
         {
-            foreach (var kvp in _state)
-            {
-                if (other.Has(kvp.Key) && other.Get(kvp.Key) != kvp.Value)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        foreach (var kvp in otherState._state)
-        {
-            if (!_state.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
+            if (!Has(key) || Get(key) != other.Get(key))
             {
                 return false;
             }

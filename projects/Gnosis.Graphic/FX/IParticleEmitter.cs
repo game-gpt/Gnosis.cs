@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Graphic.FX;
 
 public interface IParticleEmitter
@@ -6,11 +8,11 @@ public interface IParticleEmitter
     int BurstCount { get; set; }
     float BurstInterval { get; set; }
     ParticleEmitterShape Shape { get; set; }
-    float[] Position { get; set; }
-    float[] Direction { get; set; }
+    Vector3 Position { get; set; }
+    Vector3 Direction { get; set; }
     float Angle { get; set; }
     float Radius { get; set; }
-    float[] BoxSize { get; set; }
+    Vector3 BoxSize { get; set; }
     float MinLifetime { get; set; }
     float MaxLifetime { get; set; }
     float MinSpeed { get; set; }

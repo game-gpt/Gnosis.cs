@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Physics.Dynamics;
 
 public interface IRigidBody
@@ -9,13 +11,13 @@ public interface IRigidBody
     float AngularDrag { get; set; }
     bool UseGravity { get; set; }
     bool IsKinematic { get; set; }
-    float[] Velocity { get; set; }
-    float[] AngularVelocity { get; set; }
-    float[] Position { get; set; }
-    float[] Rotation { get; set; }
-    void AddForce(float[] force, ForceMode mode = ForceMode.Force);
-    void AddTorque(float[] torque, ForceMode mode = ForceMode.Force);
-    void AddForceAtPosition(float[] force, float[] position, ForceMode mode = ForceMode.Force);
+    Vector3 Velocity { get; set; }
+    Vector3 AngularVelocity { get; set; }
+    Vector3 Position { get; set; }
+    Quaternion Rotation { get; set; }
+    void AddForce(Vector3 force, ForceMode mode = ForceMode.Force);
+    void AddTorque(Vector3 torque, ForceMode mode = ForceMode.Force);
+    void AddForceAtPosition(Vector3 force, Vector3 position, ForceMode mode = ForceMode.Force);
 }
 
 public enum ForceMode

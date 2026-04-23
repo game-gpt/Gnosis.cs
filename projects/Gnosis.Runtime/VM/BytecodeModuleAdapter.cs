@@ -1,3 +1,4 @@
+using Acorn.Core.ByteOrder;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Runtime.VM;
@@ -87,11 +88,7 @@ public sealed class BytecodeModuleAdapter : IModule
 
             case OpCode.PushInt16:
             {
-                var bytes = BitConverter.GetBytes((short)operand);
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes((short)operand, Endianness.LittleEndian);
                 stream.Write(bytes, 0, 2);
                 break;
             }
@@ -120,44 +117,28 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.IsType:
             case OpCode.TypeOf:
             {
-                var bytes = BitConverter.GetBytes((int)operand);
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes((int)operand, Endianness.LittleEndian);
                 stream.Write(bytes, 0, 4);
                 break;
             }
 
             case OpCode.PushInt64:
             {
-                var bytes = BitConverter.GetBytes(operand);
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes(operand, Endianness.LittleEndian);
                 stream.Write(bytes, 0, 8);
                 break;
             }
 
             case OpCode.PushFloat32:
             {
-                var bytes = BitConverter.GetBytes((float)BitConverter.Int64BitsToDouble(operand));
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes((float)BitConverter.Int64BitsToDouble(operand), Endianness.LittleEndian);
                 stream.Write(bytes, 0, 4);
                 break;
             }
 
             case OpCode.PushFloat64:
             {
-                var bytes = BitConverter.GetBytes(BitConverter.Int64BitsToDouble(operand));
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes(BitConverter.Int64BitsToDouble(operand), Endianness.LittleEndian);
                 stream.Write(bytes, 0, 8);
                 break;
             }
@@ -165,12 +146,7 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.QueryAll:
             case OpCode.QueryAny:
             {
-                var count = (int)operand;
-                var bytes = BitConverter.GetBytes(count);
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes((int)operand, Endianness.LittleEndian);
                 stream.Write(bytes, 0, 4);
                 break;
             }
@@ -223,11 +199,7 @@ public sealed class BytecodeModuleAdapter : IModule
 
             default:
             {
-                var bytes = BitConverter.GetBytes((int)operand);
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(bytes);
-                }
+                var bytes = ByteOrderConverter.GetBytes((int)operand, Endianness.LittleEndian);
                 stream.Write(bytes, 0, 4);
                 break;
             }

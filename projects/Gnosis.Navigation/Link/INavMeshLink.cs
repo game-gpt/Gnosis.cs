@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Link;
 
 /// <summary>
@@ -18,12 +20,12 @@ public interface INavMeshLink
     /// <summary>
     /// 起始点
     /// </summary>
-    float[] StartPoint { get; }
+    Vector3 StartPoint { get; }
 
     /// <summary>
     /// 终止点
     /// </summary>
-    float[] EndPoint { get; }
+    Vector3 EndPoint { get; }
 
     /// <summary>
     /// 是否双向

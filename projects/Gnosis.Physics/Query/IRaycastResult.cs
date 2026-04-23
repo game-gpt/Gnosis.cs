@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Physics.Shape;
 
 namespace Gnosis.Physics.Query;
@@ -6,8 +7,8 @@ public interface IRaycastResult
 {
     bool HasHit { get; }
     ICollider? Collider { get; }
-    float[] Point { get; }
-    float[] Normal { get; }
+    Vector3 Point { get; }
+    Vector3 Normal { get; }
     float Distance { get; }
 }
 

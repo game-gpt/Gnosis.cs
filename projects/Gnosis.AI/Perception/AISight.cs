@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 /// <summary>
@@ -29,17 +31,17 @@ public sealed class AISight : IAISense
     /// <summary>
     /// 感知者位置
     /// </summary>
-    public float[] OwnerPosition { get; set; } = [0, 0, 0];
+    public Vector3 OwnerPosition { get; set; } = new(0, 0, 0);
 
     /// <summary>
     /// 感知者朝向（归一化方向向量）
     /// </summary>
-    public float[] OwnerForward { get; set; } = [0, 0, 1];
+    public Vector3 OwnerForward { get; set; } = new(0, 0, 1);
 
     /// <summary>
     /// 视线检测回调，返回 true 表示无遮挡
     /// </summary>
-    public Func<float[], float[], bool>? LineOfSightCheck { get; set; }
+    public Func<Vector3, Vector3, bool>? LineOfSightCheck { get; set; }
 
     #endregion
 
@@ -130,7 +132,7 @@ public sealed class AISight : IAISense
     /// </summary>
     private bool IsTargetVisible(IAIStimulusSource target)
     {
-        float distance = ComputeDistance(OwnerPosition, target.Position);
+        float distance = Vector3.Distance(OwnerPosition, target.Position);
 
         if (distance > _config.Range)
         {
@@ -153,34 +155,23 @@ public sealed class AISight : IAISense
     /// <summary>
     /// 检测目标是否在视野锥内
     /// </summary>
-    private bool IsInFieldOfView(float[] targetPosition)
+    private bool IsInFieldOfView(Vector3 targetPosition)
     {
         if (_config.FieldOfView <= 0 || _config.FieldOfView >= 360)
         {
             return true;
         }
 
-        if (OwnerForward.Length < 3 || OwnerPosition.Length < 3 || targetPosition.Length < 3)
-        {
-            return false;
-        }
+        Vector3 toTarget = targetPosition - OwnerPosition;
+        float lengthSq = toTarget.LengthSquared;
 
-        float dx = targetPosition[0] - OwnerPosition[0];
-        float dy = targetPosition[1] - OwnerPosition[1];
-        float dz = targetPosition[2] - OwnerPosition[2];
-
-        float lengthSq = dx * dx + dy * dy + dz * dz;
         if (lengthSq < 0.0001f)
         {
             return true;
         }
 
-        float invLength = 1.0f / MathF.Sqrt(lengthSq);
-        dx *= invLength;
-        dy *= invLength;
-        dz *= invLength;
-
-        float dot = OwnerForward[0] * dx + OwnerForward[1] * dy + OwnerForward[2] * dz;
+        Vector3 direction = Vector3.Normalize(toTarget);
+        float dot = Vector3.Dot(OwnerForward, direction);
 
         float halfFovRad = _config.FieldOfView * 0.5f * MathF.PI / 180.0f;
         float cosHalfFov = MathF.Cos(halfFovRad);
@@ -200,31 +191,13 @@ public sealed class AISight : IAISense
 
         if (LineOfSightCheck is not null)
         {
-            float[] eyePosition = new float[3];
-            Array.Copy(OwnerPosition, eyePosition, Math.Min(3, OwnerPosition.Length));
-            eyePosition[1] += _config.LineOfSightHeightOffset;
+            Vector3 eyePosition = OwnerPosition;
+            eyePosition.Y += _config.LineOfSightHeightOffset;
 
             return LineOfSightCheck(eyePosition, target.Position);
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// 计算两点间距离
-    /// </summary>
-    private static float ComputeDistance(float[] a, float[] b)
-    {
-        if (a.Length < 3 || b.Length < 3)
-        {
-            return 0f;
-        }
-
-        float dx = a[0] - b[0];
-        float dy = a[1] - b[1];
-        float dz = a[2] - b[2];
-
-        return MathF.Sqrt(dx * dx + dy * dy + dz * dz);
     }
 
     #endregion

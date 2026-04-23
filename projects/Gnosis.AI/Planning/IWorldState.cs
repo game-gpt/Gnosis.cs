@@ -21,6 +21,11 @@ public interface IWorldState
     bool Has(string key);
 
     /// <summary>
+    /// 获取所有状态键
+    /// </summary>
+    IReadOnlyList<string> GetKeys();
+
+    /// <summary>
     /// 与另一个世界状态的差异
     /// </summary>
     IReadOnlyList<string> Diff(IWorldState other);

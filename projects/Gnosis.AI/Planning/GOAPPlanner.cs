@@ -191,24 +191,9 @@ public sealed class GOAPPlanner : IGOAPPlanner
     {
         var preconditions = action.Preconditions;
 
-        if (preconditions is WorldState preState)
+        foreach (var key in preconditions.GetKeys())
         {
-            foreach (var kvp in GetStateEntries(preState))
-            {
-                state.Set(kvp.Key, kvp.Value);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 获取世界状态的键值对
-    /// </summary>
-    private static IEnumerable<KeyValuePair<string, bool>> GetStateEntries(WorldState state)
-    {
-        var diff = state.Diff(new WorldState());
-        foreach (var key in diff)
-        {
-            yield return new KeyValuePair<string, bool>(key, state.Get(key));
+            state.Set(key, preconditions.Get(key));
         }
     }
 
@@ -217,17 +202,12 @@ public sealed class GOAPPlanner : IGOAPPlanner
     /// </summary>
     private static string ComputeStateKey(IWorldState state)
     {
-        if (state is not WorldState ws)
-        {
-            return state.GetHashCode().ToString();
-        }
-
-        var entries = GetStateEntries(ws).OrderBy(kvp => kvp.Key);
+        var keys = state.GetKeys().OrderBy(k => k);
         var parts = new List<string>();
 
-        foreach (var kvp in entries)
+        foreach (var key in keys)
         {
-            parts.Add($"{kvp.Key}={kvp.Value}");
+            parts.Add($"{key}={state.Get(key)}");
         }
 
         return string.Join(",", parts);

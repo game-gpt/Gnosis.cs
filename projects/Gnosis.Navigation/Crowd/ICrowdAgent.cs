@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Crowd;
 
 /// <summary>
@@ -13,17 +15,17 @@ public interface ICrowdAgent
     /// <summary>
     /// 当前位置
     /// </summary>
-    float[] Position { get; }
+    Vector3 Position { get; }
 
     /// <summary>
     /// 目标位置
     /// </summary>
-    float[] Target { get; }
+    Vector3 Target { get; }
 
     /// <summary>
     /// 当前速度
     /// </summary>
-    float[] Velocity { get; }
+    Vector3 Velocity { get; }
 
     /// <summary>
     /// 代理参数
@@ -38,7 +40,7 @@ public interface ICrowdAgent
     /// <summary>
     /// 设置目标位置
     /// </summary>
-    void SetTarget(float[] target);
+    void SetTarget(Vector3 target);
 
     /// <summary>
     /// 重置代理状态

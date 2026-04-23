@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 /// <summary>
@@ -23,7 +25,7 @@ public interface IPerceptionMemory
     /// <summary>
     /// 添加或更新记忆条目
     /// </summary>
-    void AddOrUpdate(IAIStimulusSource target, float[] position);
+    void AddOrUpdate(IAIStimulusSource target, Vector3 position);
 
     /// <summary>
     /// 移除记忆条目

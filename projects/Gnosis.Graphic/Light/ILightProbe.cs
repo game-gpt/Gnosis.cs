@@ -1,8 +1,10 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Graphic.Light;
 
 public interface ILightProbe
 {
-    float[] Position { get; set; }
+    Vector3 Position { get; set; }
     float[] ShCoefficients { get; }
     void Bake();
     void Update();

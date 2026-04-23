@@ -1,9 +1,11 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Input.Device;
 
 public interface IMouse : IInputDevice
 {
-    float[] Position { get; }
-    float[] Delta { get; }
+    Vector2 Position { get; }
+    Vector2 Delta { get; }
     float ScrollDelta { get; }
     bool GetButton(int buttonIndex);
     bool GetButtonDown(int buttonIndex);

@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Dynamic;
 
 /// <summary>
@@ -18,7 +20,7 @@ public interface IDynamicObstacle
     /// <summary>
     /// 障碍物位置
     /// </summary>
-    float[] Position { get; }
+    Vector3 Position { get; }
 
     /// <summary>
     /// 是否激活
@@ -28,10 +30,10 @@ public interface IDynamicObstacle
     /// <summary>
     /// 更新障碍物位置
     /// </summary>
-    void UpdatePosition(float[] position);
+    void UpdatePosition(Vector3 position);
 
     /// <summary>
     /// 获取障碍物占据的导航区域
     /// </summary>
-    float[] GetBounds();
+    Vector3 GetBounds();
 }

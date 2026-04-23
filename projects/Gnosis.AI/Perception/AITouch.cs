@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.AI.Perception;
 
 /// <summary>
@@ -29,7 +31,7 @@ public sealed class AITouch : IAISense
     /// <summary>
     /// 感知者位置
     /// </summary>
-    public float[] OwnerPosition { get; set; } = [0, 0, 0];
+    public Vector3 OwnerPosition { get; set; } = new(0, 0, 0);
 
     /// <summary>
     /// 感知者碰撞半径
@@ -125,32 +127,10 @@ public sealed class AITouch : IAISense
     /// </summary>
     private bool IsTargetTouching(IAIStimulusSource target)
     {
-        float distance = ComputeDistance(OwnerPosition, target.Position);
-        float touchRadius = OwnerRadius + _config.Range;
-
-        if (target is AIStimulusSource concreteTarget)
-        {
-            touchRadius += concreteTarget.Radius;
-        }
+        float distance = Vector3.Distance(OwnerPosition, target.Position);
+        float touchRadius = OwnerRadius + _config.Range + target.Radius;
 
         return distance <= touchRadius;
-    }
-
-    /// <summary>
-    /// 计算两点间距离
-    /// </summary>
-    private static float ComputeDistance(float[] a, float[] b)
-    {
-        if (a.Length < 3 || b.Length < 3)
-        {
-            return 0f;
-        }
-
-        float dx = a[0] - b[0];
-        float dy = a[1] - b[1];
-        float dz = a[2] - b[2];
-
-        return MathF.Sqrt(dx * dx + dy * dy + dz * dz);
     }
 
     #endregion

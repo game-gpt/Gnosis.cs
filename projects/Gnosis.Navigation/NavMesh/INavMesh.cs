@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.NavMesh;
 
 public interface INavMesh
@@ -8,8 +10,8 @@ public interface INavMesh
     void Build(NavMeshBuildSettings settings);
     void Rebuild();
     void Clear();
-    bool IsPointWalkable(float[] point);
-    float[] GetClosestPoint(float[] point);
+    bool IsPointWalkable(Vector3 point);
+    Vector3 GetClosestPoint(Vector3 point);
 
     /// <summary>
     /// 导航网格中的多边形列表
@@ -19,5 +21,5 @@ public interface INavMesh
     /// <summary>
     /// 根据位置查找所在多边形
     /// </summary>
-    NavMeshPolygon? FindPolygon(float[] point);
+    NavMeshPolygon? FindPolygon(Vector3 point);
 }

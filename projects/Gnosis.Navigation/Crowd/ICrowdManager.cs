@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Crowd;
 
 /// <summary>
@@ -18,7 +20,7 @@ public interface ICrowdManager
     /// <summary>
     /// 添加代理
     /// </summary>
-    ICrowdAgent AddAgent(float[] position, CrowdAgentParams parameters);
+    ICrowdAgent AddAgent(Vector3 position, CrowdAgentParams parameters);
 
     /// <summary>
     /// 移除代理

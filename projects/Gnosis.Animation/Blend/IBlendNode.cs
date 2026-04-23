@@ -1,10 +1,12 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Animation.Blend;
 
 public interface IBlendNode
 {
     string Name { get; }
     string ClipName { get; }
-    float[] Position { get; }
+    Vector3 Position { get; }
     float Speed { get; set; }
 }
 

@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Animation.IK;
 
 public sealed class IKConstraint : IIKConstraint
@@ -8,9 +10,9 @@ public sealed class IKConstraint : IIKConstraint
 
     public IKConstraintType Type { get; }
 
-    public float[] TargetPosition { get; set; } = [0f, 0f, 0f];
+    public Vector3 TargetPosition { get; set; } = new(0f, 0f, 0f);
 
-    public float[] TargetRotation { get; set; } = [0f, 0f, 0f, 1f];
+    public Quaternion TargetRotation { get; set; } = Quaternion.Identity;
 
     public int ChainLength { get; set; } = 2;
 
