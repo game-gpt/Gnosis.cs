@@ -1,4 +1,4 @@
-using Acorn.Core.ByteOrder;
+using System.Buffers.Binary;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Runtime.VM;
@@ -88,8 +88,9 @@ public sealed class BytecodeModuleAdapter : IModule
 
             case OpCode.PushInt16:
             {
-                var bytes = ByteOrderConverter.GetBytes((short)operand, Endianness.LittleEndian);
-                stream.Write(bytes, 0, 2);
+                Span<byte> bytes = stackalloc byte[2];
+                BinaryPrimitives.WriteInt16LittleEndian(bytes, (short)operand);
+                stream.Write(bytes);
                 break;
             }
 
@@ -117,37 +118,42 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.IsType:
             case OpCode.TypeOf:
             {
-                var bytes = ByteOrderConverter.GetBytes((int)operand, Endianness.LittleEndian);
-                stream.Write(bytes, 0, 4);
+                Span<byte> bytes = stackalloc byte[4];
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, (int)operand);
+                stream.Write(bytes);
                 break;
             }
 
             case OpCode.PushInt64:
             {
-                var bytes = ByteOrderConverter.GetBytes(operand, Endianness.LittleEndian);
-                stream.Write(bytes, 0, 8);
+                Span<byte> bytes = stackalloc byte[8];
+                BinaryPrimitives.WriteInt64LittleEndian(bytes, operand);
+                stream.Write(bytes);
                 break;
             }
 
             case OpCode.PushFloat32:
             {
-                var bytes = ByteOrderConverter.GetBytes((float)BitConverter.Int64BitsToDouble(operand), Endianness.LittleEndian);
-                stream.Write(bytes, 0, 4);
+                Span<byte> bytes = stackalloc byte[4];
+                BinaryPrimitives.WriteSingleLittleEndian(bytes, (float)BitConverter.Int64BitsToDouble(operand));
+                stream.Write(bytes);
                 break;
             }
 
             case OpCode.PushFloat64:
             {
-                var bytes = ByteOrderConverter.GetBytes(BitConverter.Int64BitsToDouble(operand), Endianness.LittleEndian);
-                stream.Write(bytes, 0, 8);
+                Span<byte> bytes = stackalloc byte[8];
+                BinaryPrimitives.WriteDoubleLittleEndian(bytes, BitConverter.Int64BitsToDouble(operand));
+                stream.Write(bytes);
                 break;
             }
 
             case OpCode.QueryAll:
             case OpCode.QueryAny:
             {
-                var bytes = ByteOrderConverter.GetBytes((int)operand, Endianness.LittleEndian);
-                stream.Write(bytes, 0, 4);
+                Span<byte> bytes = stackalloc byte[4];
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, (int)operand);
+                stream.Write(bytes);
                 break;
             }
 
@@ -199,8 +205,9 @@ public sealed class BytecodeModuleAdapter : IModule
 
             default:
             {
-                var bytes = ByteOrderConverter.GetBytes((int)operand, Endianness.LittleEndian);
-                stream.Write(bytes, 0, 4);
+                Span<byte> bytes = stackalloc byte[4];
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, (int)operand);
+                stream.Write(bytes);
                 break;
             }
         }

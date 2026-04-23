@@ -1,4 +1,4 @@
-using Acorn.Core.ByteOrder;
+using System.Buffers.Binary;
 using Gnosis.Core.Event;
 using Gnosis.Core.Time;
 using Gnosis.Security.Encryption;
@@ -109,14 +109,14 @@ public sealed class SignedMessage : INetworkMessage
         var buffer = new byte[totalSize];
         var offset = 0;
 
-        WriteInt32(buffer, ref offset, _messageId);
+        WriteInt32LittleEndian(buffer, ref offset, _messageId);
         WriteGuid(buffer, ref offset, _senderId.Value);
-        WriteInt64(buffer, ref offset, _timestamp.Value.ToUnixTimeMilliseconds());
+        WriteInt64LittleEndian(buffer, ref offset, _timestamp.Value.ToUnixTimeMilliseconds());
         buffer[offset++] = (byte)(_isReliable ? 1 : 0);
-        WriteInt32(buffer, ref offset, signatureLength);
+        WriteInt32LittleEndian(buffer, ref offset, signatureLength);
         Buffer.BlockCopy(_signature, 0, buffer, offset, signatureLength);
         offset += signatureLength;
-        WriteInt32(buffer, ref offset, _payload.Length);
+        WriteInt32LittleEndian(buffer, ref offset, _payload.Length);
         Buffer.BlockCopy(_payload, 0, buffer, offset, _payload.Length);
 
         return buffer;
@@ -125,15 +125,15 @@ public sealed class SignedMessage : INetworkMessage
     public static SignedMessage FromBytes(ReadOnlySpan<byte> data)
     {
         var offset = 0;
-        var messageId = ReadInt32(data, ref offset);
+        var messageId = ReadInt32LittleEndian(data, ref offset);
         var senderGuid = ReadGuid(data, ref offset);
-        var timestampMs = ReadInt64(data, ref offset);
+        var timestampMs = ReadInt64LittleEndian(data, ref offset);
         var isReliable = data[offset++] != 0;
-        var signatureLength = ReadInt32(data, ref offset);
+        var signatureLength = ReadInt32LittleEndian(data, ref offset);
         var signature = new byte[signatureLength];
         data.Slice(offset, signatureLength).CopyTo(signature);
         offset += signatureLength;
-        var payloadLength = ReadInt32(data, ref offset);
+        var payloadLength = ReadInt32LittleEndian(data, ref offset);
         var payload = new byte[payloadLength];
         data.Slice(offset, payloadLength).CopyTo(payload);
 
@@ -157,25 +157,23 @@ public sealed class SignedMessage : INetworkMessage
         var buffer = new byte[size];
         var offset = 0;
 
-        WriteInt32(buffer, ref offset, messageId);
+        WriteInt32LittleEndian(buffer, ref offset, messageId);
         WriteGuid(buffer, ref offset, senderId.Value);
-        WriteInt64(buffer, ref offset, timestamp.Value.ToUnixTimeMilliseconds());
+        WriteInt64LittleEndian(buffer, ref offset, timestamp.Value.ToUnixTimeMilliseconds());
         Buffer.BlockCopy(payload, 0, buffer, offset, payload.Length);
 
         return buffer;
     }
 
-    private static void WriteInt32(byte[] buffer, ref int offset, int value)
+    private static void WriteInt32LittleEndian(byte[] buffer, ref int offset, int value)
     {
-        var bytes = ByteOrderConverter.GetBytes(value, Endianness.LittleEndian);
-        Buffer.BlockCopy(bytes, 0, buffer, offset, 4);
+        BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(offset, 4), value);
         offset += 4;
     }
 
-    private static void WriteInt64(byte[] buffer, ref int offset, long value)
+    private static void WriteInt64LittleEndian(byte[] buffer, ref int offset, long value)
     {
-        var bytes = ByteOrderConverter.GetBytes(value, Endianness.LittleEndian);
-        Buffer.BlockCopy(bytes, 0, buffer, offset, 8);
+        BinaryPrimitives.WriteInt64LittleEndian(buffer.AsSpan(offset, 8), value);
         offset += 8;
     }
 
@@ -185,16 +183,16 @@ public sealed class SignedMessage : INetworkMessage
         offset += GuidSize;
     }
 
-    private static int ReadInt32(ReadOnlySpan<byte> data, ref int offset)
+    private static int ReadInt32LittleEndian(ReadOnlySpan<byte> data, ref int offset)
     {
-        var value = ByteOrderConverter.ToInt32(data.Slice(offset, 4), Endianness.LittleEndian);
+        var value = BinaryPrimitives.ReadInt32LittleEndian(data.Slice(offset, 4));
         offset += 4;
         return value;
     }
 
-    private static long ReadInt64(ReadOnlySpan<byte> data, ref int offset)
+    private static long ReadInt64LittleEndian(ReadOnlySpan<byte> data, ref int offset)
     {
-        var value = ByteOrderConverter.ToInt64(data.Slice(offset, 8), Endianness.LittleEndian);
+        var value = BinaryPrimitives.ReadInt64LittleEndian(data.Slice(offset, 8));
         offset += 8;
         return value;
     }

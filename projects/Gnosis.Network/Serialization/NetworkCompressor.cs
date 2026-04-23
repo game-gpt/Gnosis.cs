@@ -1,5 +1,4 @@
-using System;
-using Acorn.Core.ByteOrder;
+using System.Buffers.Binary;
 
 namespace Gnosis.Network.Serialization;
 
@@ -55,14 +54,14 @@ public static class NetworkCompressor
         {
             var result = new byte[1 + 4 + data.Length];
             result[0] = (byte)CompressionAlgorithm.None;
-            WriteInt32BigEndian(result, 1, data.Length);
+            BinaryPrimitives.WriteInt32BigEndian(result.AsSpan(1, 4), data.Length);
             data.CopyTo(result.AsSpan(5));
             return result;
         }
 
         var output = new byte[1 + 4 + compressed.Length];
         output[0] = (byte)algorithm;
-        WriteInt32BigEndian(output, 1, data.Length);
+        BinaryPrimitives.WriteInt32BigEndian(output.AsSpan(1, 4), data.Length);
         compressed.CopyTo(output.AsSpan(5));
         return output;
     }
@@ -80,7 +79,7 @@ public static class NetworkCompressor
         }
 
         var algorithm = (CompressionAlgorithm)data[0];
-        var originalLength = ReadInt32BigEndian(data, 1);
+        var originalLength = BinaryPrimitives.ReadInt32BigEndian(data.Slice(1, 4));
         var payload = data[5..];
 
         return algorithm switch
@@ -358,27 +357,6 @@ public static class NetworkCompressor
 
         var estimatedCompressedSize = data.Length - matches + matches * 3 / LzLiteMinMatch;
         return 1.0f - (float)estimatedCompressedSize / data.Length;
-    }
-
-    #endregion
-
-    #region 辅助方法
-
-    /// <summary>
-    /// 以大端序写入 32 位整数
-    /// </summary>
-    private static void WriteInt32BigEndian(byte[] buffer, int offset, int value)
-    {
-        var bytes = ByteOrderConverter.GetBytes(value, Endianness.BigEndian);
-        Buffer.BlockCopy(bytes, 0, buffer, offset, 4);
-    }
-
-    /// <summary>
-    /// 以大端序读取 32 位整数
-    /// </summary>
-    private static int ReadInt32BigEndian(ReadOnlySpan<byte> data, int offset)
-    {
-        return ByteOrderConverter.ToInt32(data.Slice(offset, 4), Endianness.BigEndian);
     }
 
     #endregion
