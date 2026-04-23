@@ -1,9 +1,9 @@
 using System.Text;
 using Gnosis.Toolchain.ScriptCompiler;
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Toolchain.ScriptCompiler.Lexer;
-using Gnosis.Toolchain.ScriptCompiler.Parser;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
+using Oak.GGScript.Lexer;
+using Oak.GGScript.Parser;
 
 namespace Gnosis.Compiler.Parser;
 
@@ -14,7 +14,6 @@ public class ParserTester
 {
     #region 字段
 
-    private readonly IParser _parser;
     private readonly TimeSpan _timeout;
     private readonly Action<string>? _logger;
 
@@ -22,9 +21,8 @@ public class ParserTester
 
     #region 构造函数
 
-    public ParserTester(IParser parser, TimeSpan? timeout = null, Action<string>? logger = null)
+    public ParserTester(TimeSpan? timeout = null, Action<string>? logger = null)
     {
-        _parser = parser;
         _timeout = timeout ?? TimeSpan.FromSeconds(5);
         _logger = logger;
     }
@@ -172,18 +170,18 @@ public class ParserTester
         Log($"开始词法分析");
 
         var diagnostics = new DiagnosticSink();
-        var lexer = new GameScriptLexer(diagnostics);
+        var lexer = new GGScriptLexer();
         var tokens = lexer.Tokenize(source);
 
         Log($"词法分析完成，Token 数量: {tokens.Count}");
         Log($"开始语法分析");
 
-        var parserWithDiagnostics = new GameScriptParser(diagnostics);
+        var parserWithDiagnostics = new GGScriptParser();
         var ast = ExecuteWithTimeout(() => parserWithDiagnostics.Parse(tokens));
 
         Log($"语法分析完成，AST 类型: {ast.GetType().Name}");
 
-        return new ParserTestResult(ast, diagnostics.GetErrors().ToList(), diagnostics.GetWarnings().ToList());
+        return new ParserTestResult(ast, diagnostics.Errors.ToList(), diagnostics.Messages.Where(m => m.Level == DiagnosticLevel.Warning).ToList());
     }
 
     #endregion
@@ -204,8 +202,8 @@ public class ParserTester
     public static void SaveExpectedFile(
         string filePath,
         AstNode ast,
-        IReadOnlyList<Diagnostic> errors,
-        IReadOnlyList<Diagnostic> warnings)
+        IReadOnlyList<DiagnosticMessage> errors,
+        IReadOnlyList<DiagnosticMessage> warnings)
     {
         var sb = new StringBuilder();
 
@@ -368,10 +366,10 @@ public class ParserTester
                 {
                     sb.AppendLine($"{prefix}  Queries: {sys.Queries.Count}");
                 }
-                if (sys.LifecycleMethods.Count > 0)
+                if (sys.Methods.Count > 0)
                 {
                     sb.AppendLine($"{prefix}  LifecycleMethods:");
-                    foreach (var method in sys.LifecycleMethods)
+                    foreach (var method in sys.Methods)
                     {
                         SerializeNode(method, sb, indent + 2);
                     }
@@ -471,7 +469,7 @@ public class ParserTester
                 sb.AppendLine($"{prefix}MemberAccessExpr:");
                 sb.AppendLine($"{prefix}  Member: {member.MemberName}");
                 sb.AppendLine($"{prefix}  Object:");
-                SerializeNode(member.Object, sb, indent + 2);
+                SerializeNode(member.Target, sb, indent + 2);
                 break;
 
             case TermCallExpression call:
@@ -533,7 +531,7 @@ public class ParserTester
             case TermIndexExpression index:
                 sb.AppendLine($"{prefix}IndexExpr:");
                 sb.AppendLine($"{prefix}  Object:");
-                SerializeNode(index.Object, sb, indent + 2);
+                SerializeNode(index.Target, sb, indent + 2);
                 sb.AppendLine($"{prefix}  Index:");
                 SerializeNode(index.Index, sb, indent + 2);
                 break;
@@ -723,8 +721,8 @@ public class ParserTester
 
     private ParserDiffResult CompareResults(
         AstNode actualAst,
-        IReadOnlyList<Diagnostic> actualErrors,
-        IReadOnlyList<Diagnostic> actualWarnings,
+        IReadOnlyList<DiagnosticMessage> actualErrors,
+        IReadOnlyList<DiagnosticMessage> actualWarnings,
         ParserExpectedResult expected)
     {
         if (actualErrors.Count != expected.Errors.Count)
@@ -817,8 +815,8 @@ public class ParserTester
 /// </summary>
 public record ParserTestResult(
     AstNode Ast,
-    IReadOnlyList<Diagnostic> Errors,
-    IReadOnlyList<Diagnostic> Warnings
+    IReadOnlyList<DiagnosticMessage> Errors,
+    IReadOnlyList<DiagnosticMessage> Warnings
 );
 
 /// <summary>

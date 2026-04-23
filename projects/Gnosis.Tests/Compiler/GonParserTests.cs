@@ -1,5 +1,5 @@
-using Gnosis.Toolchain.ScriptCompiler;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Oak.Core.Diagnostics;
+using Oak.Gon;
 using Gnosis.Toolchain.ScriptCompiler.Parser;
 using NUnit.Framework;
 
@@ -319,7 +319,7 @@ public class GonParserTests
     {
         _parser.Parse("@");
 
-        Assert.That(_diagnostics.GetErrors().Count, Is.GreaterThan(0));
+        Assert.That(_diagnostics.Errors.Count, Is.GreaterThan(0));
     }
 
     [Test]
@@ -327,8 +327,8 @@ public class GonParserTests
     {
         _parser.Parse("{ a: 1");
 
-        Assert.That(_diagnostics.GetErrors().Any(e => e.Message.Contains("}")) ||
-                    _diagnostics.GetErrors().Any(e => e.Message.Contains("期望")),
+        Assert.That(_diagnostics.Errors.Any(e => e.Message.Contains("}")) ||
+                    _diagnostics.Errors.Any(e => e.Message.Contains("期望")),
                     Is.True);
     }
 
@@ -337,7 +337,7 @@ public class GonParserTests
     {
         _parser.Parse("[1, 2");
 
-        Assert.That(_diagnostics.GetErrors().Any(e => e.Message.Contains("]")),
+        Assert.That(_diagnostics.Errors.Any(e => e.Message.Contains("]")),
                     Is.True);
     }
 
@@ -346,7 +346,7 @@ public class GonParserTests
     {
         _parser.Parse("{ a 1 }");
 
-        Assert.That(_diagnostics.GetErrors().Any(e => e.Message.Contains(":")),
+        Assert.That(_diagnostics.Errors.Any(e => e.Message.Contains(":")),
                     Is.True);
     }
 
@@ -355,7 +355,7 @@ public class GonParserTests
     {
         _parser.Parse("unknown_identifier");
 
-        Assert.That(_diagnostics.GetErrors().Count, Is.GreaterThan(0));
+        Assert.That(_diagnostics.Errors.Count, Is.GreaterThan(0));
     }
 
     #endregion

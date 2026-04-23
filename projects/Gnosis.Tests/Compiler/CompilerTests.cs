@@ -1,8 +1,8 @@
 using Gnosis.Toolchain.ScriptCompiler;
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Toolchain.ScriptCompiler.Lexer;
-using Gnosis.Toolchain.ScriptCompiler.Parser;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
+using Oak.GGScript.Lexer;
+using Oak.GGScript.Parser;
 using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 using Gnosis.Toolchain.ScriptCompiler.Backend;
 using NUnit.Framework;

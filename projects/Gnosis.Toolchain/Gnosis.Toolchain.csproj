@@ -18,8 +18,6 @@
     <ItemGroup>
         <Compile Remove="ShaderCompiler\ShaderCompiler.cs" />
         <Compile Remove="ShaderCompiler\ShaderGenerator\**" />
-        <Compile Remove="ScriptCompiler\AST\TypeExpressionStatement.cs" />
-        <Compile Remove="ScriptCompiler\AST\TypeCallExpression.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,6 +28,7 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Core\Oak.Core.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.GGScript\Oak.GGScript.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.GGShader\Oak.GGShader.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Gon\Oak.Gon.csproj" />

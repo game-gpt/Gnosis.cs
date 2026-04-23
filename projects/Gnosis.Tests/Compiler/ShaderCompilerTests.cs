@@ -1,5 +1,5 @@
 using Gnosis.IR.Shader;
-using Gnosis.Toolchain.ScriptCompiler;
+using Oak.Core.Diagnostics;
 using Gnosis.Toolchain.ShaderCompiler;
 using NUnit.Framework;
 
