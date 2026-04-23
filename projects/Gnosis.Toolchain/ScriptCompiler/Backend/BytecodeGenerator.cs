@@ -1,5 +1,5 @@
 using System.Text;
-using Oak.Core.Diagnostics;
+using Oak.Diagnostics;
 using Oak.GGScript.AST;
 using Gnosis.IR.Instruction;
 

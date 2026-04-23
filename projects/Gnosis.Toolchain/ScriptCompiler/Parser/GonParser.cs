@@ -1,4 +1,4 @@
-using Oak.Core.Diagnostics;
+using Oak.Diagnostics;
 using Oak.Gon;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Parser;

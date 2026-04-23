@@ -1,4 +1,4 @@
-using Oak.Core.Diagnostics;
+using Oak.Diagnostics;
 
 namespace Gnosis.Toolchain.ShaderCompiler;
 

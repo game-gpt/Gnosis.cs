@@ -1,4 +1,4 @@
-using Oak.Core.Diagnostics;
+using Oak.Diagnostics;
 using Oak.GGScript.AST;
 using Oak.GGShader.Lexer;
 using Oak.GGShader.Parser;

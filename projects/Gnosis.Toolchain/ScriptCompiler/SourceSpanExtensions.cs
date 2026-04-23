@@ -1,4 +1,4 @@
-using Oak.Core.Diagnostics;
+using Oak.Diagnostics;
 using Oak.GGScript.Lexer;
 
 namespace Gnosis.Toolchain.ScriptCompiler;
