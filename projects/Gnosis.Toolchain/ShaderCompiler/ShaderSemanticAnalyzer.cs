@@ -396,7 +396,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5001",
                 "顶点着色器入口必须有返回类型",
-                "返回类型应为 vec4<f32> 或结构体");
+                new[] { "返回类型应为 vec4<f32> 或结构体" });
         }
         else
         {
@@ -408,7 +408,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                     func.Span,
                     "GG5001",
                     $"顶点着色器入口返回类型无效: {func.ReturnType.Name}",
-                    "返回类型应为 vec4<f32> 或结构体");
+                new[] { "返回类型应为 vec4<f32> 或结构体" });
             }
         }
 
@@ -419,7 +419,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5002",
                 "顶点着色器入口必须有输入参数",
-                "添加顶点输入参数");
+                new[] { "添加顶点输入参数" });
         }
     }
 
@@ -432,7 +432,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5003",
                 "片段着色器入口返回类型必须为 vec4<f32>",
-                "将返回类型改为 vec4<f32>");
+                new[] { "将返回类型改为 vec4<f32>" });
         }
 
         if (func.Parameters.Count == 0)
@@ -442,7 +442,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5004",
                 "片段着色器入口必须有输入参数",
-                "添加片段输入参数");
+                new[] { "添加片段输入参数" });
         }
     }
 
@@ -455,7 +455,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5005",
                 "计算着色器入口必须有 [WorkgroupSize] GGShader 特性标注",
-                "添加 [WorkgroupSize] GGShader 特性标注");
+                new[] { "添加 [WorkgroupSize] GGShader 特性标注" });
         }
 
         var hasGlobalInvocationId = func.Parameters.Any(p =>
@@ -472,7 +472,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5006",
                 "计算着色器入口必须有 [Builtin(global_invocation_id)] 参数",
-                "添加带有 [Builtin(global_invocation_id)] GGShader 特性标注的参数");
+                new[] { "添加带有 [Builtin(global_invocation_id)] GGShader 特性标注的参数" });
         }
     }
 
@@ -485,7 +485,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5007",
                 "光线生成着色器入口必须有启动配置参数",
-                "添加启动配置参数");
+                new[] { "添加启动配置参数" });
         }
     }
 
@@ -501,7 +501,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5008",
                 "最近命中着色器入口必须有 [HitAttr] 参数",
-                "添加带有 [HitAttr] GGShader 特性标注的参数");
+                new[] { "添加带有 [HitAttr] GGShader 特性标注的参数" });
         }
     }
 
@@ -514,7 +514,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5009",
                 "外部函数不能有函数体",
-                "移除函数体");
+                new[] { "移除函数体" });
         }
 
         foreach (var param in func.Parameters)
@@ -526,7 +526,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                     param.Span,
                     "GG5010",
                     $"外部函数参数类型无效: {param.ParamType.Name}",
-                    "参数类型必须为着色器有效类型（标量、向量、矩阵、纹理、采样器或结构体）");
+                    new[] { "参数类型必须为着色器有效类型（标量、向量、矩阵、纹理、采样器或结构体）" });
             }
         }
 
@@ -537,7 +537,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5011",
                 $"外部函数返回类型无效: {func.ReturnType.Name}",
-                "返回类型必须为着色器有效类型（标量、向量、矩阵、纹理、采样器或结构体）");
+                new[] { "返回类型必须为着色器有效类型（标量、向量、矩阵、纹理、采样器或结构体）" });
         }
     }
 
@@ -629,7 +629,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 expr.Span,
                 "GG5012",
                 $"向量大小不匹配: {leftType.Name} 与 {rightType.Name} 无法进行二元运算",
-                $"向量大小必须相同，当前为 {leftType.VectorSize} 与 {rightType.VectorSize}");
+                new[] { $"向量大小必须相同，当前为 {leftType.VectorSize} 与 {rightType.VectorSize}" });
             return;
         }
 
@@ -700,20 +700,20 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
     private void ValidateSwizzleComponents(SwizzleExpr expr)
     {
-        var objectType = ResolveExpressionType(expr.Object);
+        var objectType = ResolveExpressionType(expr.Target);
         if (objectType is null || !IsVector(objectType))
         {
             return;
         }
 
-        if (!IsValidSwizzle(expr.Components))
+        if (!IsValidSwizzle(expr.Pattern))
         {
             _diagnostics.AddError(
                 string.Empty,
                 expr.Span,
                 "GG5019",
-                $"无效的 swizzle 分量: .{expr.Components}",
-                "有效的 swizzle 集合: xyzw, rgba, stpq，长度 1-4，不可混用集合");
+                $"无效的 swizzle 分量: .{expr.Pattern}",
+                new[] { "有效的 swizzle 集合: xyzw, rgba, stpq，长度 1-4，不可混用集合" });
         }
     }
 
@@ -740,7 +740,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                         comp.Span,
                         "GG5014",
                         $"Uniform 绑定冲突: (binding={key.Item1}, set={key.Item2}) 已被 '{existingName}' 使用",
-                        $"修改 '{comp.Name}' 的绑定或集合以避免冲突");
+                        new[] { $"修改 '{comp.Name}' 的绑定或集合以避免冲突" }));
                 }
                 else
                 {
@@ -763,7 +763,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                         uniform.Span,
                         "GG5014",
                         $"Uniform 绑定冲突: (binding={key.Item1}, set={key.Item2}) 已被 '{existingName}' 使用",
-                        $"修改 '{uniform.Name}' 的绑定或集合以避免冲突");
+                            new[] { $"修改 '{uniform.Name}' 的绑定或集合以避免冲突" });
                 }
                 else
                 {
@@ -818,7 +818,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
             case NodeType.MemberAccessExpr:
                 var memberExpr = (MemberAccessExpr)expr;
-                var objType = ResolveExpressionType(memberExpr.Object);
+                var objType = ResolveExpressionType(memberExpr.Target);
                 if (objType is not null && IsVector(objType))
                 {
                     var len = memberExpr.MemberName.Length;
@@ -835,15 +835,15 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
             case NodeType.SwizzleExpr:
                 var swizzleExpr = (SwizzleExpr)expr;
-                var swizzleObjType = ResolveExpressionType(swizzleExpr.Object);
+                var swizzleObjType = ResolveExpressionType(swizzleExpr.Target);
                 if (swizzleObjType is not null && IsVector(swizzleObjType))
                 {
-                    var len = swizzleExpr.Components.Length;
+                    var len = swizzleExpr.Pattern.Length;
                     if (len == 1)
                     {
                         return new ShaderTypeInfo("f32", 0, 0, 0);
                     }
-                    if (len is >= 2 and <= 4 && IsValidSwizzle(swizzleExpr.Components))
+                    if (len is >= 2 and <= 4 && IsValidSwizzle(swizzleExpr.Pattern))
                     {
                         return new ShaderTypeInfo($"vec{len}", len, 0, 0);
                     }
