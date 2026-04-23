@@ -1,6 +1,7 @@
 using System.Text;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Toolchain.ScriptCompiler.Lexer;
+using Oak.Diagnostics;
+using Oak.GGScript;
+using Oak.GGScript.Lexer;
 
 namespace Gnosis.Compiler.Lexer.Testing;
 
@@ -11,7 +12,6 @@ public class LexerTester
 {
     #region 字段
 
-    private readonly ILexer _lexer;
     private readonly TimeSpan _timeout;
     private readonly Action<string>? _logger;
 
@@ -19,9 +19,8 @@ public class LexerTester
 
     #region 构造函数
 
-    public LexerTester(ILexer lexer, TimeSpan? timeout = null, Action<string>? logger = null)
+    public LexerTester(TimeSpan? timeout = null, Action<string>? logger = null)
     {
-        _lexer = lexer;
         _timeout = timeout ?? TimeSpan.FromSeconds(5);
         _logger = logger;
     }
@@ -169,11 +168,14 @@ public class LexerTester
         Log($"开始词法分析");
 
         var diagnostics = new DiagnosticSink();
-        var lexerWithDiagnostics = new GameScriptLexer(diagnostics);
+        var lexer = new GGScriptLexer(diagnostics);
 
-        IReadOnlyList<Token> tokens = ExecuteWithTimeout(() => lexerWithDiagnostics.Tokenize(source));
+        IReadOnlyList<Token> tokens = ExecuteWithTimeout(() => lexer.Tokenize(source));
 
-        var result = new LexerTestResult(tokens, diagnostics.GetErrors().ToList(), diagnostics.GetWarnings().ToList());
+        var errors = diagnostics.Errors.ToList();
+        var warnings = diagnostics.Messages.Where(m => m.Level == DiagnosticLevel.Warning).ToList();
+
+        var result = new LexerTestResult(tokens, errors, warnings);
 
         Log($"词法分析完成，Token 数量: {tokens.Count}");
 
@@ -198,8 +200,8 @@ public class LexerTester
     public static void SaveExpectedFile(
         string filePath,
         IReadOnlyList<Token> tokens,
-        IReadOnlyList<Diagnostic> errors,
-        IReadOnlyList<Diagnostic> warnings)
+        IReadOnlyList<DiagnosticMessage> errors,
+        IReadOnlyList<DiagnosticMessage> warnings)
     {
         var sb = new StringBuilder();
 
@@ -232,7 +234,7 @@ public class LexerTester
         foreach (var token in tokens)
         {
             var escapedValue = EscapeValue(token.Value);
-            sb.AppendLine($"{token.TokenType}\t{escapedValue}\t{token.Line}\t{token.Column}");
+            sb.AppendLine($"{token.Type}\t{escapedValue}\t{token.Line}\t{token.Column}");
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
@@ -361,8 +363,8 @@ public class LexerTester
 
     private LexerDiffResult CompareResults(
         IReadOnlyList<Token> actualTokens,
-        IReadOnlyList<Diagnostic> actualErrors,
-        IReadOnlyList<Diagnostic> actualWarnings,
+        IReadOnlyList<DiagnosticMessage> actualErrors,
+        IReadOnlyList<DiagnosticMessage> actualWarnings,
         LexerExpectedResult expected)
     {
         if (actualTokens.Count != expected.Tokens.Count)
@@ -378,11 +380,11 @@ public class LexerTester
             var actual = actualTokens[i];
             var expectedToken = expected.Tokens[i];
 
-            if (actual.TokenType != expectedToken.TokenType)
+            if (actual.Type != expectedToken.Type)
             {
                 return new LexerDiffResult(
                     false,
-                    $"Token[{i}] 类型不匹配: 期望 {expectedToken.TokenType}，实际 {actual.TokenType}"
+                    $"Token[{i}] 类型不匹配: 期望 {expectedToken.Type}，实际 {actual.Type}"
                 );
             }
 
@@ -459,8 +461,8 @@ public class LexerTester
 /// </summary>
 public record LexerTestResult(
     IReadOnlyList<Token> Tokens,
-    IReadOnlyList<Diagnostic> Errors,
-    IReadOnlyList<Diagnostic> Warnings
+    IReadOnlyList<DiagnosticMessage> Errors,
+    IReadOnlyList<DiagnosticMessage> Warnings
 );
 
 /// <summary>

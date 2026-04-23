@@ -1,4 +1,4 @@
-using Acorn.Core.BitStream;
+using Acorn.Stream;
 using Gnosis.Testing;
 using NUnit.Framework;
 

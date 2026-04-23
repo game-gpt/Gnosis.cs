@@ -20,6 +20,11 @@ public readonly struct Rect
         Height = height;
     }
 
+    public bool Contains(float x, float y)
+    {
+        return x >= X && x <= Right && y >= Y && y <= Bottom;
+    }
+
     public Rect Deflate(EdgeInsets padding)
     {
         return new Rect(

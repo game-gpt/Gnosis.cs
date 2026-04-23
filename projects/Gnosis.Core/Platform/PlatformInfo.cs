@@ -83,27 +83,27 @@ public static class PlatformInfo
     {
         var arch = RuntimeInformation.ProcessArchitecture;
 
-        if (arch == System.Runtime.InteropServices.Architecture.X64)
+        if (arch == global::System.Runtime.InteropServices.Architecture.X64)
         {
             return SystemArchitecture.X64;
         }
 
-        if (arch == System.Runtime.InteropServices.Architecture.X86)
+        if (arch == global::System.Runtime.InteropServices.Architecture.X86)
         {
             return SystemArchitecture.X86;
         }
 
-        if (arch == System.Runtime.InteropServices.Architecture.Arm64)
+        if (arch == global::System.Runtime.InteropServices.Architecture.Arm64)
         {
             return SystemArchitecture.Arm64;
         }
 
-        if (arch == System.Runtime.InteropServices.Architecture.Arm)
+        if (arch == global::System.Runtime.InteropServices.Architecture.Arm)
         {
             return SystemArchitecture.Arm;
         }
 
-        if (arch == System.Runtime.InteropServices.Architecture.Wasm)
+        if (arch == global::System.Runtime.InteropServices.Architecture.Wasm)
         {
             return SystemArchitecture.Wasm;
         }

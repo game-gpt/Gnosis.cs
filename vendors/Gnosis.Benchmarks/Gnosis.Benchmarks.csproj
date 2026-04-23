@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <OutputType>Exe</OutputType>
+        <PackageId>Gnosis.Benchmarks</PackageId>
+        <RootNamespace>Gnosis.Benchmarks</RootNamespace>
+        <Description>Gnosis Runtime 性能基准测试</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\projects\Gnosis.Runtime\Gnosis.Runtime.csproj"/>
+        <ProjectReference Include="..\..\projects\Gnosis.ECS\Gnosis.ECS.csproj"/>
+        <ProjectReference Include="..\..\projects\Gnosis.IR\Gnosis.IR.csproj"/>
+    </ItemGroup>
+
+</Project>

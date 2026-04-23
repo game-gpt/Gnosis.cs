@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Gnosis.ECS.Entity;
 
 namespace Gnosis.Runtime.VM;
 
@@ -149,6 +150,17 @@ public readonly struct GGValue : IEquatable<GGValue>
         return new GGValue(EntityTag | ((ulong)entityId & PayloadMask), null);
     }
 
+    /// <summary>
+    /// 从 EntityId 创建 GGValue，将 Index（低 32 位）和 Generation（高 16 位）打包到 48 位载荷中。
+    /// 布局：[EntityTag(16)] [Generation(16)] [Index(32)] = 64 位
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GGValue FromEntity(EntityId entityId)
+    {
+        var payload = ((ulong)entityId.Generation << 32) | entityId.Index;
+        return new GGValue(EntityTag | (payload & PayloadMask), null);
+    }
+
     #endregion
 
     #region 类型判断
@@ -237,6 +249,22 @@ public readonly struct GGValue : IEquatable<GGValue>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (int)(_bits & PayloadMask);
+    }
+
+    /// <summary>
+    /// 将 GGValue 的 Entity 载荷还原为 EntityId。
+    /// 布局：[Generation(16)] [Index(32)]，从 48 位载荷中提取。
+    /// </summary>
+    public EntityId ToEntityId
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            var payload = _bits & PayloadMask;
+            var index = (uint)(payload & 0xFFFF_FFFFUL);
+            var generation = (uint)((payload >> 32) & 0xFFFFUL);
+            return new EntityId(index, generation);
+        }
     }
 
     public GGString? StringValue => _reference as GGString;

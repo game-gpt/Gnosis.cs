@@ -67,7 +67,7 @@ public sealed class TaskScheduler : IScheduler
     #region 字段
 
     private readonly PriorityQueue<Action, TaskPriority> _taskQueue;
-    private readonly List<System.Threading.Thread> _workers;
+    private readonly List<global::System.Threading.Thread> _workers;
     private readonly object _lock = new();
     private readonly AutoResetEvent _signal;
     private volatile bool _isRunning;
@@ -99,14 +99,14 @@ public sealed class TaskScheduler : IScheduler
     {
         var count = workerCount ?? Environment.ProcessorCount;
         _taskQueue = new PriorityQueue<Action, TaskPriority>();
-        _workers = new List<System.Threading.Thread>(count);
+        _workers = new List<global::System.Threading.Thread>(count);
         _signal = new AutoResetEvent(false);
         _isRunning = true;
         _pendingCount = 0;
 
         for (var i = 0; i < count; i++)
         {
-            var thread = new System.Threading.Thread(WorkerLoop)
+            var thread = new global::System.Threading.Thread(WorkerLoop)
             {
                 IsBackground = true,
                 Name = $"Gnosis-Worker-{i}"
@@ -144,7 +144,7 @@ public sealed class TaskScheduler : IScheduler
                 finally
                 {
                     handle.MarkCompleted();
-                    System.Threading.Interlocked.Decrement(ref _pendingCount);
+                    global::System.Threading.Interlocked.Decrement(ref _pendingCount);
                 }
             }, priority);
 

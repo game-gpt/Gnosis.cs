@@ -19,7 +19,7 @@ public sealed class Signal
     public ConnectionHandle Connect(Action handler)
     {
         _handlers.Add(handler);
-        return new ConnectionHandle(() => Disconnect(handler));
+        return new ConnectionHandle { DisconnectAction = () => Disconnect(handler) };
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public sealed class Signal<T>
     public ConnectionHandle Connect(Action<T> handler)
     {
         _handlers.Add(handler);
-        return new ConnectionHandle(() => Disconnect(handler));
+        return new ConnectionHandle { DisconnectAction = () => Disconnect(handler) };
     }
 
     /// <summary>

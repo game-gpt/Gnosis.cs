@@ -16,6 +16,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Database\Gnosis.Database.csproj" />
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
+        <ProjectReference Include="..\Gnosis.Security\Gnosis.Security.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\..\SolidDB\projects\SolidDB\SolidDB.csproj" />
     </ItemGroup>
 </Project>

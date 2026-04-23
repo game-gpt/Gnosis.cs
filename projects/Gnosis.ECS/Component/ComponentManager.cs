@@ -148,7 +148,7 @@ public sealed class ComponentManager
         if (!_pools.TryGetValue(componentType, out var pool))
         {
             var poolType = typeof(ComponentPool<>).MakeGenericType(componentType);
-            pool = (IComponentPool)Activator.CreateInstance(poolType)!;
+            pool = (IComponentPool)Activator.CreateInstance(poolType, (object)1024)!;
             _pools[componentType] = pool;
             _typeIdRegistry.GetOrRegister(componentType);
         }

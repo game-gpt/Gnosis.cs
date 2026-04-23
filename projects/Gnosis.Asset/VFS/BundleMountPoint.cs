@@ -5,6 +5,8 @@ namespace Gnosis.Asset.VFS;
 public class BundleMountPoint : IMountPoint
 {
     private readonly string _bundlePath;
+    private readonly byte[]? _encryptionKey;
+    private readonly IEncryptionProvider? _encryptionProvider;
     private AssetBundleIndex? _index;
     private readonly Dictionary<string, AssetBundleIndexEntry> _entryMap = new(StringComparer.OrdinalIgnoreCase);
     private bool _disposed;
@@ -19,6 +21,20 @@ public class BundleMountPoint : IMountPoint
     {
         _bundlePath = bundlePath ?? throw new ArgumentNullException(nameof(bundlePath));
         MountPath = mountPath?.Replace('\\', '/').Trim('/') ?? throw new ArgumentNullException(nameof(mountPath));
+        Priority = priority;
+
+        LoadIndex();
+    }
+
+    /// <summary>
+    /// 初始化加密资产包挂载点
+    /// </summary>
+    public BundleMountPoint(string bundlePath, string mountPath, byte[] encryptionKey, IEncryptionProvider? encryptionProvider = null, int priority = 0)
+    {
+        _bundlePath = bundlePath ?? throw new ArgumentNullException(nameof(bundlePath));
+        MountPath = mountPath?.Replace('\\', '/').Trim('/') ?? throw new ArgumentNullException(nameof(mountPath));
+        _encryptionKey = encryptionKey ?? throw new ArgumentNullException(nameof(encryptionKey));
+        _encryptionProvider = encryptionProvider;
         Priority = priority;
 
         LoadIndex();
@@ -49,7 +65,7 @@ public class BundleMountPoint : IMountPoint
             return null;
         }
 
-        var data = AssetBundler.ReadAsset(_bundlePath, entry.VirtualPath);
+        var data = AssetBundler.ReadAsset(_bundlePath, entry.VirtualPath, _encryptionKey, _encryptionProvider);
         return new MemoryStream(data);
     }
 

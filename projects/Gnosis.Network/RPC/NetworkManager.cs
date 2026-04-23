@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Gnosis.Core;
 using Gnosis.Core.Event;
 using Gnosis.Network.Channel;
@@ -21,6 +22,11 @@ public sealed class NetworkManager : INetworkManager
     private string? _lobbyId;
     private int _maxPlayers;
     private readonly List<INetworkMessage> _pendingMessages = [];
+    private readonly Dictionary<ConnectionId, ITransportConnection> _connections = new();
+    private ITransportConnection? _clientConnection;
+    private ChannelId _reliableChannel;
+    private ChannelId _unreliableChannel;
+    private bool _channelsInitialized;
 
     #endregion
 
@@ -71,6 +77,48 @@ public sealed class NetworkManager : INetworkManager
     public NetworkManager(ITransport transport)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _transport.OnConnectionReceived += OnTransportConnectionReceived;
+        _transport.OnStateChanged += OnTransportStateChanged;
+    }
+
+    private void OnTransportConnectionReceived(ITransportConnection connection)
+    {
+        EnsureChannelsInitialized(connection);
+
+        _connections[connection.Id] = connection;
+        _playerCount = _connections.Count + (IsServer ? 1 : 0);
+
+        connection.OnDisconnected += id =>
+        {
+            _connections.Remove(id);
+            _playerCount = Math.Max(0, _connections.Count + (IsServer ? 1 : 0));
+            OnPlayerLeft?.Invoke(default);
+        };
+
+        OnPlayerJoined?.Invoke(default);
+    }
+
+    private void OnTransportStateChanged(TransportState state)
+    {
+        if (state == TransportState.Disconnected)
+        {
+            _networkMode = NetworkMode.Offline;
+            _connections.Clear();
+            _clientConnection = null;
+            _playerCount = 0;
+        }
+    }
+
+    private void EnsureChannelsInitialized(ITransportConnection connection)
+    {
+        if (_channelsInitialized)
+        {
+            return;
+        }
+
+        _reliableChannel = connection.CreateChannel(ChannelType.ReliableOrdered);
+        _unreliableChannel = connection.CreateChannel(ChannelType.UnreliableUnordered);
+        _channelsInitialized = true;
     }
 
     /// <summary>
@@ -111,6 +159,9 @@ public sealed class NetworkManager : INetworkManager
         if (_transport is not null)
         {
             _networkMode = NetworkMode.Offline;
+            _connections.Clear();
+            _clientConnection = null;
+            _channelsInitialized = false;
             return;
         }
 
@@ -170,6 +221,7 @@ public sealed class NetworkManager : INetworkManager
             _maxPlayers = maxPlayers;
             _playerCount = 1;
             _lobbyId = Guid.NewGuid().ToString("N")[..8];
+            OnPlayerJoined?.Invoke(default);
             return;
         }
 
@@ -194,10 +246,23 @@ public sealed class NetworkManager : INetworkManager
     {
         if (_transport is not null)
         {
-            _transport.Connect("server", 0);
+            var connection = _transport.Connect("server", 0);
+            EnsureChannelsInitialized(connection);
+            _clientConnection = connection;
+            _connections[connection.Id] = connection;
             _networkMode = NetworkMode.Client;
             _lobbyId = lobbyId;
             _playerCount = 1;
+
+            connection.OnDisconnected += id =>
+            {
+                _connections.Remove(id);
+                if (_clientConnection?.Id == id)
+                {
+                    _clientConnection = null;
+                }
+            };
+
             return;
         }
 
@@ -224,6 +289,14 @@ public sealed class NetworkManager : INetworkManager
                 _transport.Disconnect();
             }
 
+            foreach (var (_, connection) in _connections)
+            {
+                connection.Dispose();
+            }
+
+            _connections.Clear();
+            _clientConnection = null;
+            _channelsInitialized = false;
             _networkMode = NetworkMode.Offline;
             _playerCount = 0;
             _lobbyId = null;
@@ -249,7 +322,16 @@ public sealed class NetworkManager : INetworkManager
     {
         if (_transport is not null)
         {
-            throw new NotImplementedException("请通过 ITransportConnection 发送数据");
+            var connection = _clientConnection ?? GetFirstConnection();
+
+            if (connection is null)
+            {
+                throw new InvalidOperationException("没有可用的服务器连接");
+            }
+
+            var channelId = reliable ? _reliableChannel : _unreliableChannel;
+            connection.Send(channelId, data);
+            return;
         }
 
         if (_backend is null)
@@ -276,7 +358,17 @@ public sealed class NetworkManager : INetworkManager
     {
         if (_transport is not null)
         {
-            throw new NotImplementedException("请通过 ITransportConnection 发送数据");
+            var channelId = reliable ? _reliableChannel : _unreliableChannel;
+
+            foreach (var (_, connection) in _connections)
+            {
+                if (connection.IsConnected)
+                {
+                    connection.Send(channelId, data);
+                }
+            }
+
+            return;
         }
 
         if (_backend is null)
@@ -300,8 +392,28 @@ public sealed class NetworkManager : INetworkManager
     /// <returns>接收到的消息集合</returns>
     public IEnumerable<INetworkMessage> PollMessages()
     {
-        if (_backend is null && _transport is not null)
+        if (_transport is not null)
         {
+            foreach (var (_, connection) in _connections)
+            {
+                var events = connection.Poll();
+
+                foreach (var evt in events)
+                {
+                    if (evt.Type == TransportEventType.DataReceived && evt.Data.Length > 0)
+                    {
+                        var message = NetworkMessage.Create(
+                            0,
+                            default,
+                            evt.Data.ToArray(),
+                            evt.ChannelId == _reliableChannel
+                        );
+                        _pendingMessages.Add(message);
+                        OnMessageReceived?.Invoke(message);
+                    }
+                }
+            }
+
             var messages = _pendingMessages.ToList();
             _pendingMessages.Clear();
             return messages;
@@ -318,6 +430,19 @@ public sealed class NetworkManager : INetworkManager
         var result = _pendingMessages.ToList();
         _pendingMessages.Clear();
         return result;
+    }
+
+    private ITransportConnection? GetFirstConnection()
+    {
+        foreach (var (_, connection) in _connections)
+        {
+            if (connection.IsConnected)
+            {
+                return connection;
+            }
+        }
+
+        return null;
     }
 
     #endregion

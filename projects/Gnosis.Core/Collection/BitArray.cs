@@ -38,7 +38,7 @@ public sealed class BitArray
             var count = 0;
             for (var i = 0; i < _words.Length; i++)
             {
-                count += System.Numerics.BitOperations.PopCount(_words[i]);
+                count += global::System.Numerics.BitOperations.PopCount(_words[i]);
             }
 
             return count;

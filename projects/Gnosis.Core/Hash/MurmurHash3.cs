@@ -71,9 +71,9 @@ public static class MurmurHash3
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint Compute(string text, uint seed = 0)
     {
-        var maxBytes = System.Text.Encoding.UTF8.GetMaxByteCount(text.Length);
+        var maxBytes = global::System.Text.Encoding.UTF8.GetMaxByteCount(text.Length);
         Span<byte> bytes = stackalloc byte[maxBytes];
-        var written = System.Text.Encoding.UTF8.GetBytes(text, bytes);
+        var written = global::System.Text.Encoding.UTF8.GetBytes(text, bytes);
         return Compute(bytes[..written], seed);
     }
 

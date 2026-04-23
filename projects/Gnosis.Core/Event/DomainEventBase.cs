@@ -1,4 +1,4 @@
-using Gnosis.Core;
+using Gnosis.Core.Entity;
 using Gnosis.Core.Time;
 
 namespace Gnosis.Core.Event;

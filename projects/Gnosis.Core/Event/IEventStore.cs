@@ -1,3 +1,4 @@
+using Gnosis.Core.Entity;
 using Gnosis.Core.Event;
 using Gnosis.Core.Time;
 

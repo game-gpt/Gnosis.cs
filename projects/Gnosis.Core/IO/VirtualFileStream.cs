@@ -86,7 +86,7 @@ public class VirtualFileStream : Stream
             return 0;
         }
 
-        var bytesToRead = (int)System.Math.Min(count, remaining);
+        var bytesToRead = (int)global::System.Math.Min(count, remaining);
         Array.Copy(_buffer, _position, buffer, offset, bytesToRead);
         _position += bytesToRead;
 
@@ -179,7 +179,7 @@ public class VirtualFileStream : Stream
             return;
         }
 
-        var newCapacity = System.Math.Max(_buffer.Length * 2, requiredCapacity);
+        var newCapacity = global::System.Math.Max(_buffer.Length * 2, requiredCapacity);
         var newBuffer = new byte[newCapacity];
         Array.Copy(_buffer, newBuffer, _length);
         _buffer = newBuffer;

@@ -112,6 +112,13 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.AddComponent:
             case OpCode.GetComponent:
             case OpCode.RemoveComponent:
+            case OpCode.SetComponent:
+            case OpCode.HasComponent:
+            case OpCode.QueryWith:
+            case OpCode.QueryWithout:
+            case OpCode.DefineComponent:
+            case OpCode.DefineSystem:
+            case OpCode.SystemSchedule:
             case OpCode.PushString:
             case OpCode.NewArray:
             case OpCode.MakeClosure:
@@ -192,6 +199,7 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.Return:
             case OpCode.SpawnEntity:
             case OpCode.DestroyEntity:
+            case OpCode.WorldUpdate:
             case OpCode.ConcatString:
             case OpCode.StringLength:
             case OpCode.StringGetChar:
@@ -264,6 +272,9 @@ public sealed class BytecodeModuleAdapter : IModule
                 or OpCode.StoreGlobal or OpCode.LoadField or OpCode.StoreField
                 or OpCode.NewObject or OpCode.GetField or OpCode.SetField
                 or OpCode.AddComponent or OpCode.GetComponent or OpCode.RemoveComponent
+                or OpCode.SetComponent or OpCode.HasComponent
+                or OpCode.QueryWith or OpCode.QueryWithout
+                or OpCode.DefineComponent or OpCode.DefineSystem or OpCode.SystemSchedule
                 or OpCode.PushString or OpCode.NewArray or OpCode.MakeClosure
                 or OpCode.IsType or OpCode.TypeOf or OpCode.QueryAll or OpCode.QueryAny => 4,
             _ => 0

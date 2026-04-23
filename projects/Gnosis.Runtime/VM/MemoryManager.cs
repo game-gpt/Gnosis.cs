@@ -11,6 +11,11 @@ public class MemoryManager
     private const long DefaultGcThreshold = 4 * 1024 * 1024;
     private long _gcThreshold;
 
+    /// <summary>
+    /// GC 收集前的回调，用于调用者提供额外的 GC Roots（如操作数栈和局部变量）
+    /// </summary>
+    public Action? BeforeCollect { get; set; }
+
     #endregion
 
     #region Constructors
@@ -103,9 +108,19 @@ public class MemoryManager
     {
         for (var i = 0; i < count; i++)
         {
-            if (stackValues[i].Reference is IGCObject gcObj)
+            var value = stackValues[i];
+
+            if (value.Reference is IGCObject gcObj)
             {
                 AddRoot(gcObj);
+            }
+            else if (value.IsInt)
+            {
+                var obj = GetObject((int)value.IntValue);
+                if (obj is not null)
+                {
+                    AddRoot(obj);
+                }
             }
         }
     }
@@ -118,6 +133,14 @@ public class MemoryManager
             {
                 AddRoot(gcObj);
             }
+            else if (local.IsInt)
+            {
+                var obj = GetObject((int)local.IntValue);
+                if (obj is not null)
+                {
+                    AddRoot(obj);
+                }
+            }
         }
     }
 
@@ -127,6 +150,8 @@ public class MemoryManager
 
     public void Collect()
     {
+        BeforeCollect?.Invoke();
+
         foreach (var obj in _heap.Values)
         {
             obj.IsMarked = false;

@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Gnosis.Runtime.Coroutine;
 
 /// <summary>
@@ -18,6 +20,19 @@ public class TweenSystem : ITweenSystem
     public ITween To(Action<float> setter, float startValue, float endValue, float duration)
     {
         var tween = new Tween(setter, startValue, endValue, duration);
+        _pendingAdd.Add(tween);
+        return tween;
+    }
+
+    public ITween To(Action<Vector3> setter, Vector3 startValue, Vector3 endValue, float duration)
+    {
+        void VectorSetter(float progress)
+        {
+            var current = Vector3.Lerp(startValue, endValue, progress);
+            setter(current);
+        }
+
+        var tween = new Tween(VectorSetter, 0f, 1f, duration);
         _pendingAdd.Add(tween);
         return tween;
     }

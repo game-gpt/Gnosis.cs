@@ -30,7 +30,7 @@ public sealed class AssetBundler : IDisposable
     /// <summary>
     /// 添加资产到打包列表
     /// </summary>
-    public void AddAsset(string assetPath, string virtualPath, CompressionType compression = CompressionType.None)
+    public void AddAsset(string assetPath, string virtualPath, CompressionType compression = CompressionType.None, EncryptionType encryption = EncryptionType.None)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -61,6 +61,7 @@ public sealed class AssetBundler : IDisposable
             SourcePath = normalizedAssetPath,
             Data = data,
             Compression = compression,
+            Encryption = encryption,
             Hash = hash,
             Size = data.Length
         };
@@ -71,7 +72,7 @@ public sealed class AssetBundler : IDisposable
     /// <summary>
     /// 添加内存中的资产数据到打包列表
     /// </summary>
-    public void AddAssetFromMemory(string virtualPath, byte[] data, CompressionType compression = CompressionType.None)
+    public void AddAssetFromMemory(string virtualPath, byte[] data, CompressionType compression = CompressionType.None, EncryptionType encryption = EncryptionType.None)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -91,6 +92,7 @@ public sealed class AssetBundler : IDisposable
             SourcePath = string.Empty,
             Data = data,
             Compression = compression,
+            Encryption = encryption,
             Hash = hash,
             Size = data.Length
         };
@@ -101,7 +103,7 @@ public sealed class AssetBundler : IDisposable
     /// <summary>
     /// 从目录批量添加资产
     /// </summary>
-    public int AddDirectory(string directoryPath, string virtualPrefix, CompressionType compression = CompressionType.None, string searchPattern = "*")
+    public int AddDirectory(string directoryPath, string virtualPrefix, CompressionType compression = CompressionType.None, EncryptionType encryption = EncryptionType.None, string searchPattern = "*")
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -123,7 +125,7 @@ public sealed class AssetBundler : IDisposable
 
             try
             {
-                AddAsset(file, virtualPath, compression);
+                AddAsset(file, virtualPath, compression, encryption);
                 added++;
             }
             catch (IOException)
@@ -161,7 +163,7 @@ public sealed class AssetBundler : IDisposable
     /// <summary>
     /// 将所有资产打包为资产包文件
     /// </summary>
-    public AssetBundleResult Pack(string bundleName, CancellationToken cancellationToken = default)
+    public AssetBundleResult Pack(string bundleName, byte[]? encryptionKey = null, IEncryptionProvider? encryptionProvider = null, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -175,10 +177,13 @@ public sealed class AssetBundler : IDisposable
             throw new InvalidOperationException("没有可打包的资产");
         }
 
+        ValidateEncryptionConfig(encryptionKey, encryptionProvider);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         var sortedEntries = _entries.OrderBy(e => e.Key, StringComparer.OrdinalIgnoreCase).ToList();
         var indexEntries = new List<AssetBundleIndexEntry>();
+        var effectiveProvider = ResolveEncryptionProvider(encryptionProvider);
 
         using var dataStream = new MemoryStream();
 
@@ -194,6 +199,15 @@ public sealed class AssetBundler : IDisposable
                 dataToWrite = CompressionService.Compress(entry.Data, entry.Compression);
             }
 
+            byte[]? iv = null;
+
+            if (entry.Encryption != EncryptionType.None)
+            {
+                var encrypted = effectiveProvider.Encrypt(dataToWrite, encryptionKey!);
+                dataToWrite = encrypted.Ciphertext;
+                iv = encrypted.Iv;
+            }
+
             dataStream.Write(dataToWrite, 0, dataToWrite.Length);
 
             indexEntries.Add(new AssetBundleIndexEntry
@@ -203,11 +217,12 @@ public sealed class AssetBundler : IDisposable
                 CompressedSize = dataToWrite.Length,
                 OriginalSize = entry.Size,
                 Compression = entry.Compression,
+                Encryption = entry.Encryption,
+                Iv = iv ?? [],
                 Hash = entry.Hash
             });
         }
 
-        var indexOffset = dataStream.Position;
         var indexData = BuildIndexData(indexEntries, bundleName);
         dataStream.Write(indexData, 0, indexData.Length);
 
@@ -230,7 +245,7 @@ public sealed class AssetBundler : IDisposable
     /// <summary>
     /// 异步打包所有资产
     /// </summary>
-    public async Task<AssetBundleResult> PackAsync(string bundleName, CancellationToken cancellationToken = default)
+    public async Task<AssetBundleResult> PackAsync(string bundleName, byte[]? encryptionKey = null, IEncryptionProvider? encryptionProvider = null, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -244,10 +259,13 @@ public sealed class AssetBundler : IDisposable
             throw new InvalidOperationException("没有可打包的资产");
         }
 
+        ValidateEncryptionConfig(encryptionKey, encryptionProvider);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         var sortedEntries = _entries.OrderBy(e => e.Key, StringComparer.OrdinalIgnoreCase).ToList();
         var indexEntries = new List<AssetBundleIndexEntry>();
+        var effectiveProvider = ResolveEncryptionProvider(encryptionProvider);
 
         using var dataStream = new MemoryStream();
 
@@ -263,6 +281,15 @@ public sealed class AssetBundler : IDisposable
                 dataToWrite = await Task.Run(() => CompressionService.Compress(entry.Data, entry.Compression), cancellationToken);
             }
 
+            byte[]? iv = null;
+
+            if (entry.Encryption != EncryptionType.None)
+            {
+                var encrypted = effectiveProvider.Encrypt(dataToWrite, encryptionKey!);
+                dataToWrite = encrypted.Ciphertext;
+                iv = encrypted.Iv;
+            }
+
             await dataStream.WriteAsync(dataToWrite, cancellationToken);
 
             indexEntries.Add(new AssetBundleIndexEntry
@@ -272,11 +299,12 @@ public sealed class AssetBundler : IDisposable
                 CompressedSize = dataToWrite.Length,
                 OriginalSize = entry.Size,
                 Compression = entry.Compression,
+                Encryption = entry.Encryption,
+                Iv = iv ?? [],
                 Hash = entry.Hash
             });
         }
 
-        var indexOffset = dataStream.Position;
         var indexData = BuildIndexData(indexEntries, bundleName);
         await dataStream.WriteAsync(indexData, cancellationToken);
 
@@ -317,7 +345,7 @@ public sealed class AssetBundler : IDisposable
     /// <summary>
     /// 从资产包中读取指定资产
     /// </summary>
-    public static byte[] ReadAsset(string bundleFilePath, string virtualPath)
+    public static byte[] ReadAsset(string bundleFilePath, string virtualPath, byte[]? encryptionKey = null, IEncryptionProvider? encryptionProvider = null)
     {
         var index = LoadIndex(bundleFilePath);
         var normalizedPath = NormalizePath(virtualPath);
@@ -330,13 +358,13 @@ public sealed class AssetBundler : IDisposable
             throw new KeyNotFoundException($"资产包中未找到资产：{virtualPath}");
         }
 
-        return ReadAssetFromBundle(bundleFilePath, entry);
+        return ReadAssetFromBundle(bundleFilePath, entry, encryptionKey, encryptionProvider);
     }
 
     /// <summary>
     /// 从资产包中流式读取指定资产
     /// </summary>
-    public static Stream ReadAssetStream(string bundleFilePath, string virtualPath)
+    public static Stream ReadAssetStream(string bundleFilePath, string virtualPath, byte[]? encryptionKey = null, IEncryptionProvider? encryptionProvider = null)
     {
         var index = LoadIndex(bundleFilePath);
         var normalizedPath = NormalizePath(virtualPath);
@@ -349,31 +377,7 @@ public sealed class AssetBundler : IDisposable
             throw new KeyNotFoundException($"资产包中未找到资产：{virtualPath}");
         }
 
-        var stream = new FileStream(bundleFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        stream.Position = entry.Offset;
-
-        var compressedData = new byte[entry.CompressedSize];
-        int totalRead = 0;
-
-        while (totalRead < entry.CompressedSize)
-        {
-            int bytesRead = stream.Read(compressedData, totalRead, entry.CompressedSize - totalRead);
-            if (bytesRead == 0) break;
-            totalRead += bytesRead;
-        }
-
-        byte[] data;
-
-        if (entry.Compression != CompressionType.None)
-        {
-            data = CompressionService.Decompress(compressedData, entry.Compression);
-        }
-        else
-        {
-            data = compressedData;
-        }
-
-        stream.Dispose();
+        var data = ReadAssetFromBundle(bundleFilePath, entry, encryptionKey, encryptionProvider);
         return new MemoryStream(data);
     }
 
@@ -396,12 +400,32 @@ public sealed class AssetBundler : IDisposable
 
     #region 私有方法
 
+    private void ValidateEncryptionConfig(byte[]? encryptionKey, IEncryptionProvider? encryptionProvider)
+    {
+        var hasEncryptedEntries = _entries.Values.Any(e => e.Encryption != EncryptionType.None);
+
+        if (hasEncryptedEntries && encryptionKey == null)
+        {
+            throw new ArgumentException("存在加密资产但未提供加密密钥", nameof(encryptionKey));
+        }
+
+        if (encryptionKey != null && encryptionProvider != null && encryptionProvider.EncryptionType != EncryptionType.Aes256Cbc)
+        {
+            throw new ArgumentException($"不支持的加密类型：{encryptionProvider.EncryptionType}", nameof(encryptionProvider));
+        }
+    }
+
+    private static IEncryptionProvider ResolveEncryptionProvider(IEncryptionProvider? encryptionProvider)
+    {
+        return encryptionProvider ?? new AesEncryptionProvider();
+    }
+
     private static byte[] BuildIndexData(List<AssetBundleIndexEntry> entries, string bundleName)
     {
         var index = new AssetBundleIndex
         {
             Magic = 0x474E425A,
-            Version = 1,
+            Version = 2,
             BundleName = bundleName,
             EntryCount = entries.Count,
             Entries = entries
@@ -444,6 +468,12 @@ public sealed class AssetBundler : IDisposable
         }
 
         var version = reader.ReadInt32();
+
+        if (version < 1 || version > 2)
+        {
+            throw new InvalidDataException($"不支持的资产包版本：{version}");
+        }
+
         var entryCount = reader.ReadInt32();
         var indexJsonSize = reader.ReadInt32();
 
@@ -464,7 +494,7 @@ public sealed class AssetBundler : IDisposable
         return index;
     }
 
-    private static byte[] ReadAssetFromBundle(string bundleFilePath, AssetBundleIndexEntry entry)
+    private static byte[] ReadAssetFromBundle(string bundleFilePath, AssetBundleIndexEntry entry, byte[]? encryptionKey = null, IEncryptionProvider? encryptionProvider = null)
     {
         using var stream = new FileStream(bundleFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         stream.Position = entry.Offset;
@@ -479,12 +509,31 @@ public sealed class AssetBundler : IDisposable
             totalRead += bytesRead;
         }
 
-        if (entry.Compression != CompressionType.None)
+        byte[] data = compressedData;
+
+        if (entry.Encryption != EncryptionType.None)
         {
-            return CompressionService.Decompress(compressedData, entry.Compression);
+            if (encryptionKey == null)
+            {
+                throw new InvalidOperationException($"资产 {entry.VirtualPath} 已加密，需要提供加密密钥");
+            }
+
+            var provider = ResolveEncryptionProvider(encryptionProvider);
+            var encryptedData = new EncryptedData
+            {
+                Ciphertext = compressedData,
+                Iv = entry.Iv,
+                EncryptionType = entry.Encryption
+            };
+            data = provider.Decrypt(encryptedData, encryptionKey);
         }
 
-        return compressedData;
+        if (entry.Compression != CompressionType.None)
+        {
+            return CompressionService.Decompress(data, entry.Compression);
+        }
+
+        return data;
     }
 
     private static string NormalizePath(string path)
@@ -501,6 +550,7 @@ public sealed class AssetBundleEntry
     public string SourcePath { get; init; } = string.Empty;
     public byte[] Data { get; init; } = [];
     public CompressionType Compression { get; init; }
+    public EncryptionType Encryption { get; init; }
     public AssetHash Hash { get; init; } = AssetHash.Empty;
     public int Size { get; init; }
 }
@@ -530,5 +580,7 @@ public sealed class AssetBundleIndexEntry
     public int CompressedSize { get; init; }
     public int OriginalSize { get; init; }
     public CompressionType Compression { get; init; }
+    public EncryptionType Encryption { get; init; }
+    public byte[] Iv { get; init; } = [];
     public AssetHash Hash { get; init; } = AssetHash.Empty;
 }

@@ -2,6 +2,7 @@ using SolidDB.Core;
 
 namespace Gnosis.Storage.Provider;
 
+[Obsolete("请使用 DatabaseStorageProvider，通过 Gnosis.Database 统一访问存储层")]
 public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
 {
     #region 字段

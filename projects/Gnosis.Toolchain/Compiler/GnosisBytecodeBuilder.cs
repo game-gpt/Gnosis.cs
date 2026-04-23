@@ -151,6 +151,34 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
                 result.Add(new BytecodeInstruction(OpCode.StoreLocal, GetOperandIndex(instr)));
                 break;
 
+            case IrOpcode.SpawnEntity:
+                result.Add(new BytecodeInstruction(OpCode.SpawnEntity));
+                break;
+
+            case IrOpcode.DestroyEntity:
+                result.Add(new BytecodeInstruction(OpCode.DestroyEntity));
+                break;
+
+            case IrOpcode.AddComponent:
+                result.Add(new BytecodeInstruction(OpCode.AddComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.GetComponent:
+                result.Add(new BytecodeInstruction(OpCode.GetComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.RemoveComponent:
+                result.Add(new BytecodeInstruction(OpCode.RemoveComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.QueryAll:
+                result.Add(new BytecodeInstruction(OpCode.QueryAll, GetQueryTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.QueryAny:
+                result.Add(new BytecodeInstruction(OpCode.QueryAny, GetQueryTypeIndex(instr, constants)));
+                break;
+
             default:
                 result.Add(new BytecodeInstruction(OpCode.Nop));
                 break;
@@ -186,6 +214,28 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
         return 0;
     }
 
+    private static int GetComponentTypeIndex(IrInstruction instr, List<object> constants)
+    {
+        if (instr.Arguments.Count > 0 && instr.Arguments[0] is string typeName)
+        {
+            var idx = constants.Count;
+            constants.Add(typeName);
+            return idx;
+        }
+        return 0;
+    }
+
+    private static int GetQueryTypeIndex(IrInstruction instr, List<object> constants)
+    {
+        if (instr.Arguments.Count > 0 && instr.Arguments[0] is string typeName)
+        {
+            var idx = constants.Count;
+            constants.Add(typeName);
+            return idx;
+        }
+        return 0;
+    }
+
     #endregion
 
     #region 辅助方法
@@ -203,7 +253,14 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
             IrOpcode.Mul or
             IrOpcode.Div or
             IrOpcode.Load or
-            IrOpcode.Store;
+            IrOpcode.Store or
+            IrOpcode.SpawnEntity or
+            IrOpcode.DestroyEntity or
+            IrOpcode.AddComponent or
+            IrOpcode.GetComponent or
+            IrOpcode.RemoveComponent or
+            IrOpcode.QueryAll or
+            IrOpcode.QueryAny;
     }
 
     private static int GetOperandSize(OpCode opCode)

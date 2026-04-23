@@ -78,6 +78,14 @@ public enum OpCode : byte
     RemoveComponent = 0x84,
     QueryAll = 0x85,
     QueryAny = 0x86,
+    DefineComponent = 0x87,
+    DefineSystem = 0x88,
+    SetComponent = 0x89,
+    HasComponent = 0x8A,
+    QueryWith = 0x8B,
+    QueryWithout = 0x8C,
+    SystemSchedule = 0x8D,
+    WorldUpdate = 0x8E,
 
     // 字符串操作
     PushString = 0x90,

@@ -14,6 +14,7 @@ public sealed class EditorMain
     private readonly StyleApplier _styleApplier;
     private readonly ShortcutManager _shortcutManager;
     private readonly WindowManager _windowManager;
+    private readonly LayoutPersistence _layoutPersistence;
 
     private WidgetElement? _root;
     private MenuBar? _menuBar;
@@ -28,6 +29,8 @@ public sealed class EditorMain
     public ShortcutManager ShortcutManager => _shortcutManager;
 
     public WindowManager WindowManager => _windowManager;
+
+    public LayoutPersistence LayoutPersistence => _layoutPersistence;
 
     public WidgetElement? Root => _root;
 
@@ -48,6 +51,7 @@ public sealed class EditorMain
         _styleApplier = new StyleApplier(_themeManager);
         _shortcutManager = new ShortcutManager();
         _windowManager = new WindowManager();
+        _layoutPersistence = new LayoutPersistence();
 
         RegisterDefaultShortcuts();
     }
@@ -58,8 +62,21 @@ public sealed class EditorMain
 
     public void Initialize()
     {
+        var savedLayout = _layoutPersistence.Load();
+
+        if (savedLayout != null)
+        {
+            _layoutPersistence.ApplyLayout(savedLayout, _windowManager, _themeManager);
+        }
+
         _root = BuildLayout();
         ApplyStyles();
+
+        if (_root != null)
+        {
+            _themeManager.TrackRoot(_root, _styleApplier);
+        }
+
         Initialized?.Invoke();
     }
 
@@ -79,7 +96,24 @@ public sealed class EditorMain
 
     public void RequestShutdown()
     {
+        _layoutPersistence.Save(_windowManager, _themeManager);
         ShutdownRequested?.Invoke();
+    }
+
+    public void SaveLayout(string layoutName = "default")
+    {
+        _layoutPersistence.Save(_windowManager, _themeManager, layoutName);
+    }
+
+    public bool LoadLayout(string layoutName = "default")
+    {
+        var data = _layoutPersistence.Load(layoutName);
+        if (data == null)
+        {
+            return false;
+        }
+
+        return _layoutPersistence.ApplyLayout(data, _windowManager, _themeManager);
     }
 
     #endregion
@@ -129,7 +163,7 @@ public sealed class EditorMain
         fileMenu.AddChild(new MenuItem("Save") { Shortcut = "Ctrl+S" });
         fileMenu.AddChild(new MenuItem("Save As...") { Shortcut = "Ctrl+Shift+S" });
         fileMenu.AddChild(MenuItem.Separator());
-        fileMenu.AddChild(new MenuItem("Exit"));
+        fileMenu.AddChild(new MenuItem("Exit") { OnClick = () => RequestShutdown() });
 
         var editMenu = new MenuItem("Edit");
         editMenu.AddChild(new MenuItem("Undo") { Shortcut = "Ctrl+Z" });
@@ -147,7 +181,13 @@ public sealed class EditorMain
         viewMenu.AddChild(new MenuItem("Console"));
         viewMenu.AddChild(new MenuItem("Content Browser"));
         viewMenu.AddChild(MenuItem.Separator());
-        viewMenu.AddChild(new MenuItem("Toggle Dark/Light Theme"));
+        var toggleThemeItem = new MenuItem("Toggle Dark/Light Theme") { Shortcut = "Ctrl+T" };
+        toggleThemeItem.OnClick = () => _themeManager.ToggleTheme();
+        viewMenu.AddChild(toggleThemeItem);
+
+        var layoutMenu = new MenuItem("Layout");
+        layoutMenu.AddChild(new MenuItem("Save Layout") { OnClick = () => SaveLayout() });
+        layoutMenu.AddChild(new MenuItem("Reset Layout") { OnClick = () => LoadLayout("default") });
 
         var helpMenu = new MenuItem("Help");
         helpMenu.AddChild(new MenuItem("Documentation"));
@@ -156,6 +196,7 @@ public sealed class EditorMain
         menuBar.AddMenu(fileMenu);
         menuBar.AddMenu(editMenu);
         menuBar.AddMenu(viewMenu);
+        menuBar.AddMenu(layoutMenu);
         menuBar.AddMenu(helpMenu);
 
         return menuBar;
@@ -249,11 +290,12 @@ public sealed class EditorMain
 
     private void RegisterDefaultShortcuts()
     {
-        _shortcutManager.Register("Ctrl+S", "Save", () => { });
+        _shortcutManager.Register("Ctrl+S", "Save", () => SaveLayout());
         _shortcutManager.Register("Ctrl+Z", "Undo", () => { });
         _shortcutManager.Register("Ctrl+Y", "Redo", () => { });
         _shortcutManager.Register("Ctrl+N", "NewProject", () => { });
         _shortcutManager.Register("Ctrl+O", "OpenProject", () => { });
+        _shortcutManager.Register("Ctrl+T", "ToggleTheme", () => _themeManager.ToggleTheme());
         _shortcutManager.Register("W", "TranslateTool", () => { });
         _shortcutManager.Register("E", "RotateTool", () => { });
         _shortcutManager.Register("R", "ScaleTool", () => { });

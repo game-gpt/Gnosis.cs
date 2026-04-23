@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Gnosis.ECS;
 using Gnosis.ECS.Entity;
+using Gnosis.ECS.Query;
 using Gnosis.ECS.World;
 using Gnosis.IR.Instruction;
 
@@ -15,6 +16,7 @@ public class VMInterpreter
 
     private readonly VMState _state;
     private readonly NativeFunctionRegistry _nativeRegistry;
+    private readonly ComponentTypeRegistry _componentRegistry;
     private IWorld? _world;
     private bool _running;
     private byte[]? _instructions;
@@ -30,6 +32,7 @@ public class VMInterpreter
     {
         _state = state;
         _nativeRegistry = nativeRegistry;
+        _componentRegistry = new ComponentTypeRegistry();
         _world = null;
         _running = false;
         _instructions = null;
@@ -42,6 +45,21 @@ public class VMInterpreter
     {
         _state = state;
         _nativeRegistry = nativeRegistry;
+        _componentRegistry = new ComponentTypeRegistry();
+        _world = world;
+        _running = false;
+        _instructions = null;
+    }
+
+    /// <summary>
+    /// 初始化虚拟机解释器，绑定 ECS 世界和组件类型注册表
+    /// </summary>
+    public VMInterpreter(VMState state, NativeFunctionRegistry nativeRegistry,
+        ComponentTypeRegistry componentRegistry, IWorld world)
+    {
+        _state = state;
+        _nativeRegistry = nativeRegistry;
+        _componentRegistry = componentRegistry;
         _world = world;
         _running = false;
         _instructions = null;
@@ -60,6 +78,11 @@ public class VMInterpreter
     /// 是否正在运行
     /// </summary>
     public bool IsRunning => _running;
+
+    /// <summary>
+    /// 组件类型注册表
+    /// </summary>
+    public ComponentTypeRegistry ComponentRegistry => _componentRegistry;
 
     #endregion
 
@@ -330,14 +353,38 @@ public class VMInterpreter
             case OpCode.GetComponent:
                 ExecuteGetComponent();
                 break;
+            case OpCode.SetComponent:
+                ExecuteSetComponent();
+                break;
             case OpCode.RemoveComponent:
                 ExecuteRemoveComponent();
+                break;
+            case OpCode.HasComponent:
+                ExecuteHasComponent();
                 break;
             case OpCode.QueryAll:
                 ExecuteQueryAll();
                 break;
             case OpCode.QueryAny:
                 ExecuteQueryAny();
+                break;
+            case OpCode.QueryWith:
+                ExecuteQueryWith();
+                break;
+            case OpCode.QueryWithout:
+                ExecuteQueryWithout();
+                break;
+            case OpCode.DefineComponent:
+                ExecuteDefineComponent();
+                break;
+            case OpCode.DefineSystem:
+                ExecuteDefineSystem();
+                break;
+            case OpCode.SystemSchedule:
+                ExecuteSystemSchedule();
+                break;
+            case OpCode.WorldUpdate:
+                ExecuteWorldUpdate();
                 break;
 
             #endregion
@@ -875,8 +922,8 @@ public class VMInterpreter
         var typeIdx = ReadInt32();
         var typeName = ReadConstant()?.ToString();
         var obj = new GGObject(typeName ?? "object");
-        var objectId = _state.MemoryManager.Allocate(obj);
-        _state.Push(GGValue.FromInt(objectId));
+        _state.MemoryManager.Allocate(obj);
+        _state.Push(GGValue.FromObject(obj));
     }
 
     private void ExecuteGetField()
@@ -920,7 +967,7 @@ public class VMInterpreter
         }
         else
         {
-            _state.Push(GGValue.FromInt(0));
+            _state.Push(GGValue.FromEntity(EntityId.Null));
         }
     }
 
@@ -929,15 +976,8 @@ public class VMInterpreter
         if (_world is not null)
         {
             var value = _state.Pop();
-
-            if (value.IsEntity)
-            {
-                _world.DestroyEntity(new EntityId(value.EntityId));
-            }
-            else if (value.IsInt)
-            {
-                _world.DestroyEntity(new EntityId((int)value.IntValue));
-            }
+            var entity = ResolveEntityId(value);
+            _world.DestroyEntity(entity);
         }
         else
         {
@@ -948,44 +988,303 @@ public class VMInterpreter
     private void ExecuteAddComponent()
     {
         var typeIdx = ReadInt32();
-        _state.Pop();
+        var entityValue = _state.Pop();
+
+        if (_world is null)
+        {
+            return;
+        }
+
+        var entity = ResolveEntityId(entityValue);
+        _componentRegistry.AddComponent(_world, entity, typeIdx);
     }
 
     private void ExecuteGetComponent()
     {
         var typeIdx = ReadInt32();
-        _state.Pop();
-        _state.Push(GGValue.Null);
+        var entityValue = _state.Pop();
+
+        if (_world is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var entity = ResolveEntityId(entityValue);
+        var result = _componentRegistry.GetComponent(_world, entity, typeIdx);
+        _state.Push(result);
+    }
+
+    private void ExecuteSetComponent()
+    {
+        var typeIdx = ReadInt32();
+        var dataValue = _state.Pop();
+        var entityValue = _state.Pop();
+
+        if (_world is null)
+        {
+            return;
+        }
+
+        var entity = ResolveEntityId(entityValue);
+
+        if (TryGetHeapObject<GGStruct>(dataValue, out var data))
+        {
+            _componentRegistry.SetComponent(_world, entity, typeIdx, data);
+        }
     }
 
     private void ExecuteRemoveComponent()
     {
         var typeIdx = ReadInt32();
-        _state.Pop();
+        var entityValue = _state.Pop();
+
+        if (_world is null)
+        {
+            return;
+        }
+
+        var entity = ResolveEntityId(entityValue);
+        _componentRegistry.RemoveComponent(_world, entity, typeIdx);
+    }
+
+    private void ExecuteHasComponent()
+    {
+        var typeIdx = ReadInt32();
+        var entityValue = _state.Pop();
+
+        if (_world is null)
+        {
+            _state.Push(GGValue.FromBool(false));
+            return;
+        }
+
+        var entity = ResolveEntityId(entityValue);
+        var result = _componentRegistry.HasComponent(_world, entity, typeIdx);
+        _state.Push(GGValue.FromBool(result));
     }
 
     private void ExecuteQueryAll()
     {
         var count = ReadInt32();
+        var typeIndices = new int[count];
 
         for (var i = 0; i < count; i++)
         {
-            ReadInt32();
+            typeIndices[i] = ReadInt32();
         }
 
-        _state.Push(GGValue.FromInt(0));
+        if (_world is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var query = _world.CreateQuery();
+
+        foreach (var typeIdx in typeIndices)
+        {
+            var clrType = _componentRegistry.GetClrType(typeIdx);
+            if (clrType is not null && query is EntityQuery eq)
+            {
+                eq.All(clrType);
+            }
+        }
+
+        var results = query.Build().ToList();
+        var arr = new GGArray(results.Count);
+
+        for (var i = 0; i < results.Count; i++)
+        {
+            arr[i] = GGValue.FromEntity(results[i]);
+        }
+
+        _state.MemoryManager.Allocate(arr);
+        _state.Push(GGValue.FromArray(arr));
     }
 
     private void ExecuteQueryAny()
     {
         var count = ReadInt32();
+        var typeIndices = new int[count];
 
         for (var i = 0; i < count; i++)
+        {
+            typeIndices[i] = ReadInt32();
+        }
+
+        if (_world is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var query = _world.CreateQuery();
+
+        foreach (var typeIdx in typeIndices)
+        {
+            var clrType = _componentRegistry.GetClrType(typeIdx);
+            if (clrType is not null && query is EntityQuery eq)
+            {
+                eq.Any(clrType);
+            }
+        }
+
+        var results = query.Build().ToList();
+        var arr = new GGArray(results.Count);
+
+        for (var i = 0; i < results.Count; i++)
+        {
+            arr[i] = GGValue.FromEntity(results[i]);
+        }
+
+        _state.MemoryManager.Allocate(arr);
+        _state.Push(GGValue.FromArray(arr));
+    }
+
+    private void ExecuteQueryWith()
+    {
+        var typeIdx = ReadInt32();
+
+        if (_world is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var clrType = _componentRegistry.GetClrType(typeIdx);
+        if (clrType is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var query = _world.CreateQuery();
+        if (query is EntityQuery eq)
+        {
+            eq.All(clrType);
+        }
+
+        var results = query.Build().ToList();
+        var arr = new GGArray(results.Count);
+
+        for (var i = 0; i < results.Count; i++)
+        {
+            arr[i] = GGValue.FromEntity(results[i]);
+        }
+
+        _state.MemoryManager.Allocate(arr);
+        _state.Push(GGValue.FromArray(arr));
+    }
+
+    private void ExecuteQueryWithout()
+    {
+        var typeIdx = ReadInt32();
+
+        if (_world is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var clrType = _componentRegistry.GetClrType(typeIdx);
+        if (clrType is null)
+        {
+            _state.Push(GGValue.Null);
+            return;
+        }
+
+        var query = _world.CreateQuery();
+        if (query is EntityQuery eq)
+        {
+            eq.None(clrType);
+        }
+
+        var results = query.Build().ToList();
+        var arr = new GGArray(results.Count);
+
+        for (var i = 0; i < results.Count; i++)
+        {
+            arr[i] = GGValue.FromEntity(results[i]);
+        }
+
+        _state.MemoryManager.Allocate(arr);
+        _state.Push(GGValue.FromArray(arr));
+    }
+
+    private void ExecuteDefineComponent()
+    {
+        var nameIdx = ReadInt32();
+        var fieldCount = ReadInt32();
+
+        var name = ReadConstant()?.ToString() ?? $"component_{nameIdx}";
+        var fieldNames = new string[fieldCount];
+
+        for (var i = 0; i < fieldCount; i++)
+        {
+            fieldNames[i] = ReadConstant()?.ToString() ?? $"field_{i}";
+        }
+
+        var typeIdx = _componentRegistry.GetIndex(name);
+        if (typeIdx < 0)
+        {
+            var ggStruct = new GGStruct(name, fieldNames);
+            _state.MemoryManager.Allocate(ggStruct);
+            _state.Push(GGValue.FromStruct(ggStruct));
+        }
+        else
+        {
+            _state.Push(GGValue.FromInt(typeIdx));
+        }
+    }
+
+    private void ExecuteDefineSystem()
+    {
+        var nameIdx = ReadInt32();
+        var phaseValue = ReadInt32();
+
+        var name = ReadConstant()?.ToString() ?? $"system_{nameIdx}";
+        _state.Push(GGValue.FromInt(_state.GlobalCount));
+    }
+
+    private void ExecuteSystemSchedule()
+    {
+        var systemIdx = ReadInt32();
+        var dependencyCount = ReadInt32();
+
+        for (var i = 0; i < dependencyCount; i++)
         {
             ReadInt32();
         }
 
-        _state.Push(GGValue.FromInt(0));
+        _state.Push(GGValue.Null);
+    }
+
+    private void ExecuteWorldUpdate()
+    {
+        var deltaRaw = ReadFloat32();
+
+        if (_world is not null && _world is World concreteWorld)
+        {
+            concreteWorld.Update(deltaRaw);
+        }
+
+        _state.Push(GGValue.Null);
+    }
+
+    private EntityId ResolveEntityId(GGValue value)
+    {
+        if (value.IsEntity)
+        {
+            return value.ToEntityId;
+        }
+
+        if (value.IsInt)
+        {
+            return new EntityId((uint)value.IntValue, 0);
+        }
+
+        throw new VMRuntimeException($"无法将 {value.Type} 转换为实体 ID");
     }
 
     #endregion
@@ -1025,7 +1324,7 @@ public class VMInterpreter
 
     private void ExecuteStringGetChar()
     {
-        var idx = _state.Pop().IntValue;
+        var idx = (int)_state.Pop().IntValue;
         var val = _state.Pop();
         var str = val.Type == GGValueType.String ? val.StringValue?.Value ?? "" : val.ToString() ?? "";
 
@@ -1047,8 +1346,8 @@ public class VMInterpreter
     {
         var size = ReadInt32();
         var arr = new GGArray(size);
-        var objectId = _state.MemoryManager.Allocate(arr);
-        _state.Push(GGValue.FromInt(objectId));
+        _state.MemoryManager.Allocate(arr);
+        _state.Push(GGValue.FromArray(arr));
     }
 
     private void ExecuteArrayGet()
@@ -1098,8 +1397,8 @@ public class VMInterpreter
     {
         var funcAddr = ReadInt32();
         var closure = new GGClosure(funcAddr, 0);
-        var objectId = _state.MemoryManager.Allocate(closure);
-        _state.Push(GGValue.FromInt(objectId));
+        _state.MemoryManager.Allocate(closure);
+        _state.Push(GGValue.FromClosure(closure));
     }
 
     private void ExecuteGetUpvalue()
@@ -1186,6 +1485,37 @@ public class VMInterpreter
 
     #region 辅助方法
 
+    private void RefreshGCRoots()
+    {
+        var mm = _state.MemoryManager;
+        mm.ClearRoots();
+
+        var rawStack = _state.StackInternal.GetRawStack();
+        mm.SetRootsFromStack(rawStack, _state.StackInternal.SP);
+
+        foreach (var frame in _state.StackInternal.FramesInternal)
+        {
+            mm.SetRootsFromLocals(frame.Locals);
+        }
+
+        for (var i = 0; i < _state.GlobalCount; i++)
+        {
+            var globalValue = _state.GetGlobal(i);
+            if (globalValue.Reference is IGCObject gcObj)
+            {
+                mm.AddRoot(gcObj);
+            }
+            else if (globalValue.IsInt)
+            {
+                var obj = mm.GetObject((int)globalValue.IntValue);
+                if (obj is not null)
+                {
+                    mm.AddRoot(obj);
+                }
+            }
+        }
+    }
+
     private byte ReadByte()
     {
         return _instructions![_state.IP++];
@@ -1243,16 +1573,16 @@ public class VMInterpreter
     {
         obj = null;
 
-        if (value.IsInt)
-        {
-            obj = _state.MemoryManager.GetObject<T>((int)value.IntValue);
-            return obj is not null;
-        }
-
         if (value.IsReference && value.Reference is T direct)
         {
             obj = direct;
             return true;
+        }
+
+        if (value.IsInt)
+        {
+            obj = _state.MemoryManager.GetObject<T>((int)value.IntValue);
+            return obj is not null;
         }
 
         return false;

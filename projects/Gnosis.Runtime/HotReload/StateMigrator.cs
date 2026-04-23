@@ -85,21 +85,11 @@ public sealed class StateMigrator
     /// </summary>
     public VMStateSnapshot MigrateState(VMStateSnapshot oldState, IModule newModule)
     {
-        var newState = new VMStateSnapshot
-        {
-            IP = oldState.IP,
-            SP = oldState.SP,
-            CurrentModuleName = newModule.Name,
-            ModuleCount = oldState.ModuleCount
-        };
-
         var newStack = new GGValue[oldState.Stack.Length];
         for (var i = 0; i < oldState.Stack.Length; i++)
         {
             newStack[i] = oldState.Stack[i];
         }
-
-        newState.Stack = newStack;
 
         var newFrames = new CallFrameInfo[oldState.CallFrames.Length];
 
@@ -110,8 +100,13 @@ public sealed class StateMigrator
             newFrames[i] = new CallFrameInfo(oldFrame.ReturnAddress, oldFrame.BasePointer, migratedLocals);
         }
 
-        newState.CallFrames = newFrames;
-        return newState;
+        return new VMStateSnapshot(
+            oldState.IP,
+            oldState.SP,
+            newStack,
+            newFrames,
+            newModule.Name,
+            oldState.ModuleCount);
     }
 
     private GGValue[] MigrateLocals(GGValue[] locals)

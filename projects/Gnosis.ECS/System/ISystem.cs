@@ -2,11 +2,7 @@ using Gnosis.ECS.World;
 
 namespace Gnosis.ECS.System;
 
-/// <summary>
-/// 系统接口，定义 ECS 系统的生命周期方法。
-/// 系统通过 World 访问实体、组件和查询。
-/// </summary>
-public interface ISystem
+public interface ISystem : Gnosis.Core.ISystem
 {
     /// <summary>
     /// 系统执行阶段
@@ -14,19 +10,9 @@ public interface ISystem
     SystemPhase Phase { get; }
 
     /// <summary>
-    /// 系统初始化
-    /// </summary>
-    void Initialize();
-
-    /// <summary>
     /// 系统帧更新
     /// </summary>
     void Update(float delta);
-
-    /// <summary>
-    /// 系统关闭
-    /// </summary>
-    void Shutdown();
 }
 
 /// <summary>

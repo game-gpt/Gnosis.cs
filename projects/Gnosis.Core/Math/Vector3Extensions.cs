@@ -49,7 +49,7 @@ public static class Vector3Extensions
 
         var normA = a / lenA;
         var normB = b / lenB;
-        var dot = Math.Clamp(Vector3.Dot(normA, normB), -1f, 1f);
+        var dot = global::System.Math.Clamp(Vector3.Dot(normA, normB), -1f, 1f);
         var theta = MathF.Acos(dot);
         var sinTheta = MathF.Sin(theta);
 

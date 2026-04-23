@@ -1,14 +1,37 @@
+using Gnosis.Widget.Element;
+
 namespace Gnosis.Widget.Style;
 
 public sealed class ThemeManager
 {
+    #region 字段
+
     private readonly Dictionary<string, Theme> _themes = new();
     private Theme? _currentTheme;
     private readonly List<StyleSheet> _styleSheets = [];
+    private readonly List<WidgetElement> _trackedRoots = [];
+
+    #endregion
+
+    #region 属性
 
     public Theme? CurrentTheme => _currentTheme;
 
+    public IReadOnlyList<string> AvailableThemes => _themes.Keys.ToList();
+
+    public IReadOnlyList<StyleSheet> StyleSheets => _styleSheets;
+
+    #endregion
+
+    #region 事件
+
     public event Action<Theme>? ThemeChanged;
+
+    public event Action<Theme, Theme>? ThemeSwitched;
+
+    #endregion
+
+    #region 构造
 
     public ThemeManager()
     {
@@ -21,9 +44,28 @@ public sealed class ThemeManager
         _currentTheme = darkTheme;
     }
 
+    #endregion
+
+    #region 主题管理
+
     public void RegisterTheme(Theme theme)
     {
         _themes[theme.Name] = theme;
+    }
+
+    public bool UnregisterTheme(string name)
+    {
+        if (name == "dark" || name == "light")
+        {
+            return false;
+        }
+
+        if (_currentTheme?.Name == name)
+        {
+            return false;
+        }
+
+        return _themes.Remove(name);
     }
 
     public bool SetTheme(string name)
@@ -33,8 +75,16 @@ public sealed class ThemeManager
             return false;
         }
 
+        var oldTheme = _currentTheme;
         _currentTheme = theme;
         ThemeChanged?.Invoke(theme);
+
+        if (oldTheme != null && oldTheme.Name != theme.Name)
+        {
+            ThemeSwitched?.Invoke(oldTheme, theme);
+            RefreshAllTrackedRoots();
+        }
+
         return true;
     }
 
@@ -43,7 +93,47 @@ public sealed class ThemeManager
         return _themes.GetValueOrDefault(name);
     }
 
-    public IReadOnlyList<string> AvailableThemes => _themes.Keys.ToList();
+    public void ToggleTheme()
+    {
+        if (_currentTheme?.Name == "dark")
+        {
+            SetTheme("light");
+        }
+        else
+        {
+            SetTheme("dark");
+        }
+    }
+
+    #endregion
+
+    #region 根元素追踪
+
+    public void TrackRoot(WidgetElement root, StyleApplier styleApplier)
+    {
+        if (!_trackedRoots.Contains(root))
+        {
+            _trackedRoots.Add(root);
+        }
+    }
+
+    public void UntrackRoot(WidgetElement root)
+    {
+        _trackedRoots.Remove(root);
+    }
+
+    private void RefreshAllTrackedRoots()
+    {
+        foreach (var root in _trackedRoots)
+        {
+            ApplyThemeToElement(root);
+            root.InvalidateMeasure();
+        }
+    }
+
+    #endregion
+
+    #region 样式表管理
 
     public void AddStyleSheet(StyleSheet sheet)
     {
@@ -55,7 +145,9 @@ public sealed class ThemeManager
         _styleSheets.Remove(sheet);
     }
 
-    public IReadOnlyList<StyleSheet> StyleSheets => _styleSheets;
+    #endregion
+
+    #region 样式解析
 
     public StyleMatchResult ResolveStyle(Element.WidgetElement element)
     {
@@ -74,10 +166,58 @@ public sealed class ThemeManager
         return result;
     }
 
+    #endregion
+
+    #region 样式应用
+
     public void ApplyStyle(Element.WidgetElement element)
     {
         var result = ResolveStyle(element);
         ApplyDeclarations(element, result);
+    }
+
+    public void ApplyThemeToElement(WidgetElement element)
+    {
+        ApplyThemeColorsRecursive(element);
+    }
+
+    private void ApplyThemeColorsRecursive(WidgetElement element)
+    {
+        ApplyThemeColors(element);
+
+        if (element is ContainerElement container)
+        {
+            foreach (var child in container.Children)
+            {
+                ApplyThemeColorsRecursive(child);
+            }
+        }
+    }
+
+    private void ApplyThemeColors(WidgetElement element)
+    {
+        if (_currentTheme == null)
+        {
+            return;
+        }
+
+        var bg = _currentTheme.GetColor("background");
+        if (bg != null && element.Background.A > 0)
+        {
+            element.Background = bg.Value.ToWidgetColor();
+        }
+
+        var fg = _currentTheme.GetColor("text");
+        if (fg != null && element.Foreground.A > 0)
+        {
+            element.Foreground = fg.Value.ToWidgetColor();
+        }
+
+        var border = _currentTheme.GetColor("border");
+        if (border != null && element.BorderColor.A > 0)
+        {
+            element.BorderColor = border.Value.ToWidgetColor();
+        }
     }
 
     private void ApplyDeclarations(Element.WidgetElement element, StyleMatchResult result)
@@ -204,4 +344,6 @@ public sealed class ThemeManager
 
         setter(element, edgeInsets);
     }
+
+    #endregion
 }
