@@ -77,9 +77,20 @@ public sealed class StyleSheet
 
     public static StyleSheet Parse(string source)
     {
+        var oakSheet = Oak.Scss.StyleSheet.Parse(source);
         var sheet = new StyleSheet(source);
-        var parser = new ScssParser(source);
-        parser.Parse(sheet);
+
+        foreach (var oakRule in oakSheet.Rules)
+        {
+            var selectors = oakRule.Selectors
+                .Select(s => new StyleSelector((StyleSelectorType)(int)s.Type, s.Value))
+                .ToList();
+            var declarations = oakRule.Declarations
+                .Select(d => new StyleDeclaration(d.Property, d.Value, d.Specificity, d.Important))
+                .ToList();
+            sheet.AddRule(selectors, declarations);
+        }
+
         return sheet;
     }
 

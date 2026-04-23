@@ -1,3 +1,5 @@
+using Acorn.Tensor.Data;
+using Acorn.Tensor.Encode;
 using Gnosis.Graphic.Shader;
 using Gnosis.IR.Shader;
 using Gnosis.Neural.Runtime;
@@ -5,20 +7,25 @@ using Gnosis.Neural.Runtime;
 namespace Gnosis.Neural.Adapter;
 
 /// <summary>
-/// 神经网络着色器后端，将 Shader IR 转换为 Tensor Core 优化的计算着色器
+///     神经网络着色器后端，将 Shader IR 转换为 Tensor Core 优化的计算着色器。
 /// </summary>
+/// <remarks>
+///     本后端使用 Acorn.Tensor 的 <see cref="TensorProgramEncoder" /> 进行张量程序二进制编码，
+///     遵循架构规则：二进制编解码职责由 Acorn 独占。
+/// </remarks>
 public sealed class NeuralShaderBackend : IShaderBackend
 {
     #region Fields
 
     private readonly INeuralRuntime _neuralRuntime;
+    private readonly List<TensorInstruction> _operations = [];
 
     #endregion
 
     #region Properties
 
     /// <summary>
-    /// 后端名称
+    ///     后端名称
     /// </summary>
     public string Name => "Neural";
 
@@ -36,7 +43,7 @@ public sealed class NeuralShaderBackend : IShaderBackend
     #region Public Methods
 
     /// <summary>
-    /// 检查是否支持指定的微函数类型
+    ///     检查是否支持指定的微函数类型
     /// </summary>
     public bool SupportsKind(MicroFunctionKind kind)
     {
@@ -44,7 +51,7 @@ public sealed class NeuralShaderBackend : IShaderBackend
     }
 
     /// <summary>
-    /// 编译着色器模块
+    ///     编译着色器模块
     /// </summary>
     public IShaderModule CompileModule(IShaderModule module, ShaderCompileOptions options)
     {
@@ -52,223 +59,173 @@ public sealed class NeuralShaderBackend : IShaderBackend
     }
 
     /// <summary>
-    /// 编译 Shader IR 为神经网络优化的计算着色器
+    ///     编译 Shader IR 为神经网络优化的计算着色器
     /// </summary>
     public byte[] Compile(ShaderModuleIr module, ShaderCompileOptions options)
     {
-        var neuralProgram = new NeuralProgram();
+        _operations.Clear();
 
         foreach (var function in module.Functions)
         {
             if (function.IsEntryPoint && function.EntryPointModel == ShaderExecutionModel.Compute)
             {
-                CompileNeuralFunction(function, neuralProgram);
+                CompileNeuralFunction(function);
             }
         }
 
-        return neuralProgram.Serialize();
+        var program = new TensorProgramData
+        {
+            Operations = _operations.ToArray()
+        };
+
+        var encoder = new TensorProgramEncoder();
+        return encoder.Encode(program);
     }
 
     /// <summary>
-    /// 分发计算着色器
+    ///     分发计算着色器
     /// </summary>
     public void DispatchCompute(IMicroFunction computeFunction, uint groupCountX, uint groupCountY, uint groupCountZ)
     {
-        // 神经网络后端通过运行时执行计算
     }
 
     #endregion
 
     #region Private Methods
 
-    private void CompileNeuralFunction(ShaderFunctionIr function, NeuralProgram program)
+    private void CompileNeuralFunction(ShaderFunctionIr function)
     {
         foreach (var instruction in function.Instructions)
         {
             switch (instruction.OpCode)
             {
                 case ShaderIrOpCode.Mul:
-                    CompileMatrixMultiply(instruction, program);
+                    CompileMatrixMultiply(instruction);
                     break;
 
                 case ShaderIrOpCode.Add:
-                    CompileElementWiseAdd(instruction, program);
+                    CompileElementWiseAdd(instruction);
                     break;
 
                 case ShaderIrOpCode.Sub:
-                    CompileElementWiseSub(instruction, program);
+                    CompileElementWiseSub(instruction);
                     break;
 
                 case ShaderIrOpCode.Div:
-                    CompileElementWiseDiv(instruction, program);
+                    CompileElementWiseDiv(instruction);
                     break;
 
                 case ShaderIrOpCode.Dot:
-                    CompileDotProduct(instruction, program);
+                    CompileDotProduct(instruction);
                     break;
 
                 case ShaderIrOpCode.Cross:
-                    CompileCrossProduct(instruction, program);
+                    CompileCrossProduct(instruction);
                     break;
 
                 case ShaderIrOpCode.Lerp:
-                    CompileInterpolation(instruction, program);
+                    CompileInterpolation(instruction);
                     break;
 
                 case ShaderIrOpCode.Step:
-                    CompileStepFunction(instruction, program);
+                    CompileStepFunction(instruction);
                     break;
 
                 case ShaderIrOpCode.SmoothStep:
-                    CompileSmoothStepFunction(instruction, program);
+                    CompileSmoothStepFunction(instruction);
                     break;
 
                 default:
-                    CompileGenericInstruction(instruction, program);
+                    CompileGenericInstruction(instruction);
                     break;
             }
         }
     }
 
-    private void CompileMatrixMultiply(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileMatrixMultiply(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
-            OpCode = TensorOpCode.MatMul
-        };
-
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "M", Size = 1024 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "N", Size = 1024 });
-        tensorOp.Dimensions.Add(new TensorDimensionIr { Name = "K", Size = 1024 });
-
-        program.AddTensorOperation(tensorOp);
+            OpCode = TensorOpCode.MatMul,
+            Dimensions =
+            [
+                new TensorDimension { Name = "M", Size = 1024 },
+                new TensorDimension { Name = "N", Size = 1024 },
+                new TensorDimension { Name = "K", Size = 1024 }
+            ]
+        });
     }
 
-    private void CompileElementWiseAdd(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileElementWiseAdd(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseAdd
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileElementWiseSub(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileElementWiseSub(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseSub
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileElementWiseDiv(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileElementWiseDiv(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseDiv
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileDotProduct(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileDotProduct(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ReduceSum
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileCrossProduct(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileCrossProduct(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseMul
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileInterpolation(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileInterpolation(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseAdd
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileStepFunction(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileStepFunction(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseClamp
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileSmoothStepFunction(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileSmoothStepFunction(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseSigmoid
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileGenericInstruction(ShaderIrInstruction instruction, NeuralProgram program)
+    private void CompileGenericInstruction(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.Custom
-        };
-
-        program.AddTensorOperation(tensorOp);
-    }
-
-    #endregion
-
-    #region Nested Types
-
-    private sealed class NeuralProgram
-    {
-        private readonly List<TensorInstruction> _operations = [];
-
-        public void AddTensorOperation(TensorInstruction operation)
-        {
-            _operations.Add(operation);
-        }
-
-        public byte[] Serialize()
-        {
-            using var stream = new System.IO.MemoryStream();
-            using var writer = new System.IO.BinaryWriter(stream);
-
-            writer.Write(_operations.Count);
-
-            foreach (var op in _operations)
-            {
-                writer.Write((int)op.OpCode);
-                writer.Write(op.Dimensions.Count);
-
-                foreach (var dim in op.Dimensions)
-                {
-                    writer.Write(dim.Name);
-                    writer.Write(dim.Size);
-                    writer.Write(dim.Stride);
-                }
-            }
-
-            return stream.ToArray();
-        }
+        });
     }
 
     #endregion

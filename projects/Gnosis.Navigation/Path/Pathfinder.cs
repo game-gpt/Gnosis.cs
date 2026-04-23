@@ -21,82 +21,6 @@ public sealed class Pathfinder : IPathfinder
         public float FCost;
     }
 
-    /// <summary>
-    /// 优先队列（最小堆）
-    /// </summary>
-    private sealed class MinHeap
-    {
-        private readonly List<AStarNode> _data = new();
-
-        public int Count => _data.Count;
-
-        public void Push(AStarNode node)
-        {
-            _data.Add(node);
-            SiftUp(_data.Count - 1);
-        }
-
-        public AStarNode Pop()
-        {
-            var root = _data[0];
-            var last = _data[^1];
-            _data[0] = last;
-            _data.RemoveAt(_data.Count - 1);
-
-            if (_data.Count > 0)
-            {
-                SiftDown(0);
-            }
-
-            return root;
-        }
-
-        private void SiftUp(int index)
-        {
-            while (index > 0)
-            {
-                var parent = (index - 1) / 2;
-                if (_data[index].FCost >= _data[parent].FCost)
-                {
-                    break;
-                }
-
-                (_data[index], _data[parent]) = (_data[parent], _data[index]);
-                index = parent;
-            }
-        }
-
-        private void SiftDown(int index)
-        {
-            var count = _data.Count;
-
-            while (true)
-            {
-                var smallest = index;
-                var left = 2 * index + 1;
-                var right = 2 * index + 2;
-
-                if (left < count && _data[left].FCost < _data[smallest].FCost)
-                {
-                    smallest = left;
-                }
-
-                if (right < count && _data[right].FCost < _data[smallest].FCost)
-                {
-                    smallest = right;
-                }
-
-                if (smallest == index)
-                {
-                    break;
-                }
-
-                (_data[index], _data[smallest]) = (_data[smallest], _data[index]);
-                index = smallest;
-            }
-        }
-    }
-
     #endregion
 
     #region 字段
@@ -181,7 +105,7 @@ public sealed class Pathfinder : IPathfinder
             polygonMap[polygon.Id] = polygon;
         }
 
-        var openSet = new MinHeap();
+        var openSet = new PriorityQueue<AStarNode, float>();
         var cameFrom = new Dictionary<int, int>();
         var gScore = new Dictionary<int, float>();
         var closedSet = new HashSet<int>();
@@ -194,17 +118,17 @@ public sealed class Pathfinder : IPathfinder
         var endCenter = GetPolygonCenter(endPolygon);
 
         gScore[startId] = 0;
-        openSet.Push(new AStarNode
+        openSet.Enqueue(new AStarNode
         {
             PolygonId = startId,
             ParentPolygonId = -1,
             GCost = 0,
             FCost = 0
-        });
+        }, 0);
 
         while (openSet.Count > 0)
         {
-            var current = openSet.Pop();
+            var current = openSet.Dequeue();
 
             if (current.PolygonId == endId)
             {
@@ -246,13 +170,13 @@ public sealed class Pathfinder : IPathfinder
                     var neighborCenter = GetPolygonCenter(neighborPolygon);
                     var heuristic = DistanceXZ(neighborCenter, endCenter);
 
-                    openSet.Push(new AStarNode
+                    openSet.Enqueue(new AStarNode
                     {
                         PolygonId = neighborId,
                         ParentPolygonId = current.PolygonId,
                         GCost = tentativeG,
                         FCost = tentativeG + heuristic
-                    });
+                    }, tentativeG + heuristic);
                 }
             }
         }

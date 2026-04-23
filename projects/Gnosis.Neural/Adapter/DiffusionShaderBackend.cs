@@ -1,3 +1,5 @@
+using Acorn.Tensor.Data;
+using Acorn.Tensor.Encode;
 using Gnosis.Graphic.Shader;
 using Gnosis.IR.Shader;
 using Gnosis.Neural.Runtime;
@@ -5,20 +7,25 @@ using Gnosis.Neural.Runtime;
 namespace Gnosis.Neural.Adapter;
 
 /// <summary>
-/// 扩散模型着色器后端，将 Shader IR 转换为扩散模型优化的计算着色器
+///     扩散模型着色器后端，将 Shader IR 转换为扩散模型优化的计算着色器。
 /// </summary>
+/// <remarks>
+///     本后端使用 Acorn.Tensor 的 <see cref="TensorProgramEncoder" /> 进行张量程序二进制编码，
+///     遵循架构规则：二进制编解码职责由 Acorn 独占。
+/// </remarks>
 public sealed class DiffusionShaderBackend : IShaderBackend
 {
     #region Fields
 
     private readonly IDiffusionRuntime _diffusionRuntime;
+    private readonly List<TensorInstruction> _operations = [];
 
     #endregion
 
     #region Properties
 
     /// <summary>
-    /// 后端名称
+    ///     后端名称
     /// </summary>
     public string Name => "Diffusion";
 
@@ -36,7 +43,7 @@ public sealed class DiffusionShaderBackend : IShaderBackend
     #region Public Methods
 
     /// <summary>
-    /// 检查是否支持指定的微函数类型
+    ///     检查是否支持指定的微函数类型
     /// </summary>
     public bool SupportsKind(MicroFunctionKind kind)
     {
@@ -44,7 +51,7 @@ public sealed class DiffusionShaderBackend : IShaderBackend
     }
 
     /// <summary>
-    /// 编译着色器模块
+    ///     编译着色器模块
     /// </summary>
     public IShaderModule CompileModule(IShaderModule module, ShaderCompileOptions options)
     {
@@ -52,219 +59,167 @@ public sealed class DiffusionShaderBackend : IShaderBackend
     }
 
     /// <summary>
-    /// 编译 Shader IR 为扩散模型优化的计算着色器
+    ///     编译 Shader IR 为扩散模型优化的计算着色器
     /// </summary>
     public byte[] Compile(ShaderModuleIr module, ShaderCompileOptions options)
     {
-        var diffusionProgram = new DiffusionProgram();
+        _operations.Clear();
 
         foreach (var function in module.Functions)
         {
             if (function.IsEntryPoint && function.EntryPointModel == ShaderExecutionModel.Compute)
             {
-                CompileDiffusionFunction(function, diffusionProgram);
+                CompileDiffusionFunction(function);
             }
         }
 
-        return diffusionProgram.Serialize();
+        var program = new TensorProgramData
+        {
+            Operations = _operations.ToArray()
+        };
+
+        var encoder = new TensorProgramEncoder();
+        return encoder.Encode(program);
     }
 
     /// <summary>
-    /// 分发计算着色器
+    ///     分发计算着色器
     /// </summary>
     public void DispatchCompute(IMicroFunction computeFunction, uint groupCountX, uint groupCountY, uint groupCountZ)
     {
-        // 扩散模型后端通过运行时执行计算
     }
 
     #endregion
 
     #region Private Methods
 
-    private void CompileDiffusionFunction(ShaderFunctionIr function, DiffusionProgram program)
+    private void CompileDiffusionFunction(ShaderFunctionIr function)
     {
         foreach (var instruction in function.Instructions)
         {
             switch (instruction.OpCode)
             {
                 case ShaderIrOpCode.Mul:
-                    CompileNoiseMultiply(instruction, program);
+                    CompileNoiseMultiply(instruction);
                     break;
 
                 case ShaderIrOpCode.Add:
-                    CompileNoiseAddition(instruction, program);
+                    CompileNoiseAddition(instruction);
                     break;
 
                 case ShaderIrOpCode.Sub:
-                    CompileDenoiseStep(instruction, program);
+                    CompileDenoiseStep(instruction);
                     break;
 
                 case ShaderIrOpCode.Div:
-                    CompileNoiseDivide(instruction, program);
+                    CompileNoiseDivide(instruction);
                     break;
 
                 case ShaderIrOpCode.Dot:
-                    CompileDotProduct(instruction, program);
+                    CompileDotProduct(instruction);
                     break;
 
                 case ShaderIrOpCode.Cross:
-                    CompileCrossProduct(instruction, program);
+                    CompileCrossProduct(instruction);
                     break;
 
                 case ShaderIrOpCode.Lerp:
-                    CompileInterpolation(instruction, program);
+                    CompileInterpolation(instruction);
                     break;
 
                 case ShaderIrOpCode.Step:
-                    CompileStepFunction(instruction, program);
+                    CompileStepFunction(instruction);
                     break;
 
                 case ShaderIrOpCode.SmoothStep:
-                    CompileSmoothStepFunction(instruction, program);
+                    CompileSmoothStepFunction(instruction);
                     break;
 
                 default:
-                    CompileGenericDiffusionInstruction(instruction, program);
+                    CompileGenericDiffusionInstruction(instruction);
                     break;
             }
         }
     }
 
-    private void CompileNoiseMultiply(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileNoiseMultiply(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseMul
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileNoiseAddition(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileNoiseAddition(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseAdd
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileDenoiseStep(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileDenoiseStep(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseSub
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileNoiseDivide(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileNoiseDivide(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseDiv
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileDotProduct(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileDotProduct(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ReduceSum
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileCrossProduct(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileCrossProduct(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseMul
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileInterpolation(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileInterpolation(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseAdd
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileStepFunction(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileStepFunction(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseClamp
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileSmoothStepFunction(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileSmoothStepFunction(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.ElementWiseSigmoid
-        };
-
-        program.AddTensorOperation(tensorOp);
+        });
     }
 
-    private void CompileGenericDiffusionInstruction(ShaderIrInstruction instruction, DiffusionProgram program)
+    private void CompileGenericDiffusionInstruction(ShaderIrInstruction instruction)
     {
-        var tensorOp = new TensorInstruction
+        _operations.Add(new TensorInstruction
         {
             OpCode = TensorOpCode.Custom
-        };
-
-        program.AddTensorOperation(tensorOp);
-    }
-
-    #endregion
-
-    #region Nested Types
-
-    private sealed class DiffusionProgram
-    {
-        private readonly List<TensorInstruction> _operations = [];
-
-        public void AddTensorOperation(TensorInstruction operation)
-        {
-            _operations.Add(operation);
-        }
-
-        public byte[] Serialize()
-        {
-            using var stream = new System.IO.MemoryStream();
-            using var writer = new System.IO.BinaryWriter(stream);
-
-            writer.Write(_operations.Count);
-
-            foreach (var op in _operations)
-            {
-                writer.Write((int)op.OpCode);
-                writer.Write(op.Dimensions.Count);
-
-                foreach (var dim in op.Dimensions)
-                {
-                    writer.Write(dim.Name);
-                    writer.Write(dim.Size);
-                    writer.Write(dim.Stride);
-                }
-            }
-
-            return stream.ToArray();
-        }
+        });
     }
 
     #endregion

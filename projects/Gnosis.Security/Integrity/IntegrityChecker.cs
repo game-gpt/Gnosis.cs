@@ -1,4 +1,4 @@
-using Gnosis.Core.Hash;
+using System.IO.Hashing;
 using Gnosis.Core.Time;
 
 namespace Gnosis.Security.Integrity;
@@ -24,7 +24,7 @@ public sealed class IntegrityChecker : IIntegrityChecker
     public IntegrityChecker(string name, byte[] originalBytes, Func<byte[]> currentBytesProvider)
     {
         Name = name;
-        _originalHash = Crc32.Compute(originalBytes);
+        _originalHash = Crc32.HashToUInt32(originalBytes);
         _currentBytesProvider = currentBytesProvider;
         LastCheckTime = default;
     }
@@ -36,7 +36,7 @@ public sealed class IntegrityChecker : IIntegrityChecker
     public bool Check()
     {
         var currentBytes = _currentBytesProvider();
-        var currentHash = Crc32.Compute(currentBytes);
+        var currentHash = Crc32.HashToUInt32(currentBytes);
         LastCheckTime = Timestamp.Now;
         return currentHash == _originalHash;
     }

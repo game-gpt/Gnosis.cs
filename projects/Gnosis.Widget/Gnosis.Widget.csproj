@@ -15,4 +15,8 @@
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Scss\Oak.Scss.csproj" />
+    </ItemGroup>
 </Project>

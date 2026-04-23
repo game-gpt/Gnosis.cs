@@ -1,4 +1,5 @@
 using Gnosis.Graphic.RHI;
+using System.Numerics;
 using Gnosis.Core.Math;
 
 namespace Gnosis.Graphic.PostProcess;

@@ -1,15 +1,18 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Gnosis.Core.Event;
 
 /// <summary>
-/// 事件总线，支持类型安全的事件发布与订阅，零分配设计
+/// 统一的事件总线，支持类型安全的事件发布与订阅。
+/// 基于 Signal&lt;T&gt; 构建，替代原有的独立 EventBus 实现。
 /// </summary>
 public sealed class EventBus
 {
     #region 字段
 
-    private readonly Dictionary<Type, List<Delegate>> _handlers = new();
+    private readonly Dictionary<Type, object> _signals = new();
     private readonly object _lock = new();
 
     #endregion
@@ -30,13 +33,13 @@ public sealed class EventBus
         lock (_lock)
         {
             var eventType = typeof(TEvent);
-            if (!_handlers.TryGetValue(eventType, out var list))
+            if (!_signals.TryGetValue(eventType, out var signal))
             {
-                list = new List<Delegate>();
-                _handlers[eventType] = list;
+                signal = new Signal<TEvent>();
+                _signals[eventType] = signal;
             }
 
-            list.Add(handler);
+            ((Signal<TEvent>)signal).Connect(handler);
         }
     }
 
@@ -53,9 +56,9 @@ public sealed class EventBus
 
         lock (_lock)
         {
-            if (_handlers.TryGetValue(typeof(TEvent), out var list))
+            if (_signals.TryGetValue(typeof(TEvent), out var signal))
             {
-                list.Remove(handler);
+                ((Signal<TEvent>)signal).Disconnect(handler);
             }
         }
     }
@@ -70,24 +73,19 @@ public sealed class EventBus
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Publish<TEvent>(TEvent evt)
     {
-        List<Delegate>? handlers;
+        Signal<TEvent>? signal;
+
         lock (_lock)
         {
-            if (!_handlers.TryGetValue(typeof(TEvent), out var list))
+            if (!_signals.TryGetValue(typeof(TEvent), out var s))
             {
                 return;
             }
 
-            handlers = list;
+            signal = (Signal<TEvent>)s;
         }
 
-        for (var i = 0; i < handlers.Count; i++)
-        {
-            if (handlers[i] is Action<TEvent> handler)
-            {
-                handler(evt);
-            }
-        }
+        signal.Emit(evt);
     }
 
     #endregion
@@ -102,7 +100,7 @@ public sealed class EventBus
     {
         lock (_lock)
         {
-            _handlers.Clear();
+            _signals.Clear();
         }
     }
 
@@ -114,7 +112,7 @@ public sealed class EventBus
     {
         lock (_lock)
         {
-            _handlers.Remove(typeof(TEvent));
+            _signals.Remove(typeof(TEvent));
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using Acorn.Core.ByteOrder;
 
 namespace Gnosis.Network.Serialization;
 
@@ -368,10 +369,8 @@ public static class NetworkCompressor
     /// </summary>
     private static void WriteInt32BigEndian(byte[] buffer, int offset, int value)
     {
-        buffer[offset] = (byte)(value >> 24);
-        buffer[offset + 1] = (byte)(value >> 16);
-        buffer[offset + 2] = (byte)(value >> 8);
-        buffer[offset + 3] = (byte)value;
+        var bytes = ByteOrderConverter.GetBytes(value, Endianness.BigEndian);
+        Buffer.BlockCopy(bytes, 0, buffer, offset, 4);
     }
 
     /// <summary>
@@ -379,7 +378,7 @@ public static class NetworkCompressor
     /// </summary>
     private static int ReadInt32BigEndian(ReadOnlySpan<byte> data, int offset)
     {
-        return (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
+        return ByteOrderConverter.ToInt32(data.Slice(offset, 4), Endianness.BigEndian);
     }
 
     #endregion

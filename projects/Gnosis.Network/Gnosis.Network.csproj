@@ -16,6 +16,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Core\Acorn.Core.csproj" />
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.Security\Gnosis.Security.csproj" />
     </ItemGroup>

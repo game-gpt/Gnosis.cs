@@ -1,3 +1,4 @@
+using System.Numerics;
 using Gnosis.Core.Math;
 using Gnosis.Graphic.RHI;
 using Gnosis.XR.Session;

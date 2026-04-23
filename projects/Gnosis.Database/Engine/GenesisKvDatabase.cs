@@ -74,11 +74,8 @@ public sealed class GenesisKvDatabase : GnosisDatabaseCore.IKvDatabase
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         await _solidDb.PutAsync(key, (SolidDatabaseCore.SolidValue)value, cancellationToken);
-        _statistics = _statistics with
-        {
-            TotalWrites = _statistics.TotalWrites + 1,
-            TotalKeys = _statistics.TotalKeys + 1
-        };
+        _statistics.TotalWrites++;
+        _statistics.TotalKeys++;
     }
 
     public async ValueTask<bool> DeleteAsync(GnosisDatabaseCore.DatabaseKey key,
@@ -89,11 +86,8 @@ public sealed class GenesisKvDatabase : GnosisDatabaseCore.IKvDatabase
         var deleted = await _solidDb.DeleteAsync(key, cancellationToken);
         if (deleted)
         {
-            _statistics = _statistics with
-            {
-                TotalWrites = _statistics.TotalWrites + 1,
-                TotalKeys = Math.Max(0, _statistics.TotalKeys - 1)
-            };
+            _statistics.TotalWrites++;
+            _statistics.TotalKeys = Math.Max(0, _statistics.TotalKeys - 1);
         }
 
         return deleted;

@@ -1,66 +1,161 @@
+using System;
 using System.Collections.Generic;
 
 namespace Gnosis.Core.Event;
 
 /// <summary>
-/// 轻量级无参数信号，实现观察者模式
+/// 类型安全的信号机制，支持无参数和带参数两种模式。
+/// 替代原有的 Signal、Signal&lt;T&gt;、MulticastDelegate&lt;T&gt; 和 EventBus 四套机制。
 /// </summary>
-public class Signal
+public sealed class Signal
 {
-    private readonly List<Action> _handlers = new();
-    private readonly List<int> _indexToId = new();
-    private readonly Dictionary<int, int> _idToIndex = new();
-    private int _nextId;
+    private readonly List<Action> _handlers = [];
+    private readonly List<Action> _pendingRemovals = [];
+    private bool _isEmitting;
 
     /// <summary>
-    /// 连接一个无参数的处理器到信号
+    /// 连接一个无参数处理器
     /// </summary>
-    /// <param name="handler">要连接的处理器</param>
-    /// <returns>连接句柄，用于后续断开连接</returns>
     public ConnectionHandle Connect(Action handler)
     {
-        var id = _nextId++;
-        var index = _handlers.Count;
         _handlers.Add(handler);
-        _indexToId.Add(id);
-        _idToIndex[id] = index;
-        return new ConnectionHandle { Id = id, Index = index };
+        return new ConnectionHandle(() => Disconnect(handler));
     }
 
     /// <summary>
-    /// 断开指定连接句柄对应的处理器，使用交换移除策略实现 O(1) 复杂度
+    /// 断开指定处理器
     /// </summary>
-    /// <param name="handle">要断开的连接句柄</param>
-    public void Disconnect(ConnectionHandle handle)
+    public void Disconnect(Action handler)
     {
-        if (!_idToIndex.TryGetValue(handle.Id, out var index))
+        if (_isEmitting)
         {
-            return;
+            _pendingRemovals.Add(handler);
         }
-
-        var lastIndex = _handlers.Count - 1;
-        if (index != lastIndex)
+        else
         {
-            _handlers[index] = _handlers[lastIndex];
-
-            var swappedId = _indexToId[lastIndex];
-            _indexToId[index] = swappedId;
-            _idToIndex[swappedId] = index;
+            _handlers.Remove(handler);
         }
-
-        _handlers.RemoveAt(lastIndex);
-        _indexToId.RemoveAt(lastIndex);
-        _idToIndex.Remove(handle.Id);
     }
 
     /// <summary>
-    /// 发射信号，按连接顺序调用所有处理器
+    /// 触发信号
     /// </summary>
     public void Emit()
     {
-        for (var i = 0; i < _handlers.Count; i++)
+        _isEmitting = true;
+
+        try
         {
-            _handlers[i]();
+            foreach (var handler in _handlers)
+            {
+                if (!_pendingRemovals.Contains(handler))
+                {
+                    handler();
+                }
+            }
+        }
+        finally
+        {
+            _isEmitting = false;
+
+            foreach (var removal in _pendingRemovals)
+            {
+                _handlers.Remove(removal);
+            }
+
+            _pendingRemovals.Clear();
         }
     }
+
+    /// <summary>
+    /// 清空所有处理器
+    /// </summary>
+    public void Clear()
+    {
+        _handlers.Clear();
+        _pendingRemovals.Clear();
+    }
+
+    /// <summary>
+    /// 获取当前连接数
+    /// </summary>
+    public int ConnectionCount => _handlers.Count;
+}
+
+/// <summary>
+/// 带参数的类型安全信号机制
+/// </summary>
+public sealed class Signal<T>
+{
+    private readonly List<Action<T>> _handlers = [];
+    private readonly List<Action<T>> _pendingRemovals = [];
+    private bool _isEmitting;
+
+    /// <summary>
+    /// 连接一个带参数的处理器
+    /// </summary>
+    public ConnectionHandle Connect(Action<T> handler)
+    {
+        _handlers.Add(handler);
+        return new ConnectionHandle(() => Disconnect(handler));
+    }
+
+    /// <summary>
+    /// 断开指定处理器
+    /// </summary>
+    public void Disconnect(Action<T> handler)
+    {
+        if (_isEmitting)
+        {
+            _pendingRemovals.Add(handler);
+        }
+        else
+        {
+            _handlers.Remove(handler);
+        }
+    }
+
+    /// <summary>
+    /// 触发信号，传递参数
+    /// </summary>
+    public void Emit(T value)
+    {
+        _isEmitting = true;
+
+        try
+        {
+            foreach (var handler in _handlers)
+            {
+                if (!_pendingRemovals.Contains(handler))
+                {
+                    handler(value);
+                }
+            }
+        }
+        finally
+        {
+            _isEmitting = false;
+
+            foreach (var removal in _pendingRemovals)
+            {
+                _handlers.Remove(removal);
+            }
+
+            _pendingRemovals.Clear();
+        }
+    }
+
+    /// <summary>
+    /// 清空所有处理器
+    /// </summary>
+    public void Clear()
+    {
+        _handlers.Clear();
+        _pendingRemovals.Clear();
+    }
+
+    /// <summary>
+    /// 获取当前连接数
+    /// </summary>
+    public int ConnectionCount => _handlers.Count;
 }
