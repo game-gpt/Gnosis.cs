@@ -1,5 +1,5 @@
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
 
 namespace Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
@@ -116,12 +116,12 @@ public abstract class BaseSemanticAnalyzer
 
             case NodeType.MemberAccessExpr:
                 var memberExpr = (MemberAccessExpr)expr;
-                ValidateExpression(memberExpr.Object);
+                ValidateExpression(memberExpr.Target);
                 break;
 
             case NodeType.IndexExpr:
                 var indexExpr = (TermIndexExpression)expr;
-                ValidateExpression(indexExpr.Object);
+                ValidateExpression(indexExpr.Target);
                 ValidateExpression(indexExpr.Index);
                 break;
 
@@ -144,7 +144,7 @@ public abstract class BaseSemanticAnalyzer
 
             case NodeType.SwizzleExpr:
                 var swizzleExpr = (SwizzleExpr)expr;
-                ValidateExpression(swizzleExpr.Object);
+                ValidateExpression(swizzleExpr.Target);
                 break;
         }
     }

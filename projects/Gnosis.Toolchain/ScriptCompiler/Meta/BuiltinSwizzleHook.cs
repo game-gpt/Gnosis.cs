@@ -1,4 +1,4 @@
-using Gnosis.Toolchain.ScriptCompiler.AST;
+using Oak.GGScript.AST;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Meta;
 

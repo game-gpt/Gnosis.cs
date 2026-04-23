@@ -1,360 +1,125 @@
-using System.Text.RegularExpressions;
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
+using Oak.Widget;
 
 namespace Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
 public partial class WidgetCompiler
 {
-    #region Fields
-
     private readonly DiagnosticSink _diagnostics;
-
-    #endregion
-
-    #region Constructors
+    private readonly WidgetParser _parser;
 
     public WidgetCompiler(DiagnosticSink? diagnostics = null)
     {
         _diagnostics = diagnostics ?? new DiagnosticSink();
+        _parser = new WidgetParser(_diagnostics);
     }
-
-    #endregion
-
-    #region Public Methods
 
     public WidgetDecl Compile(string source, string filePath = "")
     {
-        var scriptBlock = ExtractBlock(source, "script");
-        var templateBlock = ExtractBlock(source, "template");
-        var styleBlock = ExtractBlock(source, "style");
+        var result = _parser.Parse(source, filePath);
 
-        var properties = ParseScriptBlock(scriptBlock);
-        var renderMethod = ParseTemplateBlock(templateBlock);
-        var styles = ParseStyleBlock(styleBlock);
+        var properties = ConvertProperties(result.Properties);
+        var renderMethod = ConvertTemplate(result.TemplateNodes);
 
-        var widgetName = Path.GetFileNameWithoutExtension(filePath);
-        if (string.IsNullOrEmpty(widgetName))
-        {
-            widgetName = "AnonymousWidget";
-        }
-
-        return new WidgetDecl(widgetName, properties, renderMethod);
+        return new WidgetDecl(result.Name, properties, renderMethod);
     }
 
-    #endregion
-
-    #region Private Methods - Block Extraction
-
-    private static string ExtractBlock(string source, string tagName)
-    {
-        var pattern = $@"<(?:script\s+setup|{tagName})(?:\s[^>]*)?>([\s\S]*?)</(?:script|{tagName})>";
-        var match = Regex.Match(source, pattern, RegexOptions.IgnoreCase);
-
-        if (match.Success)
-        {
-            return match.Groups[1].Value.Trim();
-        }
-
-        return string.Empty;
-    }
-
-    #endregion
-
-    #region Private Methods - Script Parsing
-
-    private List<FieldDecl> ParseScriptBlock(string scriptContent)
+    private static List<FieldDecl> ConvertProperties(IReadOnlyList<WidgetProperty> widgetProperties)
     {
         var properties = new List<FieldDecl>();
 
-        if (string.IsNullOrWhiteSpace(scriptContent))
+        foreach (var prop in widgetProperties)
         {
-            return properties;
-        }
+            var type = new TypeAnnotation(prop.TypeName, []);
+            AstNode? defaultValue = ConvertValueKind(prop.DefaultValue, prop.DefaultValueKind);
 
-        var lines = scriptContent.Split('\n');
-
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
-
-            if (trimmed.StartsWith("let ") || trimmed.StartsWith("const "))
+            var attrs = new List<AttributeDecl>();
+            if (prop.IsReadonly)
             {
-                var prop = ParsePropertyDeclaration(trimmed);
-                if (prop is not null)
-                {
-                    properties.Add(prop);
-                }
+                attrs.Add(new AttributeDecl("Readonly", []));
             }
-            else if (trimmed.StartsWith("micro "))
-            {
-                // 微函数声明，暂不处理
-            }
+
+            properties.Add(new FieldDecl(prop.Name, type, defaultValue, attrs));
         }
 
         return properties;
     }
 
-    private FieldDecl? ParsePropertyDeclaration(string line)
+    private static AstNode? ConvertValueKind(string? value, WidgetValueKind kind)
     {
-        var match = PropertyDeclRegex().Match(line);
-
-        if (!match.Success)
+        if (value is null || kind == WidgetValueKind.None)
         {
             return null;
         }
 
-        var isMutable = line.TrimStart().StartsWith("let ");
-        var name = match.Groups[2].Value;
-        var typeStr = match.Groups[3].Success ? match.Groups[3].Value.Trim() : null;
-        var defaultStr = match.Groups[4].Success ? match.Groups[4].Value.Trim() : null;
-
-        var type = typeStr is not null
-            ? new TypeAnnotation(MapJsTypeToGgType(typeStr), [])
-            : new TypeAnnotation(InferTypeFromDefault(defaultStr), []);
-
-        AstNode? defaultValue = null;
-        if (defaultStr is not null)
+        return kind switch
         {
-            defaultValue = ParseDefaultValue(defaultStr);
-        }
-
-        var attrs = new List<AttributeDecl>();
-        if (!isMutable)
-        {
-            attrs.Add(new AttributeDecl("Readonly", []));
-        }
-
-        return new FieldDecl(name, type, defaultValue, attrs);
-    }
-
-    private static string MapJsTypeToGgType(string jsType)
-    {
-        return jsType.Trim() switch
-        {
-            "number" => "f64",
-            "string" => "string",
-            "boolean" => "bool",
-            "object" => "Map",
-            "array" => "Array",
-            _ => jsType.Trim()
+            WidgetValueKind.Boolean => new LiteralExpr(LiteralType.Boolean, value == "true"),
+            WidgetValueKind.Number => new LiteralExpr(LiteralType.Number, value),
+            WidgetValueKind.String => new LiteralExpr(LiteralType.String, value),
+            WidgetValueKind.Identifier => new IdentifierNode(value),
+            WidgetValueKind.Array => new IdentifierNode(value),
+            WidgetValueKind.Object => new IdentifierNode(value),
+            _ => new IdentifierNode(value)
         };
     }
 
-    private static string InferTypeFromDefault(string? defaultStr)
+    private static FunctionDecl? ConvertTemplate(IReadOnlyList<WidgetTemplateNode> nodes)
     {
-        if (defaultStr is null)
-        {
-            return "auto";
-        }
-
-        defaultStr = defaultStr.Trim();
-
-        if (defaultStr is "true" or "false")
-        {
-            return "bool";
-        }
-
-        if (defaultStr.StartsWith("\"") || defaultStr.StartsWith("'"))
-        {
-            return "string";
-        }
-
-        if (double.TryParse(defaultStr, System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out _))
-        {
-            return "f64";
-        }
-
-        if (defaultStr.StartsWith("["))
-        {
-            return "Array";
-        }
-
-        if (defaultStr.StartsWith("{"))
-        {
-            return "Map";
-        }
-
-        return "auto";
-    }
-
-    private static AstNode ParseDefaultValue(string defaultStr)
-    {
-        defaultStr = defaultStr.Trim();
-
-        if (defaultStr == "true")
-        {
-            return new LiteralExpr(LiteralType.Boolean, true);
-        }
-
-        if (defaultStr == "false")
-        {
-            return new LiteralExpr(LiteralType.Boolean, false);
-        }
-
-        if (defaultStr.StartsWith("\"") && defaultStr.EndsWith("\""))
-        {
-            return new LiteralExpr(LiteralType.String, defaultStr[1..^1]);
-        }
-
-        if (defaultStr.StartsWith("'") && defaultStr.EndsWith("'"))
-        {
-            return new LiteralExpr(LiteralType.String, defaultStr[1..^1]);
-        }
-
-        if (int.TryParse(defaultStr, out var intVal))
-        {
-            return new LiteralExpr(LiteralType.Number, intVal.ToString());
-        }
-
-        if (float.TryParse(defaultStr, System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out var floatVal))
-        {
-            return new LiteralExpr(LiteralType.Number, floatVal.ToString());
-        }
-
-        return new IdentifierNode(defaultStr);
-    }
-
-    #endregion
-
-    #region Private Methods - Template Parsing
-
-    private FunctionDecl? ParseTemplateBlock(string templateContent)
-    {
-        if (string.IsNullOrWhiteSpace(templateContent))
+        if (nodes.Count == 0)
         {
             return null;
         }
 
         var statements = new List<AstNode>();
-        ParseTemplateNodes(templateContent, statements);
+        ConvertTemplateNodes(nodes, statements);
 
         var body = new BlockStmt(statements);
-
         return new FunctionDecl("render", [], null, body, []);
     }
 
-    private void ParseTemplateNodes(string template, List<AstNode> statements)
+    private static void ConvertTemplateNodes(IReadOnlyList<WidgetTemplateNode> nodes, List<AstNode> statements)
     {
-        var pos = 0;
-
-        while (pos < template.Length)
+        foreach (var node in nodes)
         {
-            var textEnd = template.IndexOf('<', pos);
-
-            if (textEnd < 0)
+            switch (node)
             {
-                var text = template[pos..].Trim();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    statements.Add(new TermExpressionStatement(new LiteralExpr(LiteralType.String, text)));
-                }
-                break;
-            }
+                case WidgetTextNode textNode:
+                    statements.Add(new TermExpressionStatement(new LiteralExpr(LiteralType.String, textNode.Text)));
+                    break;
 
-            if (textEnd > pos)
-            {
-                var text = template[pos..textEnd].Trim();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    statements.Add(new TermExpressionStatement(new LiteralExpr(LiteralType.String, text)));
-                }
-            }
-
-            var tagEnd = template.IndexOf('>', textEnd);
-            if (tagEnd < 0)
-            {
-                break;
-            }
-
-            var tagContent = template[(textEnd + 1)..tagEnd].Trim();
-            pos = tagEnd + 1;
-
-            if (tagContent.StartsWith("!--"))
-            {
-                var commentEnd = template.IndexOf("-->", pos);
-                pos = commentEnd >= 0 ? commentEnd + 3 : template.Length;
-                continue;
-            }
-
-            if (tagContent.StartsWith("/"))
-            {
-                continue;
-            }
-
-            var isSelfClosing = tagContent.EndsWith("/");
-            if (isSelfClosing)
-            {
-                tagContent = tagContent[..^1].Trim();
-            }
-
-            var (tagName, attributes) = ParseTag(tagContent);
-
-            if (tagName == "if" || tagName.StartsWith("if "))
-            {
-                var condition = tagName.Length > 3 ? tagName[3..].Trim() : "true";
-                var (ifBody, endPos) = ParseConditionalBlock(template, pos, "if");
-                pos = endPos;
-                statements.Add(new IfStatement(new IdentifierNode(condition), ifBody, null));
-            }
-            else if (tagName == "for" || tagName.StartsWith("for "))
-            {
-                var (forBody, endPos) = ParseForBlock(template, pos);
-                pos = endPos;
-                statements.Add(forBody);
-            }
-            else
-            {
-                var widgetCall = CreateWidgetCall(tagName, attributes);
-
-                if (!isSelfClosing)
-                {
-                    var (children, endPos) = ParseChildContent(template, pos, tagName);
-                    pos = endPos;
-
-                    if (children.Statements.Count > 0)
-                    {
-                        statements.Add(new TermExpressionStatement(widgetCall));
-                        statements.AddRange(children.Statements);
-                    }
-                    else
-                    {
-                        statements.Add(new TermExpressionStatement(widgetCall));
-                    }
-                }
-                else
-                {
+                case WidgetElementNode elementNode:
+                    var widgetCall = CreateWidgetCall(elementNode.TagName, elementNode.Attributes);
                     statements.Add(new TermExpressionStatement(widgetCall));
-                }
+
+                    if (elementNode.Children.Count > 0)
+                    {
+                        ConvertTemplateNodes(elementNode.Children, statements);
+                    }
+                    break;
+
+                case WidgetIfNode ifNode:
+                    var ifBody = ConvertToBlock(ifNode.Children);
+                    statements.Add(new IfStatement(new IdentifierNode(ifNode.Condition), ifBody, null));
+                    break;
+
+                case WidgetForNode forNode:
+                    var forBody = ConvertToBlock(forNode.Children);
+                    statements.Add(new LoopStmt(forNode.Iterator, new IdentifierNode(forNode.Iterable), forBody));
+                    break;
             }
         }
     }
 
-    private static (string TagName, Dictionary<string, string> Attributes) ParseTag(string tagContent)
+    private static BlockStmt ConvertToBlock(IReadOnlyList<WidgetTemplateNode> children)
     {
-        var parts = tagContent.Split(' ', 2);
-        var tagName = parts[0];
-        var attributes = new Dictionary<string, string>();
-
-        if (parts.Length > 1)
-        {
-            var attrString = parts[1];
-            var attrMatches = AttributeRegex().Matches(attrString);
-
-            foreach (Match match in attrMatches)
-            {
-                var key = match.Groups[1].Value;
-                var value = match.Groups[2].Success ? match.Groups[2].Value : "true";
-                attributes[key] = value;
-            }
-        }
-
-        return (tagName, attributes);
+        var statements = new List<AstNode>();
+        ConvertTemplateNodes(children, statements);
+        return new BlockStmt(statements);
     }
 
-    private static TermCallExpression CreateWidgetCall(string tagName, Dictionary<string, string> attributes)
+    private static TermCallExpression CreateWidgetCall(string tagName, IReadOnlyDictionary<string, string> attributes)
     {
         var args = new List<AstNode>();
 
@@ -390,184 +155,4 @@ public partial class WidgetCompiler
 
         return new IdentifierNode(value);
     }
-
-    private (BlockStmt body, int endPos) ParseConditionalBlock(string template, int startPos, string blockType)
-    {
-        var statements = new List<AstNode>();
-        var depth = 1;
-        var pos = startPos;
-        var blockStart = startPos;
-
-        while (pos < template.Length && depth > 0)
-        {
-            var nextOpen = template.IndexOf('<', pos);
-            if (nextOpen < 0)
-            {
-                break;
-            }
-
-            var nextClose = template.IndexOf('>', nextOpen);
-            if (nextClose < 0)
-            {
-                break;
-            }
-
-            var tag = template[(nextOpen + 1)..nextClose].Trim();
-
-            if (tag == blockType || tag.StartsWith(blockType + " "))
-            {
-                depth++;
-            }
-            else if (tag == "/" + blockType)
-            {
-                depth--;
-                if (depth == 0)
-                {
-                    var blockContent = template[blockStart..nextOpen].Trim();
-                    ParseTemplateNodes(blockContent, statements);
-                    return (new BlockStmt(statements), nextClose + 1);
-                }
-            }
-
-            pos = nextClose + 1;
-        }
-
-        return (new BlockStmt(statements), pos);
-    }
-
-    private (AstNode stmt, int endPos) ParseForBlock(string template, int startPos)
-    {
-        var pos = startPos;
-        var depth = 1;
-        var blockStart = startPos;
-
-        while (pos < template.Length && depth > 0)
-        {
-            var nextOpen = template.IndexOf('<', pos);
-            if (nextOpen < 0)
-            {
-                break;
-            }
-
-            var nextClose = template.IndexOf('>', nextOpen);
-            if (nextClose < 0)
-            {
-                break;
-            }
-
-            var tag = template[(nextOpen + 1)..nextClose].Trim();
-
-            if (tag.StartsWith("for ") || tag == "for")
-            {
-                depth++;
-            }
-            else if (tag == "/for")
-            {
-                depth--;
-                if (depth == 0)
-                {
-                    var blockContent = template[blockStart..nextOpen].Trim();
-                    var body = new BlockStmt(ParseTemplateStatements(blockContent));
-                    return (new LoopStmt("item", new IdentifierNode("items"), body), nextClose + 1);
-                }
-            }
-
-            pos = nextClose + 1;
-        }
-
-        return (new BlockStmt([]), pos);
-    }
-
-    private (BlockStmt children, int endPos) ParseChildContent(string template, int startPos, string parentTag)
-    {
-        var statements = new List<AstNode>();
-        var pos = startPos;
-        var depth = 1;
-        var blockStart = startPos;
-
-        while (pos < template.Length && depth > 0)
-        {
-            var nextOpen = template.IndexOf('<', pos);
-            if (nextOpen < 0)
-            {
-                break;
-            }
-
-            var nextClose = template.IndexOf('>', nextOpen);
-            if (nextClose < 0)
-            {
-                break;
-            }
-
-            var tag = template[(nextOpen + 1)..nextClose].Trim();
-            var tagName = tag.Split(' ')[0];
-
-            if (tagName == parentTag)
-            {
-                depth++;
-            }
-            else if (tagName == "/" + parentTag)
-            {
-                depth--;
-                if (depth == 0)
-                {
-                    var blockContent = template[blockStart..nextOpen].Trim();
-                    if (!string.IsNullOrEmpty(blockContent))
-                    {
-                        ParseTemplateNodes(blockContent, statements);
-                    }
-                    return (new BlockStmt(statements), nextClose + 1);
-                }
-            }
-
-            pos = nextClose + 1;
-        }
-
-        return (new BlockStmt(statements), pos);
-    }
-
-    private List<AstNode> ParseTemplateStatements(string content)
-    {
-        var statements = new List<AstNode>();
-        ParseTemplateNodes(content, statements);
-        return statements;
-    }
-
-    #endregion
-
-    #region Private Methods - Style Parsing
-
-    private Dictionary<string, string> ParseStyleBlock(string styleContent)
-    {
-        var styles = new Dictionary<string, string>();
-
-        if (string.IsNullOrWhiteSpace(styleContent))
-        {
-            return styles;
-        }
-
-        var classPattern = @"\.([a-zA-Z_][\w-]*)\s*\{([^}]*)\}";
-        var matches = Regex.Matches(styleContent, classPattern);
-
-        foreach (Match match in matches)
-        {
-            var className = match.Groups[1].Value;
-            var properties = match.Groups[2].Value.Trim();
-            styles[className] = properties;
-        }
-
-        return styles;
-    }
-
-    #endregion
-
-    #region Generated Regex
-
-    [GeneratedRegex(@"(let|const)\s+(\w+)(?::\s*(\w+))?(?:\s*=\s*(.+?))?;?\s*$")]
-    private static partial Regex PropertyDeclRegex();
-
-    [GeneratedRegex(@"([@:]?[\w-]+)(?:=""([^""]*)""|='([^']*)')?")]
-    private static partial Regex AttributeRegex();
-
-    #endregion
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Gnosis.Network.Exceptions;
 
 namespace Gnosis.Network.Lobby;
 
@@ -113,12 +114,12 @@ public sealed class LobbyService : ILobbyService, IRoomManager, IMatchmaker
     {
         if (_localMember is null)
         {
-            throw new InvalidOperationException("大厅服务未连接");
+            throw new LobbyNotConnectedException();
         }
 
         if (_currentRoom is not null)
         {
-            throw new InvalidOperationException("已在房间中，请先离开当前房间");
+            throw new LobbyAlreadyInRoomException();
         }
 
         var roomId = Guid.NewGuid().ToString("N")[..8];
@@ -154,22 +155,22 @@ public sealed class LobbyService : ILobbyService, IRoomManager, IMatchmaker
     {
         if (_localMember is null)
         {
-            throw new InvalidOperationException("大厅服务未连接");
+            throw new LobbyNotConnectedException();
         }
 
         if (_currentRoom is not null)
         {
-            throw new InvalidOperationException("已在房间中，请先离开当前房间");
+            throw new LobbyAlreadyInRoomException();
         }
 
         if (!_rooms.TryGetValue(roomId, out var room))
         {
-            throw new InvalidOperationException($"房间 {roomId} 不存在");
+            throw new LobbyRoomNotFoundException(roomId);
         }
 
         if (room.IsFull)
         {
-            throw new InvalidOperationException("房间已满");
+            throw new LobbyRoomFullException(roomId);
         }
 
         var member = new LobbyMember(_localMember.MemberId, _localMember.Name);
@@ -363,12 +364,12 @@ public sealed class LobbyService : ILobbyService, IRoomManager, IMatchmaker
     {
         if (_localMember is null)
         {
-            throw new InvalidOperationException("大厅服务未连接");
+            throw new LobbyNotConnectedException();
         }
 
         if (IsMatching)
         {
-            throw new InvalidOperationException("已在匹配中");
+            throw new Core.Exceptions.InvalidOperationException("已在匹配中");
         }
 
         _currentMatchCriteria = criteria;

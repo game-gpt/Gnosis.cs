@@ -1,7 +1,7 @@
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
-using Gnosis.Toolchain.ScriptCompiler.Lexer;
-using Gnosis.Toolchain.ScriptCompiler.Parser;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
+using Oak.GGShader.Lexer;
+using Oak.GGShader.Parser;
 using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 using Gnosis.Toolchain.ScriptCompiler.Backend;
 using Gnosis.IR.Shader;
@@ -47,10 +47,10 @@ public class ShaderCompiler : IShaderCompiler
     // 使用显式通道宏编译着色器到 SPIR-V
     public byte[] CompileToSpirV(string source, ChannelMacros macros)
     {
-        var lexer = new GameShaderLexer(_diagnostics);
+        var lexer = new GGShaderLexer(_diagnostics);
         var tokens = lexer.Tokenize(source);
 
-        var parser = new GameShaderParser(_diagnostics);
+        var parser = new GGShaderParser(_diagnostics);
         var ast = parser.Parse(tokens);
 
         var macroTable = new MacroTable();
@@ -70,10 +70,9 @@ public class ShaderCompiler : IShaderCompiler
             ast = semanticAnalyzer.Analyze(unit);
         }
 
-        var errors = _diagnostics.GetErrors().ToList();
-        if (errors.Count > 0)
+        if (_diagnostics.HasErrors)
         {
-            throw new ShaderCompilationException(errors);
+            throw new ShaderCompilationException(_diagnostics.Errors);
         }
 
         var irGenerator = new IrGenerator(_diagnostics);
@@ -88,9 +87,9 @@ public class ShaderCompiler : IShaderCompiler
         var bytecode = CompileToSpirV(sourceCode);
 
         var irGenerator = new IrGenerator(_diagnostics);
-        var lexer = new GameShaderLexer(_diagnostics);
+        var lexer = new GGShaderLexer(_diagnostics);
         var tokens = lexer.Tokenize(sourceCode);
-        var parser = new GameShaderParser(_diagnostics);
+        var parser = new GGShaderParser(_diagnostics);
         var ast = parser.Parse(tokens);
         var ir = irGenerator.Generate((CompilationUnit)ast);
 
@@ -113,10 +112,10 @@ public class ShaderCompiler : IShaderCompiler
 
         try
         {
-            var lexer = new GameShaderLexer(_diagnostics);
+            var lexer = new GGShaderLexer(_diagnostics);
             var tokens = lexer.Tokenize(sourceCode);
 
-            var parser = new GameShaderParser(_diagnostics);
+            var parser = new GGShaderParser(_diagnostics);
             var ast = parser.Parse(tokens);
 
             if (_diagnostics.Errors.Any())

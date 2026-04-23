@@ -1,11 +1,11 @@
 namespace Gnosis.Graphic.RHI;
 
 /// <summary>
-/// 管线状态描述，包含完整的渲染管线配置
+///     管线状态描述，包含完整的渲染管线配置
 /// </summary>
 public record PipelineStateDesc
 {
-    public required ulong ShaderHandle { get; init; }
+    public required IShaderProgram Shader { get; init; }
     public PrimitiveTopology Topology { get; init; } = PrimitiveTopology.TriangleList;
     public BlendMode BlendMode { get; init; }
     public bool DepthTest { get; init; }
@@ -27,52 +27,52 @@ public record PipelineStateDesc
 }
 
 /// <summary>
-/// 管线状态接口
+///     管线状态接口
 /// </summary>
 public interface IPipelineState : IDisposable
 {
     /// <summary>
-    /// 混合模式
+    ///     关联的着色器程序
+    /// </summary>
+    IShaderProgram Shader { get; }
+
+    /// <summary>
+    ///     混合模式
     /// </summary>
     BlendMode BlendMode { get; }
 
     /// <summary>
-    /// 深度测试启用
+    ///     深度测试启用
     /// </summary>
     bool DepthTest { get; }
 
     /// <summary>
-    /// 深度写入启用
+    ///     深度写入启用
     /// </summary>
     bool DepthWrite { get; }
 
     /// <summary>
-    /// 深度比较函数
+    ///     深度比较函数
     /// </summary>
     CompareFunction DepthCompare { get; }
 
     /// <summary>
-    /// 剔除模式
+    ///     剔除模式
     /// </summary>
     CullMode CullMode { get; }
 
     /// <summary>
-    /// 正面朝向
+    ///     正面朝向
     /// </summary>
     FrontFace FrontFace { get; }
 
     /// <summary>
-    /// 多边形模式
+    ///     多边形模式
     /// </summary>
     PolygonMode PolygonMode { get; }
 
     /// <summary>
-    /// 拓扑类型
+    ///     拓扑类型
     /// </summary>
     PrimitiveTopology Topology { get; }
-
-    /// <summary>
-    /// 着色器句柄
-    /// </summary>
-    ulong ShaderHandle { get; }
 }

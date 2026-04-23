@@ -1,8 +1,7 @@
 using Gnosis.Database.Core;
-using Gnosis.Database.WAL;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Database;
+namespace Gnosis.Database;
 
 [TestFixture]
 public class WalRecoveryTests

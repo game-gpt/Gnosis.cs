@@ -1,8 +1,8 @@
+using Gnosis.Asset.ConfigTable.Testing;
 using Gnosis.Asset.Format.ConfigTables;
-using Gnosis.Testing.Asset.ConfigTable;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Assets.ConfigTables;
+namespace Gnosis.Assets.ConfigTables;
 
 /// <summary>
 /// 配置表解析器测试 - 基于文件驱动

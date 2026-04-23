@@ -1,9 +1,7 @@
-using Gnosis.Database;
-using Gnosis.Database.BTree;
 using Gnosis.Database.Core;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Database;
+namespace Gnosis.Database;
 
 [TestFixture]
 public class BTreeIndexTests

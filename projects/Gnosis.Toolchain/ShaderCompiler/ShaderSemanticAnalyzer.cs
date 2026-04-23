@@ -1,6 +1,6 @@
 using Gnosis.Toolchain.ScriptCompiler;
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
 using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
 namespace Gnosis.Toolchain.ShaderCompiler;
@@ -200,19 +200,19 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
             case NodeType.MemberAccessExpr:
                 var memberExpr = (MemberAccessExpr)expr;
-                ValidateExpression(memberExpr.Object);
+                ValidateExpression(memberExpr.Target);
                 ValidateSwizzleAccess(memberExpr);
                 break;
 
             case NodeType.SwizzleExpr:
                 var swizzleExpr = (SwizzleExpr)expr;
-                ValidateExpression(swizzleExpr.Object);
+                ValidateExpression(swizzleExpr.Target);
                 ValidateSwizzleComponents(swizzleExpr);
                 break;
 
             case NodeType.IndexExpr:
                 var indexExpr = (TermIndexExpression)expr;
-                ValidateExpression(indexExpr.Object);
+                ValidateExpression(indexExpr.Target);
                 ValidateExpression(indexExpr.Index);
                 break;
 
@@ -681,7 +681,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
 
     private void ValidateSwizzleAccess(MemberAccessExpr expr)
     {
-        var objectType = ResolveExpressionType(expr.Object);
+        var objectType = ResolveExpressionType(expr.Target);
         if (objectType is null || !IsVector(objectType))
         {
             return;
@@ -694,7 +694,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 expr.Span,
                 "GG5013",
                 $"无效的 swizzle 访问: .{expr.MemberName}",
-                "有效的 swizzle 集合: xyzw, rgba, stpq，长度 1-4，不可混用集合");
+                new[] { "有效的 swizzle 集合: xyzw, rgba, stpq，长度 1-4，不可混用集合" });
         }
     }
 

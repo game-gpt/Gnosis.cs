@@ -1,11 +1,8 @@
 using Gnosis.Database.Core;
 using Gnosis.Database.Engine;
-using Gnosis.Database.Storage;
-using Gnosis.Database.SHM;
-using Gnosis.Database.WAL;
 using NUnit.Framework;
 
-namespace Gnosis.Tests.Database;
+namespace Gnosis.Database;
 
 [TestFixture]
 public class GenesisKvDatabaseTests

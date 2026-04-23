@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Lexer;
-using Gnosis.Toolchain.ScriptCompiler.Parser;
+using Oak.GGScript.AST;
+using Oak.GGScript.Lexer;
+using Oak.GGScript.Parser;
 
 namespace Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
@@ -89,8 +89,8 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 
     private AstNode EvaluateSystemDecl(SystemDecl node)
     {
-        var methods = node.LifecycleMethods.Select(EvaluateFunctionDecl).ToList();
-        return node with { LifecycleMethods = methods };
+        var methods = node.Methods.Select(EvaluateFunctionDecl).ToList();
+        return node with { Methods = methods };
     }
 
     private AstNode EvaluateWidgetDecl(WidgetDecl node)
@@ -159,8 +159,8 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
 
     private AstNode EvaluateSwizzleExpr(SwizzleExpr expr)
     {
-        var obj = EvaluateNode(expr.Object);
-        return new SwizzleExpr(obj, expr.Components, Span: expr.Span);
+        var target = EvaluateNode(expr.Target);
+        return new SwizzleExpr(target, expr.Pattern, Span: expr.Span);
     }
 
     private AstNode EvaluateMetaBlock(MetaBlock node)
@@ -212,10 +212,10 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             return new BlockStmt([]);
         }
 
-        var lexer = new GameScriptLexer();
+        var lexer = new GGScriptLexer();
         var tokens = lexer.Tokenize(expanded);
 
-        var parser = new GameScriptParser();
+        var parser = new GGScriptParser();
         var ast = parser.Parse(tokens);
 
         if (ast is CompilationUnit unit)

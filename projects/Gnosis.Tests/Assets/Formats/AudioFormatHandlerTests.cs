@@ -1,8 +1,9 @@
+using Gnosis.Asset.Format;
 using Gnosis.Testing;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace Gnosis.Asset.Format;
+namespace Gnosis.Assets.Formats;
 
 [TestFixture]
 public class AudioFormatHandlerTests : GnosisTester

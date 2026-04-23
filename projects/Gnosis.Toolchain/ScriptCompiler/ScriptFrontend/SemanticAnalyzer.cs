@@ -1,5 +1,5 @@
-using Gnosis.Toolchain.ScriptCompiler.AST;
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Oak.Core.Diagnostics;
+using Oak.GGScript.AST;
 
 namespace Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
@@ -40,7 +40,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                             comp.Span,
                             "GG0401",
                             $"重复的组件定义: {comp.Name}",
-                            $"移除或重命名重复的组件 '{comp.Name}'");
+                            new[] { $"移除或重命名重复的组件 '{comp.Name}'" });
                     }
                     else
                     {
@@ -170,7 +170,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                     attr.Span,
                     "GG0410",
                     $"组件不支持 GGScript 特性标注 '{attr.Name}'",
-                    "组件支持的 GGScript 特性标注: Encrypted, Replicated");
+                    new[] { "组件支持的 GGScript 特性标注: Encrypted, Replicated" });
             }
         }
 
@@ -187,7 +187,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                         attr.Span,
                         "GG0411",
                         $"[Honeypot] GGScript 特性标注应在 [Encrypted] 组件内使用",
-                        "在组件上添加 [Encrypted] GGScript 特性标注");
+                        new[] { "在组件上添加 [Encrypted] GGScript 特性标注" });
                 }
             }
         }
@@ -212,7 +212,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
             ValidateQueryExpr(query);
         }
 
-        foreach (var method in decl.LifecycleMethods)
+        foreach (var method in decl.Methods)
         {
             ValidateLifecycleMethod(method);
         }
@@ -231,7 +231,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                     compType.Span,
                     "GG0420",
                     $"查询引用了未定义的组件: {compType.Name}",
-                    $"定义组件 '{compType.Name}' 或检查拼写");
+                    new[] { $"定义组件 '{compType.Name}' 或检查拼写" });
             }
         }
     }
@@ -252,7 +252,7 @@ public class SemanticAnalyzer : BaseSemanticAnalyzer
                 method.Span,
                 "GG0421",
                 $"未知的生命周期方法: {method.Name}",
-                $"有效的生命周期方法: {string.Join(", ", validNames)}");
+                new[] { $"有效的生命周期方法: {string.Join(", ", validNames)}" });
         }
 
         if (method is { Name: "on_update", Parameters.Count: > 1 })

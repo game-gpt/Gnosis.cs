@@ -2,7 +2,7 @@ using System.Text;
 using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
 using Gnosis.Toolchain.ScriptCompiler.Lexer;
 
-namespace Gnosis.Testing.Compiler.Lexer;
+namespace Gnosis.Compiler.Lexer.Testing;
 
 /// <summary>
 /// Lexer 测试工具类，支持基于文件的测试模式

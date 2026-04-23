@@ -33,5 +33,6 @@
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.GGScript\Oak.GGScript.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.GGShader\Oak.GGShader.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Gon\Oak.Gon.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Widget\Oak.Widget.csproj" />
     </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-using Gnosis.Toolchain.ScriptCompiler.Diagnostics;
+using Oak.Core.Diagnostics;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Meta;
 

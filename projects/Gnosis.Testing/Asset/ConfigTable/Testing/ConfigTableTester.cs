@@ -1,7 +1,7 @@
 using System.Text;
 using Gnosis.Asset.Format.ConfigTables;
 
-namespace Gnosis.Testing.Asset.ConfigTable;
+namespace Gnosis.Asset.ConfigTable.Testing;
 
 /// <summary>
 /// 配置表测试工具类，支持基于文件的测试模式
