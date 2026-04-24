@@ -161,6 +161,14 @@ internal static unsafe class GlNative
     public static GlFlushProc? Flush;
     public static GlFinishProc? Finish;
 
+    public static GlGenSamplersProc? GenSamplers;
+    public static GlDeleteSamplersProc? DeleteSamplers;
+    public static GlSamplerParameteriProc? SamplerParameteri;
+    public static GlSamplerParameterfProc? SamplerParameterf;
+    public static GlBindSamplerProc? BindSampler;
+    public static GlBindBufferBaseProc? BindBufferBase;
+    public static GlBindBufferRangeProc? BindBufferRange;
+
     public static void LoadFunctions(Func<string, nint> getProcAddress)
     {
         CreateShader = LoadDelegate<GlCreateShaderProc>(getProcAddress, "glCreateShader");
@@ -229,6 +237,14 @@ internal static unsafe class GlNative
         PixelStorei = LoadDelegate<GlPixelStoreiProc>(getProcAddress, "glPixelStorei");
         Flush = LoadDelegate<GlFlushProc>(getProcAddress, "glFlush");
         Finish = LoadDelegate<GlFinishProc>(getProcAddress, "glFinish");
+
+        GenSamplers = LoadDelegate<GlGenSamplersProc>(getProcAddress, "glGenSamplers");
+        DeleteSamplers = LoadDelegate<GlDeleteSamplersProc>(getProcAddress, "glDeleteSamplers");
+        SamplerParameteri = LoadDelegate<GlSamplerParameteriProc>(getProcAddress, "glSamplerParameteri");
+        SamplerParameterf = LoadDelegate<GlSamplerParameterfProc>(getProcAddress, "glSamplerParameterf");
+        BindSampler = LoadDelegate<GlBindSamplerProc>(getProcAddress, "glBindSampler");
+        BindBufferBase = LoadDelegate<GlBindBufferBaseProc>(getProcAddress, "glBindBufferBase");
+        BindBufferRange = LoadDelegate<GlBindBufferRangeProc>(getProcAddress, "glBindBufferRange");
     }
 
     private static T LoadDelegate<T>(Func<string, nint> getProcAddress, string name) where T : Delegate

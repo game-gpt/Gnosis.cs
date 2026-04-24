@@ -23,6 +23,7 @@ internal sealed unsafe class OpenGLResource : IResource
     public uint GlVertexArray { get; }
     public uint GlProgram { get; }
     public uint GlShader { get; }
+    public uint GlSampler { get; }
     public ShaderStage ShaderStage { get; }
     public string EntryPoint { get; } = "main";
 
@@ -38,7 +39,7 @@ internal sealed unsafe class OpenGLResource : IResource
 
     public OpenGLResource(ResourceType type, ResourceFormat format, ulong size,
         uint glBuffer = 0, uint glTexture = 0, uint glVertexArray = 0,
-        uint glProgram = 0, uint glShader = 0, ShaderStage shaderStage = default)
+        uint glProgram = 0, uint glShader = 0, uint glSampler = 0, ShaderStage shaderStage = default)
     {
         Id = _nextId++;
         ResourceType = type;
@@ -49,6 +50,7 @@ internal sealed unsafe class OpenGLResource : IResource
         GlVertexArray = glVertexArray;
         GlProgram = glProgram;
         GlShader = glShader;
+        GlSampler = glSampler;
         ShaderStage = shaderStage;
     }
 
@@ -91,6 +93,12 @@ internal sealed unsafe class OpenGLResource : IResource
         if (GlProgram != 0)
         {
             GlNative.DeleteProgram!(GlProgram);
+        }
+
+        if (GlSampler != 0)
+        {
+            uint sam = GlSampler;
+            GlNative.DeleteSamplers!(1, &sam);
         }
     }
 

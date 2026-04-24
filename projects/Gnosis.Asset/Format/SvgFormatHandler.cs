@@ -1,5 +1,6 @@
 using System.Text;
-using System.Text.Json;
+using Oak.Data;
+using Oak.Gon;
 using Oak.Svg;
 
 namespace Gnosis.Asset.Format;
@@ -12,11 +13,6 @@ public class SvgFormatHandler : FormatHandlerBase, ISvgFormat
     #region 常量
 
     private const string EngineExtension = ".gnosis-svg";
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true
-    };
 
     #endregion
 
@@ -57,14 +53,21 @@ public class SvgFormatHandler : FormatHandlerBase, ISvgFormat
     }
 
     /// <summary>
-    ///     加载引擎格式 SVG（JSON 序列化的 SvgGraphicData）
+    ///     加载引擎格式 SVG（GON 序列化的 SvgGraphicData）
     /// </summary>
     private async Task<SvgDocument> LoadEngineFormatAsync(string path, CancellationToken cancellationToken)
     {
         var data = await ReadAsync(path, cancellationToken);
-        var sourceContent = Encoding.UTF8.GetString(data);
-        var parser = new SvgParser();
-        return parser.Parse(sourceContent);
+        var gonText = Encoding.UTF8.GetString(data);
+
+        var parser = new GonParser();
+        var gonValue = parser.Parse(gonText);
+
+        var sourceContent = gonValue.GetField("source")?.GetString()
+            ?? throw new InvalidDataException("GON 格式 SVG 缺少 source 字段");
+
+        var svgParser = new SvgParser();
+        return svgParser.Parse(sourceContent);
     }
 
     /// <summary>
@@ -99,20 +102,38 @@ public class SvgFormatHandler : FormatHandlerBase, ISvgFormat
     }
 
     /// <summary>
-    ///     保存为引擎格式
+    ///     保存为引擎格式（GON 序列化）
     /// </summary>
     private async Task SaveEngineFormatAsync(string path, SvgDocument document, CancellationToken cancellationToken)
     {
-        var graphicData = new SvgGraphicData
-        {
-            Name = Path.GetFileNameWithoutExtension(path),
-            Width = document.Width,
-            Height = document.Height,
-            ViewBox = document.ViewBox
-        };
+        var sourceContent = SerializeSvgDocument(document);
 
-        var json = JsonSerializer.SerializeToUtf8Bytes(graphicData, JsonOptions);
-        await WriteAsync(path, json, null, cancellationToken);
+        var gonValue = SerdeValue.Object(new Dictionary<string, SerdeValue>
+        {
+            ["name"] = SerdeValue.String(Path.GetFileNameWithoutExtension(path)),
+            ["width"] = SerdeValue.Decimal(document.Width.ToString()),
+            ["height"] = SerdeValue.Decimal(document.Height.ToString()),
+            ["source"] = SerdeValue.String(sourceContent)
+        });
+
+        if (document.ViewBox.Length >= 4)
+        {
+            var viewBoxArray = new List<SerdeValue>
+            {
+                SerdeValue.Decimal(document.ViewBox[0].ToString()),
+                SerdeValue.Decimal(document.ViewBox[1].ToString()),
+                SerdeValue.Decimal(document.ViewBox[2].ToString()),
+                SerdeValue.Decimal(document.ViewBox[3].ToString())
+            };
+            gonValue = SerdeValue.Object(new Dictionary<string, SerdeValue>(gonValue.Fields!)
+            {
+                ["viewBox"] = SerdeValue.Array(viewBoxArray)
+            });
+        }
+
+        var gonText = gonValue.ToString();
+        var data = Encoding.UTF8.GetBytes(gonText);
+        await WriteAsync(path, data, null, cancellationToken);
     }
 
     /// <summary>
@@ -166,7 +187,7 @@ public class SvgFormatHandler : FormatHandlerBase, ISvgFormat
     {
         return new List<string>
         {
-            EngineExtension, ".svg", ".svgz"
+            EngineExtension, ".svg"
         };
     }
 

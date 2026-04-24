@@ -90,7 +90,30 @@ public sealed unsafe class OpenGLDevice : IDevice
 
     public IResource CreateSampler(in SamplerDesc desc)
     {
-        var resource = new OpenGLResource(ResourceType.Sampler, ResourceFormat.Unknown, 0);
+        uint sampler;
+        GlNative.GenSamplers!(1, &sampler);
+
+        GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_MIN_FILTER, (int)GlConversions.ToGlFilterMode(desc.MinFilter));
+        GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_MAG_FILTER, (int)GlConversions.ToGlFilterMode(desc.MagFilter));
+        GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_WRAP_S, (int)GlConversions.ToGlAddressMode(desc.AddressModeU));
+        GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_WRAP_T, (int)GlConversions.ToGlAddressMode(desc.AddressModeV));
+        GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_WRAP_R, (int)GlConversions.ToGlAddressMode(desc.AddressModeW));
+
+        GlNative.SamplerParameterf!(sampler, GlConstants.GL_TEXTURE_MIN_LOD, desc.MinLod);
+        GlNative.SamplerParameterf!(sampler, GlConstants.GL_TEXTURE_MAX_LOD, desc.MaxLod);
+
+        if (desc.MaxAnisotropy > 1.0f)
+        {
+            GlNative.SamplerParameterf!(sampler, GlConstants.GL_TEXTURE_MAX_ANISOTROPY, desc.MaxAnisotropy);
+        }
+
+        if (desc.CompareEnable)
+        {
+            GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_COMPARE_MODE, (int)GlConstants.GL_COMPARE_REF_TO_TEXTURE);
+            GlNative.SamplerParameteri!(sampler, GlConstants.GL_TEXTURE_COMPARE_FUNC, (int)GlConversions.ToGlCompareFunction(desc.CompareOp));
+        }
+
+        var resource = new OpenGLResource(ResourceType.Sampler, ResourceFormat.Unknown, 0, glSampler: sampler);
         _resources[resource.Id] = resource;
         return resource;
     }

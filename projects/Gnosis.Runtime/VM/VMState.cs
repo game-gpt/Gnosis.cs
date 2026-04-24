@@ -17,6 +17,7 @@ public class VMState : IVMState
     private readonly List<IModule> _modules;
     private readonly MemoryManager _memoryManager;
     private readonly Dictionary<int, GGValue> _globals;
+    private readonly Dictionary<string, Dictionary<int, GGValue>> _moduleGlobals;
     private int _ip;
     private IModule? _currentModule;
 
@@ -33,6 +34,7 @@ public class VMState : IVMState
         _modules = [];
         _memoryManager = new MemoryManager();
         _globals = new Dictionary<int, GGValue>();
+        _moduleGlobals = new Dictionary<string, Dictionary<int, GGValue>>(StringComparer.Ordinal);
         _ip = 0;
         _currentModule = null;
     }
@@ -237,6 +239,41 @@ public class VMState : IVMState
     /// 全局变量数量
     /// </summary>
     public int GlobalCount => _globals.Count;
+
+    /// <summary>
+    /// 获取模块级全局变量
+    /// </summary>
+    public GGValue GetModuleGlobal(string moduleName, int index)
+    {
+        if (_moduleGlobals.TryGetValue(moduleName, out var globals))
+        {
+            return globals.GetValueOrDefault(index);
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    /// 设置模块级全局变量
+    /// </summary>
+    public void SetModuleGlobal(string moduleName, int index, GGValue value)
+    {
+        if (!_moduleGlobals.TryGetValue(moduleName, out var globals))
+        {
+            globals = new Dictionary<int, GGValue>();
+            _moduleGlobals[moduleName] = globals;
+        }
+
+        globals[index] = value;
+    }
+
+    /// <summary>
+    /// 获取指定模块的全局变量数量
+    /// </summary>
+    public int GetModuleGlobalCount(string moduleName)
+    {
+        return _moduleGlobals.TryGetValue(moduleName, out var globals) ? globals.Count : 0;
+    }
 
     #endregion
 

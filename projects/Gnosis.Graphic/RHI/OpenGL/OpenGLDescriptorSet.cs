@@ -85,6 +85,22 @@ internal sealed unsafe class OpenGLDescriptorSet : IRhiDescriptorSet
             GlNative.ActiveTexture!(GlConstants.GL_TEXTURE0 + binding);
             GlNative.BindTexture!(GlConstants.GL_TEXTURE_2D, tex.GlTexture);
         }
+
+        foreach (var (binding, sampler) in _samplers)
+        {
+            if (sampler.GlSampler != 0)
+            {
+                GlNative.BindSampler!(binding, sampler.GlSampler);
+            }
+        }
+
+        foreach (var (binding, (buffer, offset, range)) in _uniformBuffers)
+        {
+            if (buffer.GlBuffer != 0)
+            {
+                GlNative.BindBufferBase!(GlConstants.GL_UNIFORM_BUFFER, binding, buffer.GlBuffer);
+            }
+        }
     }
 
     public void Dispose()
