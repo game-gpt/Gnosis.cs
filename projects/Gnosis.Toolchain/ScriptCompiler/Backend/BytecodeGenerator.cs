@@ -1,6 +1,7 @@
 using System.Text;
 using Oak.Diagnostics;
 using Oak.Valkyrie.AST;
+using Gnosis.Core.Diagnostic;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;
@@ -23,6 +24,8 @@ public class BytecodeGenerator : IBytecodeGenerator
     private readonly Dictionary<string, int> _localVariables;
     private readonly Dictionary<string, int> _nativeBindings;
     private readonly List<(int Offset, SourceSpan? Span)> _sourceMap;
+    private readonly List<(int Offset, Oak.Diagnostics.SourceSpan? Span)> _rawSourceMap;
+    private SourceSpan? _currentSpan;
     private int _localCount;
 
     #endregion
@@ -41,6 +44,8 @@ public class BytecodeGenerator : IBytecodeGenerator
         _localVariables = new Dictionary<string, int>();
         _nativeBindings = new Dictionary<string, int>();
         _sourceMap = [];
+        _rawSourceMap = [];
+        _currentSpan = null;
         _localCount = 0;
     }
 
@@ -90,6 +95,8 @@ public class BytecodeGenerator : IBytecodeGenerator
         _localVariables.Clear();
         _nativeBindings.Clear();
         _sourceMap.Clear();
+        _rawSourceMap.Clear();
+        _currentSpan = null;
         _localCount = 0;
     }
 
@@ -839,7 +846,13 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void Emit(OpCode op)
     {
+        var offset = _instructions.Count;
         _instructions.Add((byte)op);
+
+        if (_currentSpan is not null)
+        {
+            _sourceMap.Add((offset, _currentSpan));
+        }
     }
 
     private void EmitByte(byte value)
