@@ -45,12 +45,12 @@ public sealed class DatabaseStorageProvider : IStorageProvider, IAsyncDisposable
         var dbKey = DatabaseKey.FromString(key);
         var result = await _database.GetAsync(dbKey);
 
-        if (result == null || result.IsEmpty)
+        if (result is not { IsEmpty: false })
         {
             return null;
         }
 
-        return result.Bytes.ToArray();
+        return result.Value.Bytes.ToArray();
     }
 
     public async Task<bool> DeleteAsync(string key)

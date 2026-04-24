@@ -13,7 +13,7 @@ public struct PerceptionMemoryEntry
     /// <summary>
     /// 最后已知位置
     /// </summary>
-    public float[] LastKnownPosition { get; init; }
+    public Vector3 LastKnownPosition { get; init; }
 
     /// <summary>
     /// 最后感知时间

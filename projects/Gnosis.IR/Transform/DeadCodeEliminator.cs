@@ -2,7 +2,7 @@ using Gnosis.IR.Graph;
 
 namespace Gnosis.IR.Transform;
 
-public sealed class DeadCodeEliminator
+public sealed class DeadCodeEliminator : IOptimizationPass
 {
     #region Properties
 
@@ -11,6 +11,10 @@ public sealed class DeadCodeEliminator
     public int EliminatedInstructions { get; private set; }
 
     public int EliminatedBlocks { get; private set; }
+
+    public string Name => "DeadCodeEliminator";
+
+    public bool Changed { get; private set; }
 
     #endregion
 
@@ -29,20 +33,26 @@ public sealed class DeadCodeEliminator
     {
         EliminatedInstructions = 0;
         EliminatedBlocks = 0;
-
-        bool changed = false;
+        Changed = false;
 
         if (EliminateUnreachableBlocks())
         {
-            changed = true;
+            Changed = true;
         }
 
         if (EliminateDeadInstructions())
         {
-            changed = true;
+            Changed = true;
         }
 
-        return changed;
+        return Changed;
+    }
+
+    public void Reset()
+    {
+        Changed = false;
+        EliminatedInstructions = 0;
+        EliminatedBlocks = 0;
     }
 
     #endregion

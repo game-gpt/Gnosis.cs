@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.NavMesh;
 
 /// <summary>
@@ -79,7 +81,7 @@ public class NavMesh : INavMesh
     /// <summary>
     /// 检测点是否可行走
     /// </summary>
-    public bool IsPointWalkable(float[] point)
+    public bool IsPointWalkable(Vector3 point)
     {
         if (!_isBuilt || _polygons.Count == 0)
         {
@@ -93,7 +95,7 @@ public class NavMesh : INavMesh
     /// <summary>
     /// 获取最近可行走点
     /// </summary>
-    public float[] GetClosestPoint(float[] point)
+    public Vector3 GetClosestPoint(Vector3 point)
     {
         if (!_isBuilt || _polygons.Count == 0)
         {
@@ -106,8 +108,8 @@ public class NavMesh : INavMesh
         foreach (var polygon in _polygons)
         {
             var projected = ProjectPointToPolygon(point, polygon);
-            var dx = projected[0] - point[0];
-            var dz = projected[2] - point[2];
+            var dx = projected.X - point.X;
+            var dz = projected.Z - point.Z;
             var dist = dx * dx + dz * dz;
 
             if (dist < closestDist)
@@ -123,7 +125,7 @@ public class NavMesh : INavMesh
     /// <summary>
     /// 根据位置查找所在多边形
     /// </summary>
-    public NavMeshPolygon? FindPolygon(float[] point)
+    public NavMeshPolygon? FindPolygon(Vector3 point)
     {
         foreach (var polygon in _polygons)
         {
@@ -165,7 +167,7 @@ public class NavMesh : INavMesh
 
     #region 私有方法
 
-    private static bool IsPointInPolygon(float[] point, NavMeshPolygon polygon)
+    private static bool IsPointInPolygon(Vector3 point, NavMeshPolygon polygon)
     {
         var vertexCount = polygon.Vertices.Length / 3;
         var inside = false;
@@ -178,8 +180,8 @@ public class NavMesh : INavMesh
             var xj = polygon.Vertices[j * 3];
             var zj = polygon.Vertices[j * 3 + 2];
 
-            if (((zi > point[2]) != (zj > point[2])) &&
-                (point[0] < (xj - xi) * (point[2] - zi) / (zj - zi) + xi))
+            if (((zi > point.Z) != (zj > point.Z)) &&
+                (point.X < (xj - xi) * (point.Z - zi) / (zj - zi) + xi))
             {
                 inside = !inside;
             }
@@ -190,14 +192,14 @@ public class NavMesh : INavMesh
         return inside;
     }
 
-    private static float[] ProjectPointToPolygon(float[] point, NavMeshPolygon polygon)
+    private static Vector3 ProjectPointToPolygon(Vector3 point, NavMeshPolygon polygon)
     {
         var vertexCount = polygon.Vertices.Length / 3;
 
         var closestDist = float.MaxValue;
-        var closestX = point[0];
-        var closestY = point[1];
-        var closestZ = point[2];
+        var closestX = point.X;
+        var closestY = point.Y;
+        var closestZ = point.Z;
 
         for (var i = 0; i < vertexCount; i++)
         {
@@ -219,15 +221,15 @@ public class NavMesh : INavMesh
             }
             else
             {
-                t = Math.Clamp(((point[0] - ax) * dx + (point[2] - az) * dz) / lenSq, 0.0f, 1.0f);
+                t = Math.Clamp(((point.X - ax) * dx + (point.Z - az) * dz) / lenSq, 0.0f, 1.0f);
             }
 
             var projX = ax + t * dx;
             var projZ = az + t * dz;
             var projY = polygon.Vertices[i * 3 + 1] + t * (polygon.Vertices[j * 3 + 1] - polygon.Vertices[i * 3 + 1]);
 
-            var distX = point[0] - projX;
-            var distZ = point[2] - projZ;
+            var distX = point.X - projX;
+            var distZ = point.Z - projZ;
             var dist = distX * distX + distZ * distZ;
 
             if (dist < closestDist)
@@ -239,7 +241,7 @@ public class NavMesh : INavMesh
             }
         }
 
-        return new float[] { closestX, closestY, closestZ };
+        return new Vector3(closestX, closestY, closestZ);
     }
 
     #endregion

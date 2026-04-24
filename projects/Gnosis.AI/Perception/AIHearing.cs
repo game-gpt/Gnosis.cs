@@ -129,10 +129,10 @@ public sealed class AIHearing : IAISense
             return false;
         }
 
-        float attenuation = 1.0f / (1.0f + distance * distance * _config.Attenuation);
+        float attenuation = 1.0f / (1.0f + distance * distance * _config.AttenuationFactor);
         float audibleStrength = target.Strength * attenuation;
 
-        return audibleStrength >= _config.Threshold;
+        return audibleStrength >= _config.MinSoundStrength;
     }
 
     #endregion

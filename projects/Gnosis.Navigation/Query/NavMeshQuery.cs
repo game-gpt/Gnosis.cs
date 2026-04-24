@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Navigation.NavMesh;
 
 namespace Gnosis.Navigation.Query;
@@ -27,7 +28,7 @@ public class NavMeshQuery : INavMeshQuery
     /// <summary>
     /// 查询最近可行走点
     /// </summary>
-    public float[] FindClosestPoint(float[] point, float maxDistance)
+    public Vector3 FindClosestPoint(Vector3 point, float maxDistance)
     {
         if (!_navMesh.IsBuilt)
         {
@@ -35,8 +36,8 @@ public class NavMeshQuery : INavMeshQuery
         }
 
         var closest = _navMesh.GetClosestPoint(point);
-        var dx = closest[0] - point[0];
-        var dz = closest[2] - point[2];
+        var dx = closest.X - point.X;
+        var dz = closest.Z - point.Z;
         var dist = MathF.Sqrt(dx * dx + dz * dz);
 
         if (dist > maxDistance)
@@ -50,7 +51,7 @@ public class NavMeshQuery : INavMeshQuery
     /// <summary>
     /// 射线投射检测
     /// </summary>
-    public bool Raycast(float[] start, float[] end, out float[] hitPoint, out float hitDistance)
+    public bool Raycast(Vector3 start, Vector3 end, out Vector3 hitPoint, out float hitDistance)
     {
         hitPoint = end;
         hitDistance = 0.0f;
@@ -60,9 +61,8 @@ public class NavMeshQuery : INavMeshQuery
             return false;
         }
 
-        var dirX = end[0] - start[0];
-        var dirZ = end[2] - start[2];
-        var totalDist = MathF.Sqrt(dirX * dirX + dirZ * dirZ);
+        var dir = end - start;
+        var totalDist = MathF.Sqrt(dir.X * dir.X + dir.Z * dir.Z);
 
         if (totalDist < 1e-6f)
         {
@@ -77,11 +77,7 @@ public class NavMeshQuery : INavMeshQuery
         for (var i = 0; i <= steps; i++)
         {
             var t = (float)i / steps;
-            var testX = start[0] + dirX * t;
-            var testZ = start[2] + dirZ * t;
-            var testY = start[1] + (end[1] - start[1]) * t;
-
-            var testPoint = new float[] { testX, testY, testZ };
+            var testPoint = Vector3.Lerp(start, end, t);
 
             if (!_navMesh.IsPointWalkable(testPoint))
             {
@@ -98,7 +94,7 @@ public class NavMeshQuery : INavMeshQuery
     /// <summary>
     /// 检测点是否在导航网格上
     /// </summary>
-    public bool IsPointOnNavMesh(float[] point)
+    public bool IsPointOnNavMesh(Vector3 point)
     {
         return _navMesh.IsPointWalkable(point);
     }
@@ -106,9 +102,9 @@ public class NavMeshQuery : INavMeshQuery
     /// <summary>
     /// 获取指定半径内的可行走点
     /// </summary>
-    public IReadOnlyList<float[]> FindPointsInRadius(float[] center, float radius, int maxResults = 16)
+    public IReadOnlyList<Vector3> FindPointsInRadius(Vector3 center, float radius, int maxResults = 16)
     {
-        var results = new List<float[]>();
+        var results = new List<Vector3>();
         var radiusSq = radius * radius;
 
         foreach (var polygon in _navMesh.Polygons)
@@ -120,12 +116,12 @@ public class NavMeshQuery : INavMeshQuery
                 var py = polygon.Vertices[i * 3 + 1];
                 var pz = polygon.Vertices[i * 3 + 2];
 
-                var dx = px - center[0];
-                var dz = pz - center[2];
+                var dx = px - center.X;
+                var dz = pz - center.Z;
 
                 if (dx * dx + dz * dz <= radiusSq)
                 {
-                    results.Add(new float[] { px, py, pz });
+                    results.Add(new Vector3(px, py, pz));
                     if (results.Count >= maxResults)
                     {
                         return results;
@@ -142,7 +138,7 @@ public class NavMeshQuery : INavMeshQuery
     /// </summary>
     public float GetPolygonArea(int polygonId)
     {
-        var polygon = _navMesh.FindPolygon(new float[3]);
+        var polygon = _navMesh.FindPolygon(Vector3.Zero);
         if (polygon == null)
         {
             return 0.0f;

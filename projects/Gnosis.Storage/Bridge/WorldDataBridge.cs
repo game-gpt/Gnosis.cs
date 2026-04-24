@@ -9,9 +9,6 @@ public sealed class WorldDataBridge
     #region 常量
 
     private const string WorldKeyPrefix = "world:";
-    private const string EntityKeyPrefix = "world:entity:";
-    private const string ComponentKeyPrefix = "world:component:";
-    private const string MetaKey = "world:meta";
 
     #endregion
 
@@ -49,14 +46,14 @@ public sealed class WorldDataBridge
     public async Task<WorldSnapshot?> LoadWorldSnapshotAsync(string worldId = "default")
     {
         var metaKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:meta");
-
         var metaValue = await _database.GetAsync(metaKey);
-        if (metaValue == null || metaValue.IsEmpty)
+
+        if (metaValue is not { IsEmpty: false })
         {
             return null;
         }
 
-        var metaJson = System.Text.Encoding.UTF8.GetString(metaValue.Bytes.Span);
+        var metaJson = System.Text.Encoding.UTF8.GetString(metaValue.Value.Bytes.Span);
         var meta = JsonSerializer.Deserialize<WorldMeta>(metaJson, _jsonOptions);
 
         if (meta == null)
@@ -75,12 +72,12 @@ public sealed class WorldDataBridge
             var entityKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:entity:{i}");
             var entityValue = await _database.GetAsync(entityKey);
 
-            if (entityValue == null || entityValue.IsEmpty)
+            if (entityValue is not { IsEmpty: false })
             {
                 continue;
             }
 
-            var entityJson = System.Text.Encoding.UTF8.GetString(entityValue.Bytes.Span);
+            var entityJson = System.Text.Encoding.UTF8.GetString(entityValue.Value.Bytes.Span);
             var entitySnapshot = JsonSerializer.Deserialize<EntitySnapshot>(entityJson, _jsonOptions);
 
             if (entitySnapshot != null)
@@ -113,12 +110,12 @@ public sealed class WorldDataBridge
         var entityKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:entity:{entityIndex}");
         var entityValue = await _database.GetAsync(entityKey);
 
-        if (entityValue == null || entityValue.IsEmpty)
+        if (entityValue is not { IsEmpty: false })
         {
             return null;
         }
 
-        var entityJson = System.Text.Encoding.UTF8.GetString(entityValue.Bytes.Span);
+        var entityJson = System.Text.Encoding.UTF8.GetString(entityValue.Value.Bytes.Span);
         return JsonSerializer.Deserialize<EntitySnapshot>(entityJson, _jsonOptions);
     }
 
@@ -128,12 +125,12 @@ public sealed class WorldDataBridge
         var metaKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:meta");
         var metaValue = await _database.GetAsync(metaKey);
 
-        if (metaValue == null || metaValue.IsEmpty)
+        if (metaValue is not { IsEmpty: false })
         {
             return results;
         }
 
-        var metaJson = System.Text.Encoding.UTF8.GetString(metaValue.Bytes.Span);
+        var metaJson = System.Text.Encoding.UTF8.GetString(metaValue.Value.Bytes.Span);
         var meta = JsonSerializer.Deserialize<WorldMeta>(metaJson, _jsonOptions);
 
         if (meta == null)

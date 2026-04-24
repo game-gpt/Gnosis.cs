@@ -163,7 +163,7 @@ public sealed class AISight : IAISense
         }
 
         Vector3 toTarget = targetPosition - OwnerPosition;
-        float lengthSq = toTarget.LengthSquared;
+        float lengthSq = toTarget.LengthSquared();
 
         if (lengthSq < 0.0001f)
         {

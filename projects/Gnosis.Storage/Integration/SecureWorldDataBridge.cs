@@ -8,14 +8,7 @@ namespace Gnosis.Storage.Integration;
 
 public sealed class SecureWorldDataBridge
 {
-    #region 常量
-
     private const string WorldKeyPrefix = "world:";
-    private const string MetaKey = "world:meta";
-
-    #endregion
-
-    #region 字段
 
     private readonly IKvDatabase _database;
     private readonly WorldSerializer _serializer;
@@ -23,21 +16,13 @@ public sealed class SecureWorldDataBridge
     private readonly ComponentSerializer _componentSerializer;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    #endregion
-
-    #region 构造函数
-
     public SecureWorldDataBridge(IKvDatabase database)
     {
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _serializer = new WorldSerializer();
         _encryptionProcessor = new EncryptedComponentProcessor();
         _componentSerializer = new ComponentSerializer();
-        _jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = false,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+        _jsonOptions = new JsonSerializerOptions { WriteIndented = false, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     }
 
     public SecureWorldDataBridge(IKvDatabase database, EncryptedComponentProcessor encryptionProcessor)
@@ -46,22 +31,10 @@ public sealed class SecureWorldDataBridge
         _serializer = new WorldSerializer();
         _encryptionProcessor = encryptionProcessor ?? throw new ArgumentNullException(nameof(encryptionProcessor));
         _componentSerializer = new ComponentSerializer();
-        _jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = false,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+        _jsonOptions = new JsonSerializerOptions { WriteIndented = false, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     }
 
-    #endregion
-
-    #region 属性
-
     public EncryptedComponentProcessor EncryptionProcessor => _encryptionProcessor;
-
-    #endregion
-
-    #region 世界持久化
 
     public async Task SaveWorldAsync(World world, string worldId = "default")
     {
@@ -73,37 +46,21 @@ public sealed class SecureWorldDataBridge
     {
         var metaKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:meta");
         var metaValue = await _database.GetAsync(metaKey);
+        if (metaValue is not { IsEmpty: false }) return null;
 
-        if (metaValue == null || metaValue.IsEmpty)
-        {
-            return null;
-        }
-
-        var metaJson = System.Text.Encoding.UTF8.GetString(metaValue.Bytes.Span);
+        var metaJson = System.Text.Encoding.UTF8.GetString(metaValue.Value.Bytes.Span);
         var meta = JsonSerializer.Deserialize<WorldMeta>(metaJson, _jsonOptions);
+        if (meta == null) return null;
 
-        if (meta == null)
-        {
-            return null;
-        }
-
-        var snapshot = new WorldSnapshot
-        {
-            Timestamp = meta.Timestamp,
-            Version = meta.Version
-        };
+        var snapshot = new WorldSnapshot { Timestamp = meta.Timestamp, Version = meta.Version };
 
         for (uint i = 0; i < meta.EntityCount; i++)
         {
             var entityKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:entity:{i}");
             var entityValue = await _database.GetAsync(entityKey);
+            if (entityValue is not { IsEmpty: false }) continue;
 
-            if (entityValue == null || entityValue.IsEmpty)
-            {
-                continue;
-            }
-
-            var entityJson = System.Text.Encoding.UTF8.GetString(entityValue.Bytes.Span);
+            var entityJson = System.Text.Encoding.UTF8.GetString(entityValue.Value.Bytes.Span);
             var entitySnapshot = JsonSerializer.Deserialize<EntitySnapshot>(entityJson, _jsonOptions);
 
             if (entitySnapshot != null)
@@ -119,29 +76,13 @@ public sealed class SecureWorldDataBridge
     public async Task RestoreWorldAsync(World world, string worldId = "default")
     {
         var snapshot = await LoadWorldSnapshotAsync(worldId);
-
-        if (snapshot == null)
-        {
-            return;
-        }
-
+        if (snapshot == null) return;
         _serializer.Deserialize(world, snapshot);
     }
 
-    #endregion
-
-    #region 私有方法
-
     private async Task PersistSecureSnapshotAsync(WorldSnapshot snapshot, string worldId)
     {
-        var meta = new WorldMeta
-        {
-            WorldId = worldId,
-            Timestamp = snapshot.Timestamp,
-            Version = snapshot.Version,
-            EntityCount = (uint)snapshot.Entities.Count
-        };
-
+        var meta = new WorldMeta { WorldId = worldId, Timestamp = snapshot.Timestamp, Version = snapshot.Version, EntityCount = (uint)snapshot.Entities.Count };
         var metaJson = JsonSerializer.Serialize(meta, _jsonOptions);
         var metaBytes = System.Text.Encoding.UTF8.GetBytes(metaJson);
         var metaKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:meta");
@@ -151,7 +92,6 @@ public sealed class SecureWorldDataBridge
         {
             var entity = snapshot.Entities[i];
             EncryptEntityComponents(entity);
-
             var entityJson = JsonSerializer.Serialize(entity, _jsonOptions);
             var entityBytes = System.Text.Encoding.UTF8.GetBytes(entityJson);
             var entityKey = DatabaseKey.FromString($"{WorldKeyPrefix}{worldId}:entity:{entity.Index}");
@@ -164,16 +104,10 @@ public sealed class SecureWorldDataBridge
         foreach (var component in entity.Components)
         {
             var componentType = Type.GetType(component.TypeName);
-
-            if (componentType == null)
-            {
-                continue;
-            }
-
+            if (componentType == null) continue;
             if (_encryptionProcessor.HasEncryptedFields(componentType))
             {
-                component.JsonData = _encryptionProcessor.ProcessSerialize(
-                    component.JsonData, componentType, _componentSerializer);
+                component.JsonData = _encryptionProcessor.ProcessSerialize(component.JsonData, componentType, _componentSerializer);
             }
         }
     }
@@ -183,30 +117,21 @@ public sealed class SecureWorldDataBridge
         foreach (var component in entity.Components)
         {
             var componentType = Type.GetType(component.TypeName);
-
-            if (componentType == null)
-            {
-                continue;
-            }
-
+            if (componentType == null) continue;
             if (_encryptionProcessor.HasEncryptedFields(componentType))
             {
                 try
                 {
-                    component.JsonData = _encryptionProcessor.ProcessDeserialize(
-                        component.JsonData, componentType, _componentSerializer);
+                    var result = _encryptionProcessor.ProcessDeserialize(component.JsonData, componentType, _componentSerializer);
+                    component.JsonData = (string)result;
                 }
-                catch (SecurityException)
+                catch (Gnosis.Security.AntiCheat.SecurityException)
                 {
                     component.JsonData = "{}";
                 }
             }
         }
     }
-
-    #endregion
-
-    #region 内部类型
 
     private sealed class WorldMeta
     {
@@ -215,6 +140,4 @@ public sealed class SecureWorldDataBridge
         public int Version { get; set; } = 1;
         public uint EntityCount { get; set; }
     }
-
-    #endregion
 }

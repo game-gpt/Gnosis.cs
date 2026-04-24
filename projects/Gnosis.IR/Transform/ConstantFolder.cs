@@ -2,13 +2,17 @@ using Gnosis.IR.Graph;
 
 namespace Gnosis.IR.Transform;
 
-public sealed class ConstantFolder
+public sealed class ConstantFolder : IOptimizationPass
 {
     #region Properties
 
     public IrModule Module { get; }
 
     public int FoldedCount { get; private set; }
+
+    public string Name => "ConstantFolder";
+
+    public bool Changed { get; private set; }
 
     #endregion
 
@@ -32,17 +36,24 @@ public sealed class ConstantFolder
     public bool Run()
     {
         FoldedCount = 0;
-        bool changed = false;
+        Changed = false;
 
         foreach (var function in Module.Functions)
         {
             if (FoldFunction(function))
             {
-                changed = true;
+                Changed = true;
             }
         }
 
-        return changed;
+        return Changed;
+    }
+
+    public void Reset()
+    {
+        Changed = false;
+        FoldedCount = 0;
+        _constantValues.Clear();
     }
 
     public object? GetConstantValue(IrValue value)

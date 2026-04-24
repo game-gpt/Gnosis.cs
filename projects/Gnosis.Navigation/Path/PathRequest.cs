@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Navigation.Query;
 
 namespace Gnosis.Navigation.Path;
@@ -12,12 +13,12 @@ public sealed class PathRequest : IPathRequest
     /// <summary>
     /// 起始点
     /// </summary>
-    public float[] Start { get; }
+    public Vector3 Start { get; }
 
     /// <summary>
     /// 终止点
     /// </summary>
-    public float[] End { get; }
+    public Vector3 End { get; }
 
     /// <summary>
     /// 可通行区域掩码
@@ -33,7 +34,7 @@ public sealed class PathRequest : IPathRequest
 
     #region 构造函数
 
-    public PathRequest(float[] start, float[] end, int areaMask = -1, float costMultiplier = 1.0f)
+    public PathRequest(Vector3 start, Vector3 end, int areaMask = -1, float costMultiplier = 1.0f)
     {
         Start = start;
         End = end;

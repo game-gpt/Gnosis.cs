@@ -28,11 +28,9 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
-        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Core\Oak.Core.csproj" />
-        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.GGScript\Oak.GGScript.csproj" />
-        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.GGShader\Oak.GGShader.csproj" />
-        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Gon\Oak.Gon.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak\Oak.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Valkyrie\Oak.Valkyrie.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Von\Oak.Von.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Widget\Oak.Widget.csproj" />
-        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Verse\Verse.csproj" />
     </ItemGroup>
 </Project>

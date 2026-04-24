@@ -7,8 +7,8 @@ public sealed class TargetSelector : ITargetSelector
 {
     #region 字段
 
-    private float[] _ownerPosition = [0, 0, 0];
-    private float[]? _currentTargetPosition;
+    private Vector3 _ownerPosition;
+    private Vector3? _currentTargetPosition;
 
     #endregion
 
@@ -17,12 +17,12 @@ public sealed class TargetSelector : ITargetSelector
     /// <summary>
     /// 当前目标（与 CurrentTargetPosition 相同）
     /// </summary>
-    public float[]? CurrentTarget => _currentTargetPosition;
+    public Vector3? CurrentTarget => _currentTargetPosition;
 
     /// <summary>
     /// 当前目标位置
     /// </summary>
-    public float[]? CurrentTargetPosition => _currentTargetPosition;
+    public Vector3? CurrentTargetPosition => _currentTargetPosition;
 
     /// <summary>
     /// 是否有目标
@@ -41,14 +41,14 @@ public sealed class TargetSelector : ITargetSelector
                 return 0f;
             }
 
-            return ComputeDistance(_ownerPosition, _currentTargetPosition);
+            return Vector3.Distance(_ownerPosition, _currentTargetPosition.Value);
         }
     }
 
     /// <summary>
     /// 感知者位置（需每帧同步）
     /// </summary>
-    public float[] OwnerPosition
+    public Vector3 OwnerPosition
     {
         get => _ownerPosition;
         set => _ownerPosition = value;
@@ -67,10 +67,9 @@ public sealed class TargetSelector : ITargetSelector
     /// 设置目标位置
     /// </summary>
     /// <param name="position">目标位置</param>
-    public void SetTarget(float[] position)
+    public void SetTarget(Vector3 position)
     {
-        _currentTargetPosition = new float[position.Length];
-        Array.Copy(position, _currentTargetPosition, position.Length);
+        _currentTargetPosition = position;
     }
 
     /// <summary>
@@ -89,34 +88,13 @@ public sealed class TargetSelector : ITargetSelector
     {
         if (_currentTargetPosition is not null && LoseTargetDistance < float.MaxValue)
         {
-            float distance = ComputeDistance(_ownerPosition, _currentTargetPosition);
+            var distance = Vector3.Distance(_ownerPosition, _currentTargetPosition.Value);
 
             if (distance > LoseTargetDistance)
             {
                 ClearTarget();
             }
         }
-    }
-
-    #endregion
-
-    #region 私有方法
-
-    /// <summary>
-    /// 计算两点间距离
-    /// </summary>
-    private static float ComputeDistance(float[] a, float[] b)
-    {
-        if (a.Length < 3 || b.Length < 3)
-        {
-            return 0f;
-        }
-
-        float dx = a[0] - b[0];
-        float dy = a[1] - b[1];
-        float dz = a[2] - b[2];
-
-        return MathF.Sqrt(dx * dx + dy * dy + dz * dz);
     }
 
     #endregion

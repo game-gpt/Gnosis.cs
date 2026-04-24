@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Navigation.NavMesh;
 using Gnosis.Navigation.Query;
 
@@ -36,11 +37,11 @@ public sealed class Pathfinder : IPathfinder
     /// <summary>
     /// 从起点到终点寻路
     /// </summary>
-    public IPath FindPath(float[] start, float[] end)
+    public IPath FindPath(Vector3 start, Vector3 end)
     {
         if (_navMesh is null || !_navMesh.IsBuilt)
         {
-            return new Path(new List<float[]> { start });
+            return new Path(new List<Vector3> { start });
         }
 
         var startPolygon = _navMesh.FindPolygon(start);
@@ -48,18 +49,18 @@ public sealed class Pathfinder : IPathfinder
 
         if (startPolygon is null || endPolygon is null)
         {
-            return new Path(new List<float[]> { start });
+            return new Path(new List<Vector3> { start });
         }
 
         if (startPolygon.Value.Id == endPolygon.Value.Id)
         {
-            return new Path(new List<float[]> { start, end });
+            return new Path(new List<Vector3> { start, end });
         }
 
         var polygonPath = FindPolygonPath(startPolygon.Value.Id, endPolygon.Value.Id);
         if (polygonPath is null)
         {
-            return new Path(new List<float[]> { start });
+            return new Path(new List<Vector3> { start });
         }
 
         var waypoints = ExtractWaypoints(polygonPath, start, end);
@@ -198,9 +199,9 @@ public sealed class Pathfinder : IPathfinder
         return path;
     }
 
-    private List<float[]> ExtractWaypoints(List<int> polygonPath, float[] start, float[] end)
+    private List<Vector3> ExtractWaypoints(List<int> polygonPath, Vector3 start, Vector3 end)
     {
-        var waypoints = new List<float[]> { start };
+        var waypoints = new List<Vector3> { start };
 
         for (var i = 1; i < polygonPath.Count; i++)
         {
@@ -210,7 +211,7 @@ public sealed class Pathfinder : IPathfinder
             var sharedEdgeMid = FindSharedEdgeMidpoint(prevId, currId);
             if (sharedEdgeMid is not null)
             {
-                waypoints.Add(sharedEdgeMid);
+                waypoints.Add(sharedEdgeMid.Value);
             }
         }
 
@@ -218,7 +219,7 @@ public sealed class Pathfinder : IPathfinder
         return waypoints;
     }
 
-    private float[]? FindSharedEdgeMidpoint(int polygonAId, int polygonBId)
+    private Vector3? FindSharedEdgeMidpoint(int polygonAId, int polygonBId)
     {
         if (_navMesh is null)
         {
@@ -242,12 +243,7 @@ public sealed class Pathfinder : IPathfinder
         var v0 = sharedVertices[0];
         var v1 = sharedVertices[1];
 
-        return new float[]
-        {
-            (v0[0] + v1[0]) * 0.5f,
-            (v0[1] + v1[1]) * 0.5f,
-            (v0[2] + v1[2]) * 0.5f
-        };
+        return (v0 + v1) * 0.5f;
     }
 
     private NavMeshPolygon? FindPolygonById(int polygonId)
@@ -263,9 +259,9 @@ public sealed class Pathfinder : IPathfinder
         return null;
     }
 
-    private static List<float[]> FindSharedVertices(NavMeshPolygon a, NavMeshPolygon b)
+    private static List<Vector3> FindSharedVertices(NavMeshPolygon a, NavMeshPolygon b)
     {
-        var shared = new List<float[]>();
+        var shared = new List<Vector3>();
         var vertexCountA = a.Vertices.Length / 3;
         var vertexCountB = b.Vertices.Length / 3;
         var thresholdSq = 0.01f * 0.01f;
@@ -288,7 +284,7 @@ public sealed class Pathfinder : IPathfinder
 
                 if (dx * dx + dy * dy + dz * dz < thresholdSq)
                 {
-                    shared.Add(new float[] { ax, ay, az });
+                    shared.Add(new Vector3(ax, ay, az));
                     break;
                 }
             }
@@ -305,12 +301,12 @@ public sealed class Pathfinder : IPathfinder
         return DistanceXZ(fromCenter, toCenter) * areaCost;
     }
 
-    private static float[] GetPolygonCenter(NavMeshPolygon polygon)
+    private static Vector3 GetPolygonCenter(NavMeshPolygon polygon)
     {
         var vertexCount = polygon.Vertices.Length / 3;
         if (vertexCount == 0)
         {
-            return new float[3];
+            return Vector3.Zero;
         }
 
         var cx = 0.0f;
@@ -324,13 +320,13 @@ public sealed class Pathfinder : IPathfinder
             cz += polygon.Vertices[i * 3 + 2];
         }
 
-        return new float[] { cx / vertexCount, cy / vertexCount, cz / vertexCount };
+        return new Vector3(cx / vertexCount, cy / vertexCount, cz / vertexCount);
     }
 
-    private static float DistanceXZ(float[] a, float[] b)
+    private static float DistanceXZ(Vector3 a, Vector3 b)
     {
-        var dx = a[0] - b[0];
-        var dz = a[2] - b[2];
+        var dx = a.X - b.X;
+        var dz = a.Z - b.Z;
         return MathF.Sqrt(dx * dx + dz * dz);
     }
 

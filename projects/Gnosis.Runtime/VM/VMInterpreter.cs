@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Gnosis.Core;
 using Gnosis.ECS;
 using Gnosis.ECS.Entity;
 using Gnosis.ECS.Query;

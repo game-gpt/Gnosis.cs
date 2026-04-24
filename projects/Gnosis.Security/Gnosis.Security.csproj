@@ -19,4 +19,8 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.Database\Gnosis.Database.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.IO.Hashing" Version="9.0.0" />
+    </ItemGroup>
 </Project>

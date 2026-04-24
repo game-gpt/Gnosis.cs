@@ -740,7 +740,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                         comp.Span,
                         "GG5014",
                         $"Uniform 绑定冲突: (binding={key.Item1}, set={key.Item2}) 已被 '{existingName}' 使用",
-                        new[] { $"修改 '{comp.Name}' 的绑定或集合以避免冲突" }));
+                        new[] { $"修改 '{comp.Name}' 的绑定或集合以避免冲突" });
                 }
                 else
                 {

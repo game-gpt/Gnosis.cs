@@ -1,3 +1,4 @@
+using Gnosis.Core;
 using Gnosis.ECS.Component;
 using Gnosis.ECS.Entity;
 using Gnosis.ECS.World;

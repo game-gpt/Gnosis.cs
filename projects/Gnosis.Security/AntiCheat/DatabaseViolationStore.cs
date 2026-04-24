@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Gnosis.Database.Core;
 using Gnosis.Core;
-using Gnosis.Core.Event;
 
 namespace Gnosis.Security.AntiCheat;
 
@@ -44,7 +43,7 @@ public sealed class DatabaseViolationStore
     {
         var record = new StoredViolationRecord
         {
-            PlayerId = playerId.Value,
+            PlayerId = playerId.Value.ToString(),
             ViolationType = violationType.ToString(),
             Details = details,
             DetectionLevel = detectionLevel.ToString(),
@@ -100,12 +99,12 @@ public sealed class DatabaseViolationStore
         var statsKey = DatabaseKey.FromString($"{StatsKeyPrefix}{playerId.Value}:total");
         var statsValue = await _database.GetAsync(statsKey);
 
-        if (statsValue == null || statsValue.IsEmpty)
+        if (statsValue is not { IsEmpty: false })
         {
             return 0;
         }
 
-        var json = System.Text.Encoding.UTF8.GetString(statsValue.Bytes.Span);
+        var json = System.Text.Encoding.UTF8.GetString(statsValue.Value.Bytes.Span);
 
         try
         {
@@ -126,7 +125,7 @@ public sealed class DatabaseViolationStore
     {
         var record = new StoredBehaviorRecord
         {
-            PlayerId = playerId.Value,
+            PlayerId = playerId.Value.ToString(),
             ActionType = actionType,
             Details = details,
             TimestampMs = Environment.TickCount64
@@ -188,9 +187,9 @@ public sealed class DatabaseViolationStore
 
         PlayerViolationStats stats;
 
-        if (statsValue != null && !statsValue.IsEmpty)
+        if (statsValue is { IsEmpty: false })
         {
-            var json = System.Text.Encoding.UTF8.GetString(statsValue.Bytes.Span);
+            var json = System.Text.Encoding.UTF8.GetString(statsValue.Value.Bytes.Span);
 
             try
             {

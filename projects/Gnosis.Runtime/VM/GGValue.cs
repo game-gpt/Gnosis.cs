@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Gnosis.Core;
 using Gnosis.ECS.Entity;
 
 namespace Gnosis.Runtime.VM;

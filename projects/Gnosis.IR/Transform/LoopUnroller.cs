@@ -2,7 +2,7 @@ using Gnosis.IR.Graph;
 
 namespace Gnosis.IR.Transform;
 
-public sealed class LoopUnroller
+public sealed class LoopUnroller : IOptimizationPass
 {
     #region Properties
 
@@ -11,6 +11,10 @@ public sealed class LoopUnroller
     public int UnrolledCount { get; private set; }
 
     public int MaxUnrollFactor { get; set; } = 8;
+
+    public string Name => "LoopUnroller";
+
+    public bool Changed { get; private set; }
 
     #endregion
 
@@ -28,17 +32,23 @@ public sealed class LoopUnroller
     public bool Run()
     {
         UnrolledCount = 0;
-        bool changed = false;
+        Changed = false;
 
         foreach (var function in Module.Functions)
         {
             if (UnrollLoopsInFunction(function))
             {
-                changed = true;
+                Changed = true;
             }
         }
 
-        return changed;
+        return Changed;
+    }
+
+    public void Reset()
+    {
+        Changed = false;
+        UnrolledCount = 0;
     }
 
     #endregion

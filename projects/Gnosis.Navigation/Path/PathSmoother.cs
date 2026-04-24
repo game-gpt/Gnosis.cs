@@ -1,3 +1,4 @@
+using Gnosis.Core.Math;
 using Gnosis.Navigation.NavMesh;
 
 namespace Gnosis.Navigation.Path;
@@ -12,16 +13,16 @@ public sealed class PathSmoother
     /// <summary>
     /// 对路径点列表执行平滑处理
     /// </summary>
-    public List<float[]> Smooth(List<float[]> waypoints, INavMesh? navMesh)
+    public List<Vector3> Smooth(List<Vector3> waypoints, INavMesh? navMesh)
     {
         if (waypoints.Count <= 2)
         {
-            return new List<float[]>(waypoints);
+            return new List<Vector3>(waypoints);
         }
 
         if (navMesh is null || !navMesh.IsBuilt)
         {
-            return new List<float[]>(waypoints);
+            return new List<Vector3>(waypoints);
         }
 
         var result = FunnelSmooth(waypoints, navMesh);
@@ -32,13 +33,11 @@ public sealed class PathSmoother
 
     #region 私有方法
 
-    private static List<float[]> FunnelSmooth(List<float[]> waypoints, INavMesh navMesh)
+    private static List<Vector3> FunnelSmooth(List<Vector3> waypoints, INavMesh navMesh)
     {
-        var smoothed = new List<float[]> { waypoints[0] };
+        var smoothed = new List<Vector3> { waypoints[0] };
 
         var apex = waypoints[0];
-        var apexIdx = 0;
-
         var i = 1;
         while (i < waypoints.Count - 1)
         {
@@ -50,11 +49,9 @@ public sealed class PathSmoother
             for (var s = 1; s < steps; s++)
             {
                 var t = (float)s / steps;
-                var testX = apex[0] + (waypoints[i + 1][0] - apex[0]) * t;
-                var testZ = apex[2] + (waypoints[i + 1][2] - apex[2]) * t;
-                var testY = apex[1] + (waypoints[i + 1][1] - apex[1]) * t;
+                var testPoint = Vector3.Lerp(apex, waypoints[i + 1], t);
 
-                if (!navMesh.IsPointWalkable(new float[] { testX, testY, testZ }))
+                if (!navMesh.IsPointWalkable(testPoint))
                 {
                     canSkip = false;
                     break;
@@ -69,7 +66,6 @@ public sealed class PathSmoother
             {
                 smoothed.Add(waypoints[i]);
                 apex = waypoints[i];
-                apexIdx = i;
                 i++;
             }
         }
@@ -78,10 +74,10 @@ public sealed class PathSmoother
         return smoothed;
     }
 
-    private static float DistanceXZ(float[] a, float[] b)
+    private static float DistanceXZ(Vector3 a, Vector3 b)
     {
-        var dx = a[0] - b[0];
-        var dz = a[2] - b[2];
+        var dx = a.X - b.X;
+        var dz = a.Z - b.Z;
         return MathF.Sqrt(dx * dx + dz * dz);
     }
 

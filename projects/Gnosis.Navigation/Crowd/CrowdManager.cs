@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Crowd;
 
 /// <summary>
@@ -47,14 +49,14 @@ public sealed class CrowdManager : ICrowdManager
     /// <param name="position">初始位置</param>
     /// <param name="parameters">代理参数</param>
     /// <returns>代理实例</returns>
-    public ICrowdAgent AddAgent(float[] position, CrowdAgentParams parameters)
+    public ICrowdAgent AddAgent(Vector3 position, CrowdAgentParams parameters)
     {
         if (_agents.Count >= MaxAgents)
         {
             throw new InvalidOperationException($"已达到最大代理数量限制: {MaxAgents}");
         }
 
-        int id = _nextAgentId++;
+        var id = _nextAgentId++;
         var agent = new CrowdAgent(id, position, parameters);
         _agents[id] = agent;
 

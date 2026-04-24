@@ -2,7 +2,7 @@ using Gnosis.IR.Graph;
 
 namespace Gnosis.IR.Transform;
 
-public sealed class Inliner
+public sealed class Inliner : IOptimizationPass
 {
     #region Properties
 
@@ -13,6 +13,10 @@ public sealed class Inliner
     public int MaxInlineSize { get; set; } = 50;
 
     public int MaxInlineDepth { get; set; } = 3;
+
+    public string Name => "Inliner";
+
+    public bool Changed { get; private set; }
 
     #endregion
 
@@ -30,17 +34,23 @@ public sealed class Inliner
     public bool Run()
     {
         InlinedCount = 0;
-        bool changed = false;
+        Changed = false;
 
         foreach (var function in Module.Functions.ToList())
         {
             if (InlineCallsInFunction(function))
             {
-                changed = true;
+                Changed = true;
             }
         }
 
-        return changed;
+        return Changed;
+    }
+
+    public void Reset()
+    {
+        Changed = false;
+        InlinedCount = 0;
     }
 
     #endregion

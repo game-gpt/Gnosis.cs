@@ -1,3 +1,5 @@
+using Gnosis.Core.Math;
+
 namespace Gnosis.Navigation.Path;
 
 /// <summary>
@@ -7,7 +9,7 @@ public sealed class Path : IPath
 {
     #region 字段
 
-    private readonly List<float[]> _waypoints;
+    private readonly List<Vector3> _waypoints;
     private int _currentWaypointIndex;
 
     #endregion
@@ -27,7 +29,7 @@ public sealed class Path : IPath
     /// <summary>
     /// 路径点列表
     /// </summary>
-    public IReadOnlyList<float[]> Waypoints => _waypoints;
+    public IReadOnlyList<Vector3> Waypoints => _waypoints;
 
     /// <summary>
     /// 当前路径点索引
@@ -37,7 +39,7 @@ public sealed class Path : IPath
     /// <summary>
     /// 当前路径点
     /// </summary>
-    public float[] CurrentWaypoint =>
+    public Vector3 CurrentWaypoint =>
         _currentWaypointIndex < _waypoints.Count
             ? _waypoints[_currentWaypointIndex]
             : _waypoints[^1];
@@ -45,7 +47,7 @@ public sealed class Path : IPath
     /// <summary>
     /// 下一个路径点
     /// </summary>
-    public float[] NextWaypoint =>
+    public Vector3 NextWaypoint =>
         _currentWaypointIndex + 1 < _waypoints.Count
             ? _waypoints[_currentWaypointIndex + 1]
             : _waypoints[^1];
@@ -54,7 +56,7 @@ public sealed class Path : IPath
 
     #region 构造函数
 
-    public Path(List<float[]> waypoints)
+    public Path(List<Vector3> waypoints)
     {
         _waypoints = waypoints;
         _currentWaypointIndex = 0;
@@ -94,10 +96,7 @@ public sealed class Path : IPath
 
         for (var i = 1; i < _waypoints.Count; i++)
         {
-            var dx = _waypoints[i][0] - _waypoints[i - 1][0];
-            var dy = _waypoints[i][1] - _waypoints[i - 1][1];
-            var dz = _waypoints[i][2] - _waypoints[i - 1][2];
-            length += MathF.Sqrt(dx * dx + dy * dy + dz * dz);
+            length += Vector3.Distance(_waypoints[i - 1], _waypoints[i]);
         }
 
         return length;
