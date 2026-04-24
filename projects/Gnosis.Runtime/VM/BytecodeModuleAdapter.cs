@@ -100,6 +100,15 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.JumpIfFalse:
             case OpCode.Call:
             case OpCode.CallNative:
+            case OpCode.CallModule:
+            {
+                Span<byte> bytes = stackalloc byte[8];
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, (int)operand);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes[4..], 0);
+                stream.Write(bytes);
+                break;
+            }
+
             case OpCode.LoadLocal:
             case OpCode.StoreLocal:
             case OpCode.LoadGlobal:
@@ -277,6 +286,7 @@ public sealed class BytecodeModuleAdapter : IModule
                 or OpCode.DefineComponent or OpCode.DefineSystem or OpCode.SystemSchedule
                 or OpCode.PushString or OpCode.NewArray or OpCode.MakeClosure
                 or OpCode.IsType or OpCode.TypeOf or OpCode.QueryAll or OpCode.QueryAny => 4,
+            OpCode.CallModule => 8,
             _ => 0
         };
     }

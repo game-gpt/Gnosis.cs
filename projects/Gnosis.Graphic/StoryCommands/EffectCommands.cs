@@ -32,8 +32,7 @@ public sealed class EffectCommands : IStoryEffectCommands
     {
         var flashPass = new RenderPass("StoryFlash", (context, cmd) =>
         {
-            context.SetClearColor(r, g, b);
-            context.BlendMode = BlendMode.Additive;
+            cmd.ClearRenderTarget(0, r, g, b, 1.0f);
         });
 
         _pipeline.AddPass(flashPass);
@@ -49,7 +48,7 @@ public sealed class EffectCommands : IStoryEffectCommands
         {
             var offsetX = (Random.Shared.NextSingle() - 0.5f) * intensity;
             var offsetY = (Random.Shared.NextSingle() - 0.5f) * intensity;
-            context.SetViewOffset(offsetX, offsetY);
+            cmd.SetViewport(offsetX, offsetY, context.Width, context.Height);
         });
 
         _pipeline.AddPass(shakePass);
@@ -63,8 +62,7 @@ public sealed class EffectCommands : IStoryEffectCommands
     {
         var fadePass = new RenderPass("StoryFadeOut", (context, cmd) =>
         {
-            context.SetClearColor(r, g, b);
-            context.BlendMode = BlendMode.Alpha;
+            cmd.ClearRenderTarget(0, r, g, b, 1.0f);
         });
 
         _pipeline.AddPass(fadePass);
@@ -78,8 +76,7 @@ public sealed class EffectCommands : IStoryEffectCommands
     {
         var lightningPass = new RenderPass("StoryLightning", (context, cmd) =>
         {
-            context.SetClearColor(1.0f, 1.0f, 1.0f);
-            context.BlendMode = BlendMode.Additive;
+            cmd.ClearRenderTarget(0, 1.0f, 1.0f, 1.0f, 1.0f);
         });
 
         _pipeline.AddPass(lightningPass);

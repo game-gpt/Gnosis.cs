@@ -79,7 +79,7 @@ public sealed class CharacterCommands : IStoryCharacterCommands
 
         if (_characterNodes.TryGetValue(name, out var node))
         {
-            node.SetPosition(targetPosition);
+            node.MarkDirty();
         }
     }
 

@@ -20,6 +20,7 @@ public class VMInterpreter
     private readonly NativeFunctionRegistry _nativeRegistry;
     private readonly ComponentTypeRegistry _componentRegistry;
     private readonly ScriptSystemScheduler _scriptSystemScheduler;
+    private readonly Dictionary<string, byte[]> _moduleInstructions;
     private IWorld? _world;
     private bool _running;
     private byte[]? _instructions;
@@ -38,6 +39,7 @@ public class VMInterpreter
         _nativeRegistry = nativeRegistry;
         _componentRegistry = new ComponentTypeRegistry();
         _scriptSystemScheduler = new ScriptSystemScheduler();
+        _moduleInstructions = new Dictionary<string, byte[]>();
         _world = null;
         _running = false;
         _instructions = null;
@@ -53,6 +55,7 @@ public class VMInterpreter
         _nativeRegistry = nativeRegistry;
         _componentRegistry = new ComponentTypeRegistry();
         _scriptSystemScheduler = new ScriptSystemScheduler();
+        _moduleInstructions = new Dictionary<string, byte[]>();
         _world = world;
         _running = false;
         _instructions = null;
@@ -69,6 +72,7 @@ public class VMInterpreter
         _nativeRegistry = nativeRegistry;
         _componentRegistry = componentRegistry;
         _scriptSystemScheduler = new ScriptSystemScheduler();
+        _moduleInstructions = new Dictionary<string, byte[]>();
         _world = world;
         _running = false;
         _instructions = null;
@@ -113,7 +117,9 @@ public class VMInterpreter
             throw new VMModuleNotFoundException("未加载任何模块");
         }
 
-        _instructions = _state.CurrentModule.Instructions.ToArray();
+        CacheAllModuleInstructions();
+
+        _instructions = _moduleInstructions[_state.CurrentModule.Name];
         _running = true;
 
         while (_running)
@@ -130,6 +136,47 @@ public class VMInterpreter
         }
 
         _running = false;
+    }
+
+    /// <summary>
+    /// 缓存所有已加载模块的指令流
+    /// </summary>
+    private void CacheAllModuleInstructions()
+    {
+        foreach (var module in _state.Modules)
+        {
+            if (!_moduleInstructions.ContainsKey(module.Name))
+            {
+                _moduleInstructions[module.Name] = module.Instructions.ToArray();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 切换到指定模块的指令流
+    /// </summary>
+    private bool SwitchToModule(string moduleName)
+    {
+        if (!_moduleInstructions.TryGetValue(moduleName, out var instructions))
+        {
+            var module = _state.GetModule(moduleName);
+            if (module is null)
+            {
+                return false;
+            }
+
+            instructions = module.Instructions.ToArray();
+            _moduleInstructions[moduleName] = instructions;
+        }
+
+        _instructions = instructions;
+        var targetModule = _state.GetModule(moduleName);
+        if (targetModule is not null)
+        {
+            _state.SetCurrentModule(targetModule);
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -305,6 +352,9 @@ public class VMInterpreter
                 break;
             case OpCode.CallNative:
                 ExecuteCallNative();
+                break;
+            case OpCode.CallModule:
+                ExecuteCallModule();
                 break;
             case OpCode.Return:
                 ExecuteReturn();
@@ -811,7 +861,8 @@ public class VMInterpreter
             args[i] = _state.Pop();
         }
 
-        _state.StackInternal.PushFrame(_state.IP, _state.StackInternal.SP, localCount);
+        var returnModuleName = _state.CurrentModule?.Name;
+        _state.StackInternal.PushFrame(_state.IP, _state.StackInternal.SP, localCount, returnModuleName);
 
         var frame = _state.StackInternal.CurrentFrame;
         if (frame.HasValue)
@@ -823,6 +874,67 @@ public class VMInterpreter
         }
 
         _state.IP = addr;
+    }
+
+    private void ExecuteCallModule()
+    {
+        var constantIdx = ReadInt32();
+        var paramCount = ReadInt32();
+
+        var qualifiedName = _state.CurrentModule?.Constants.TryGetValue(constantIdx.ToString(), out var val) == true
+            ? val?.ToString()
+            : null;
+
+        if (qualifiedName is null)
+        {
+            throw new VMRuntimeException($"CallModule 常量索引无效：{constantIdx}");
+        }
+
+        var separatorIndex = qualifiedName.IndexOf("::", StringComparison.Ordinal);
+        if (separatorIndex < 0)
+        {
+            throw new VMRuntimeException($"CallModule 限定名格式无效：{qualifiedName}，期望 module::function");
+        }
+
+        var moduleName = qualifiedName[..separatorIndex];
+        var funcName = qualifiedName[(separatorIndex + 2)..];
+
+        var args = new GGValue[paramCount];
+        for (var i = paramCount - 1; i >= 0; i--)
+        {
+            args[i] = _state.Pop();
+        }
+
+        var targetModule = _state.GetModule(moduleName);
+        if (targetModule is null)
+        {
+            throw new VMModuleNotFoundException($"模块未找到：{moduleName}");
+        }
+
+        var funcInfo = FindFunctionInModule(targetModule, funcName);
+        if (funcInfo is null)
+        {
+            throw new VMRuntimeException($"函数未找到：{moduleName}::{funcName}");
+        }
+
+        var returnModuleName = _state.CurrentModule?.Name;
+        _state.StackInternal.PushFrame(_state.IP, _state.StackInternal.SP, funcInfo.LocalCount, returnModuleName);
+
+        var frame = _state.StackInternal.CurrentFrame;
+        if (frame.HasValue)
+        {
+            for (var i = 0; i < paramCount && i < frame.Value.Locals.Length; i++)
+            {
+                frame.Value.Locals[i] = args[i];
+            }
+        }
+
+        if (!SwitchToModule(moduleName))
+        {
+            throw new VMModuleNotFoundException($"模块指令流切换失败：{moduleName}");
+        }
+
+        _state.IP = funcInfo.EntryOffset;
     }
 
     private void ExecuteCallNative()
@@ -852,6 +964,15 @@ public class VMInterpreter
     {
         var frame = _state.StackInternal.PopFrame();
         _state.IP = frame.ReturnAddress;
+
+        if (frame.ReturnModuleName is not null)
+        {
+            var currentModuleName = _state.CurrentModule?.Name;
+            if (currentModuleName != frame.ReturnModuleName)
+            {
+                SwitchToModule(frame.ReturnModuleName);
+            }
+        }
     }
 
     #endregion
@@ -1735,6 +1856,35 @@ public class VMInterpreter
         if (_state.CurrentModule?.Constants.TryGetValue(idx.ToString(), out var value) == true)
         {
             return value;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 按索引读取常量池中的值（不推进 IP）
+    /// </summary>
+    private object? ReadConstantAtIndex(int idx)
+    {
+        if (_state.CurrentModule?.Constants.TryGetValue(idx.ToString(), out var value) == true)
+        {
+            return value;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 在模块中查找指定名称的函数
+    /// </summary>
+    private static ModuleFunctionInfo? FindFunctionInModule(IModule module, string functionName)
+    {
+        foreach (var func in module.Functions)
+        {
+            if (func.Name == functionName)
+            {
+                return func;
+            }
         }
 
         return null;

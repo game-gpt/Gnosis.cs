@@ -82,24 +82,73 @@ public sealed class Layer2DManager
 
             foreach (var sprite in layer.Sprites)
             {
-                var adjustedSprite = sprite with
+                if (sprite.Texture == null)
                 {
-                    Position = sprite.Position + layer.Offset,
-                    Scale = sprite.Scale * layer.Scale,
-                    Tint = sprite.Tint * new Vector4(1, 1, 1, layer.Opacity)
-                };
+                    continue;
+                }
+
+                var adjustedPosition = layer.UseParallax
+                    ? sprite.Position + layer.Offset
+                    : sprite.Position + layer.Offset;
+
+                var adjustedScale = sprite.Scale * layer.Scale;
+                var adjustedTint = sprite.Tint * new Vector4(1, 1, 1, layer.Opacity);
 
                 spriteBatch.Draw(
-                    adjustedSprite.Texture!,
-                    adjustedSprite.Position,
-                    adjustedSprite.SourceRectangle,
-                    adjustedSprite.Tint,
-                    adjustedSprite.Rotation,
-                    adjustedSprite.Origin,
-                    adjustedSprite.Scale,
-                    adjustedSprite.Flip,
-                    adjustedSprite.Depth,
-                    adjustedSprite.Layer);
+                    sprite.Texture,
+                    adjustedPosition,
+                    sprite.SourceRectangle,
+                    adjustedTint,
+                    sprite.Rotation,
+                    sprite.Origin,
+                    adjustedScale,
+                    sprite.Flip,
+                    sprite.Depth,
+                    sprite.Layer);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 使用相机偏移渲染所有可见图层，支持视差滚动
+    /// </summary>
+    /// <param name="spriteBatch">精灵批处理器</param>
+    /// <param name="cameraOffset">相机世界偏移</param>
+    public void Render(SpriteBatch spriteBatch, Vector2 cameraOffset)
+    {
+        foreach (var layer in _layers)
+        {
+            if (!layer.Visible)
+            {
+                continue;
+            }
+
+            var parallaxOffset = layer.UseParallax
+                ? cameraOffset * layer.ParallaxFactor
+                : Vector2.Zero;
+
+            foreach (var sprite in layer.Sprites)
+            {
+                if (sprite.Texture == null)
+                {
+                    continue;
+                }
+
+                var adjustedPosition = sprite.Position + layer.Offset - parallaxOffset;
+                var adjustedScale = sprite.Scale * layer.Scale;
+                var adjustedTint = sprite.Tint * new Vector4(1, 1, 1, layer.Opacity);
+
+                spriteBatch.Draw(
+                    sprite.Texture,
+                    adjustedPosition,
+                    sprite.SourceRectangle,
+                    adjustedTint,
+                    sprite.Rotation,
+                    sprite.Origin,
+                    adjustedScale,
+                    sprite.Flip,
+                    sprite.Depth,
+                    sprite.Layer);
             }
         }
     }

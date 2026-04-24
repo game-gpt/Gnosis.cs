@@ -1,14 +1,23 @@
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Gnosis.Graphic.RHI;
 
 namespace Gnosis.Graphic.Sprite2D;
 
-public sealed class SpriteBatch
+public sealed class SpriteBatch : IDisposable
 {
     #region 常量
 
     private const int InitialBatchSize = 256;
     private const int MaxBatchSize = 8192;
+    private const int VerticesPerSprite = 4;
+    private const int IndicesPerSprite = 6;
+
+    #endregion
+
+    #region 属性
+
+    public int BatchCount => _batchItems.Count;
 
     #endregion
 
@@ -17,11 +26,16 @@ public sealed class SpriteBatch
     private readonly IDevice _device;
     private readonly List<SpriteBatchItem> _batchItems;
     private readonly SpriteBatchItemComparer _comparer;
+    private readonly List<Vertex2D> _vertices;
+    private readonly List<uint> _indices;
     private bool _isBatching;
-    private IResource? _currentTexture;
     private BlendMode _currentBlendMode;
     private SpriteSortMode _sortMode;
     private Matrix4x4 _transformMatrix;
+    private IPipelineState? _pipelineState;
+    private IResource? _vertexBuffer;
+    private IResource? _indexBuffer;
+    private bool _isDisposed;
 
     #endregion
 
@@ -32,7 +46,18 @@ public sealed class SpriteBatch
         _device = device;
         _batchItems = new List<SpriteBatchItem>(InitialBatchSize);
         _comparer = new SpriteBatchItemComparer();
+        _vertices = new List<Vertex2D>(MaxBatchSize * VerticesPerSprite);
+        _indices = new List<uint>(MaxBatchSize * IndicesPerSprite);
         _transformMatrix = Matrix4x4.Identity;
+    }
+
+    #endregion
+
+    #region 初始化
+
+    public void SetPipelineState(IPipelineState pipelineState)
+    {
+        _pipelineState = pipelineState;
     }
 
     #endregion
@@ -50,7 +75,6 @@ public sealed class SpriteBatch
         _sortMode = sortMode;
         _currentBlendMode = blendMode;
         _transformMatrix = transformMatrix == default ? Matrix4x4.Identity : transformMatrix;
-        _currentTexture = null;
     }
 
     public void End()
@@ -136,6 +160,56 @@ public sealed class SpriteBatch
 
     #endregion
 
+    #region 渲染
+
+    public void Render(ICommandTable commandTable)
+    {
+        if (_batchItems.Count == 0)
+        {
+            return;
+        }
+
+        if (_sortMode != SpriteSortMode.Immediate)
+        {
+            SortBatchItems();
+        }
+
+        BuildVertexData();
+
+        if (_vertices.Count == 0)
+        {
+            return;
+        }
+
+        UploadBuffers();
+
+        if (_pipelineState != null)
+        {
+            commandTable.SetPipelineState(_pipelineState);
+        }
+
+        if (_vertexBuffer != null)
+        {
+            commandTable.SetVertexBuffer(_vertexBuffer);
+        }
+
+        if (_indexBuffer != null)
+        {
+            commandTable.SetIndexBuffer(_indexBuffer);
+            commandTable.DrawIndexed((uint)_indices.Count);
+        }
+        else
+        {
+            commandTable.Draw((uint)_vertices.Count);
+        }
+
+        _batchItems.Clear();
+        _vertices.Clear();
+        _indices.Clear();
+    }
+
+    #endregion
+
     #region 私有方法
 
     private void AssertBatching()
@@ -158,10 +232,45 @@ public sealed class SpriteBatch
             SortBatchItems();
         }
 
-        RenderBatchItems();
+        BuildVertexData();
+
+        if (_vertices.Count == 0)
+        {
+            return;
+        }
+
+        UploadBuffers();
+
+        var commandTable = _device.CreateCommandTable();
+        commandTable.Begin();
+
+        if (_pipelineState != null)
+        {
+            commandTable.SetPipelineState(_pipelineState);
+        }
+
+        if (_vertexBuffer != null)
+        {
+            commandTable.SetVertexBuffer(_vertexBuffer);
+        }
+
+        if (_indexBuffer != null)
+        {
+            commandTable.SetIndexBuffer(_indexBuffer);
+            commandTable.DrawIndexed((uint)_indices.Count);
+        }
+        else
+        {
+            commandTable.Draw((uint)_vertices.Count);
+        }
+
+        commandTable.End();
+        _device.Submit(commandTable);
+        commandTable.Dispose();
 
         _batchItems.Clear();
-        _currentTexture = null;
+        _vertices.Clear();
+        _indices.Clear();
     }
 
     private void SortBatchItems()
@@ -170,37 +279,149 @@ public sealed class SpriteBatch
         _batchItems.Sort(_comparer);
     }
 
-    private void RenderBatchItems()
+    private void BuildVertexData()
     {
-        var commandTable = _device.CreateCommandTable();
-        commandTable.Begin();
+        _vertices.Clear();
+        _indices.Clear();
 
         foreach (var item in _batchItems)
         {
-            if (_currentTexture != item.Texture)
+            if (item.Texture == null)
             {
-                if (_currentTexture != null)
-                {
-                    FlushCurrentBatch(commandTable);
-                }
-
-                _currentTexture = item.Texture;
+                continue;
             }
 
-            RenderSprite(commandTable, item);
+            var vertexStart = (uint)_vertices.Count;
+
+            BuildSpriteVertices(item);
+
+            _indices.Add(vertexStart);
+            _indices.Add(vertexStart + 1);
+            _indices.Add(vertexStart + 2);
+            _indices.Add(vertexStart);
+            _indices.Add(vertexStart + 2);
+            _indices.Add(vertexStart + 3);
+        }
+    }
+
+    private void BuildSpriteVertices(SpriteBatchItem item)
+    {
+        var position = item.Position;
+        var scale = item.Scale;
+        var origin = item.Origin;
+        var rotation = item.Rotation;
+        var tint = item.Tint;
+        var flip = item.Flip;
+
+        float width, height;
+
+        if (item.UseDestinationSize)
+        {
+            width = item.DestinationSize.X;
+            height = item.DestinationSize.Y;
+        }
+        else
+        {
+            width = scale.X;
+            height = scale.Y;
         }
 
-        FlushCurrentBatch(commandTable);
-        commandTable.End();
-        _device.Submit(commandTable);
+        var topLeft = -origin;
+        var topRight = new Vector2(width - origin.X, -origin.Y);
+        var bottomLeft = new Vector2(-origin.X, height - origin.Y);
+        var bottomRight = new Vector2(width - origin.X, height - origin.Y);
+
+        if (rotation != 0.0f)
+        {
+            var cos = MathF.Cos(rotation);
+            var sin = MathF.Sin(rotation);
+
+            topLeft = RotatePoint(topLeft, cos, sin);
+            topRight = RotatePoint(topRight, cos, sin);
+            bottomLeft = RotatePoint(bottomLeft, cos, sin);
+            bottomRight = RotatePoint(bottomRight, cos, sin);
+        }
+
+        topLeft = TransformVertex(topLeft + position);
+        topRight = TransformVertex(topRight + position);
+        bottomLeft = TransformVertex(bottomLeft + position);
+        bottomRight = TransformVertex(bottomRight + position);
+
+        var uvTopLeft = new Vector2(0.0f, 0.0f);
+        var uvTopRight = new Vector2(1.0f, 0.0f);
+        var uvBottomLeft = new Vector2(0.0f, 1.0f);
+        var uvBottomRight = new Vector2(1.0f, 1.0f);
+
+        if (!item.SourceRectangle.IsEmpty)
+        {
+            uvTopLeft = new Vector2(item.SourceRectangle.X, item.SourceRectangle.Y);
+            uvTopRight = new Vector2(item.SourceRectangle.Right, item.SourceRectangle.Y);
+            uvBottomLeft = new Vector2(item.SourceRectangle.X, item.SourceRectangle.Bottom);
+            uvBottomRight = new Vector2(item.SourceRectangle.Right, item.SourceRectangle.Bottom);
+        }
+
+        if ((flip & SpriteFlip.Horizontal) != 0)
+        {
+            (uvTopLeft.X, uvTopRight.X) = (uvTopRight.X, uvTopLeft.X);
+            (uvBottomLeft.X, uvBottomRight.X) = (uvBottomRight.X, uvBottomLeft.X);
+        }
+
+        if ((flip & SpriteFlip.Vertical) != 0)
+        {
+            (uvTopLeft.Y, uvBottomLeft.Y) = (uvBottomLeft.Y, uvTopLeft.Y);
+            (uvTopRight.Y, uvBottomRight.Y) = (uvBottomRight.Y, uvTopRight.Y);
+        }
+
+        _vertices.Add(new Vertex2D(topLeft, uvTopLeft, tint));
+        _vertices.Add(new Vertex2D(topRight, uvTopRight, tint));
+        _vertices.Add(new Vertex2D(bottomRight, uvBottomRight, tint));
+        _vertices.Add(new Vertex2D(bottomLeft, uvBottomLeft, tint));
     }
 
-    private void FlushCurrentBatch(ICommandTable commandTable)
+    private Vector2 RotatePoint(Vector2 point, float cos, float sin)
     {
+        return new Vector2(
+            point.X * cos - point.Y * sin,
+            point.X * sin + point.Y * cos
+        );
     }
 
-    private void RenderSprite(ICommandTable commandTable, SpriteBatchItem item)
+    private Vector2 TransformVertex(Vector2 vertex)
     {
+        if (_transformMatrix == Matrix4x4.Identity)
+        {
+            return vertex;
+        }
+
+        var v4 = Vector4.Transform(new Vector4(vertex, 0.0f, 1.0f), _transformMatrix);
+        return new Vector2(v4.X, v4.Y);
+    }
+
+    private void UploadBuffers()
+    {
+        var vertexData = MemoryMarshal.AsBytes<Vertex2D>(_vertices.ToArray());
+        var vertexSize = (ulong)vertexData.Length;
+
+        _vertexBuffer?.Dispose();
+        _vertexBuffer = _device.CreateBuffer(new BufferDesc
+        {
+            Size = vertexSize,
+            Usage = BufferUsage.VertexBuffer | BufferUsage.TransferDst,
+            HostVisible = true,
+            InitialData = vertexData.ToArray()
+        });
+
+        var indexData = MemoryMarshal.AsBytes(_indices.ToArray());
+        var indexSize = (ulong)indexData.Length;
+
+        _indexBuffer?.Dispose();
+        _indexBuffer = _device.CreateBuffer(new BufferDesc
+        {
+            Size = indexSize,
+            Usage = BufferUsage.IndexBuffer | BufferUsage.TransferDst,
+            HostVisible = true,
+            InitialData = indexData.ToArray()
+        });
     }
 
     #endregion
@@ -243,6 +464,23 @@ public sealed class SpriteBatch
         {
             return x.Texture?.Id.CompareTo(y.Texture?.Id ?? 0) ?? 0;
         }
+    }
+
+    #endregion
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _vertexBuffer?.Dispose();
+        _indexBuffer?.Dispose();
+
+        _isDisposed = true;
     }
 
     #endregion

@@ -740,17 +740,14 @@ public sealed class ShaderAstLowering
             case IfStatement ifStmt:
                 LowerIfStmt(ifStmt);
                 break;
-            case WhileStmt whileStmt:
+            case WhileStatement whileStmt:
                 LowerWhileStmt(whileStmt);
                 break;
             case ForStmt forStmt:
                 LowerForStmt(forStmt);
                 break;
             case DiscardStmt:
-                _currentInstructions.Add(new ShaderIrInstruction
-                {
-                    OpCode = ShaderIrOpCode.Kill
-                });
+                _currentInstructions.Add(new DiscardInstruction());
                 break;
             case BlockStmt blockStmt:
                 LowerBlock(blockStmt);
@@ -778,11 +775,10 @@ public sealed class ShaderAstLowering
         if (decl.Initializer is not null)
         {
             var initId = LowerExpression(decl.Initializer);
-            _currentInstructions.Add(new ShaderIrInstruction
+            _currentInstructions.Add(new StoreInstruction
             {
-                OpCode = ShaderIrOpCode.Store,
-                ResultType = varType,
-                Operands = [varId, initId]
+                PointerId = varId,
+                ValueId = initId
             });
         }
     }
@@ -792,93 +788,125 @@ public sealed class ShaderAstLowering
         if (stmt.Value is not null)
         {
             var valueId = LowerExpression(stmt.Value);
-            _currentInstructions.Add(new ShaderIrInstruction
+            _currentInstructions.Add(new ReturnInstruction
             {
-                OpCode = ShaderIrOpCode.Return,
-                ResultType = ShaderIrType.Void,
-                Operands = [valueId]
+                ValueId = valueId
             });
         }
         else
         {
-            _currentInstructions.Add(new ShaderIrInstruction
-            {
-                OpCode = ShaderIrOpCode.Return,
-                ResultType = ShaderIrType.Void,
-                Operands = []
-            });
+            _currentInstructions.Add(new ReturnInstruction());
         }
     }
 
     private void LowerIfStmt(IfStatement stmt)
     {
         var condId = LowerExpression(stmt.Condition);
-        _currentInstructions.Add(new ShaderIrInstruction
+        var mergeLabelId = AllocateId();
+        var trueLabelId = AllocateId();
+        var falseLabelId = stmt.ElseBlock is not null ? AllocateId() : mergeLabelId;
+
+        _currentInstructions.Add(new SelectionMergeInstruction
         {
-            OpCode = ShaderIrOpCode.BranchConditional,
-            ResultType = ShaderIrType.Bool,
-            Operands = [condId]
+            MergeLabelId = mergeLabelId
+        });
+        _currentInstructions.Add(new BranchConditionalInstruction
+        {
+            ConditionId = condId,
+            TrueLabelId = trueLabelId,
+            FalseLabelId = falseLabelId
         });
 
+        _currentInstructions.Add(new LabelInstruction { LabelId = trueLabelId });
         LowerStatement(stmt.ThenBlock);
 
         if (stmt.ElseBlock is not null)
         {
+            _currentInstructions.Add(new LabelInstruction { LabelId = falseLabelId });
             LowerStatement(stmt.ElseBlock);
         }
+
+        _currentInstructions.Add(new LabelInstruction { LabelId = mergeLabelId });
     }
 
-    private void LowerWhileStmt(WhileStmt stmt)
+    private void LowerWhileStmt(WhileStatement stmt)
     {
-        _currentInstructions.Add(new ShaderIrInstruction
+        var headerLabelId = AllocateId();
+        var bodyLabelId = AllocateId();
+        var mergeLabelId = AllocateId();
+        var continueLabelId = AllocateId();
+
+        _currentInstructions.Add(new BranchInstruction { TargetLabelId = headerLabelId });
+        _currentInstructions.Add(new LabelInstruction { LabelId = headerLabelId });
+
+        _currentInstructions.Add(new LoopMergeInstruction
         {
-            OpCode = ShaderIrOpCode.LoopMerge,
-            ResultType = ShaderIrType.Void,
-            Operands = []
+            MergeLabelId = mergeLabelId,
+            ContinueLabelId = continueLabelId
         });
 
         var condId = LowerExpression(stmt.Condition);
-        _currentInstructions.Add(new ShaderIrInstruction
+        _currentInstructions.Add(new BranchConditionalInstruction
         {
-            OpCode = ShaderIrOpCode.BranchConditional,
-            ResultType = ShaderIrType.Bool,
-            Operands = [condId]
+            ConditionId = condId,
+            TrueLabelId = bodyLabelId,
+            FalseLabelId = mergeLabelId
         });
 
+        _currentInstructions.Add(new LabelInstruction { LabelId = bodyLabelId });
         LowerBlock(stmt.Body);
+        _currentInstructions.Add(new BranchInstruction { TargetLabelId = continueLabelId });
+
+        _currentInstructions.Add(new LabelInstruction { LabelId = continueLabelId });
+        _currentInstructions.Add(new BranchInstruction { TargetLabelId = headerLabelId });
+
+        _currentInstructions.Add(new LabelInstruction { LabelId = mergeLabelId });
     }
 
     private void LowerForStmt(ForStmt stmt)
     {
+        var headerLabelId = AllocateId();
+        var bodyLabelId = AllocateId();
+        var mergeLabelId = AllocateId();
+        var continueLabelId = AllocateId();
+
         if (stmt.Initializer is not null)
         {
             LowerStatement(stmt.Initializer);
         }
 
-        _currentInstructions.Add(new ShaderIrInstruction
+        _currentInstructions.Add(new BranchInstruction { TargetLabelId = headerLabelId });
+        _currentInstructions.Add(new LabelInstruction { LabelId = headerLabelId });
+
+        _currentInstructions.Add(new LoopMergeInstruction
         {
-            OpCode = ShaderIrOpCode.LoopMerge,
-            ResultType = ShaderIrType.Void,
-            Operands = []
+            MergeLabelId = mergeLabelId,
+            ContinueLabelId = continueLabelId
         });
 
         if (stmt.Condition is not null)
         {
             var condId = LowerExpression(stmt.Condition);
-            _currentInstructions.Add(new ShaderIrInstruction
+            _currentInstructions.Add(new BranchConditionalInstruction
             {
-                OpCode = ShaderIrOpCode.BranchConditional,
-                ResultType = ShaderIrType.Bool,
-                Operands = [condId]
+                ConditionId = condId,
+                TrueLabelId = bodyLabelId,
+                FalseLabelId = mergeLabelId
             });
         }
 
+        _currentInstructions.Add(new LabelInstruction { LabelId = bodyLabelId });
         LowerBlock(stmt.Body);
+        _currentInstructions.Add(new BranchInstruction { TargetLabelId = continueLabelId });
 
+        _currentInstructions.Add(new LabelInstruction { LabelId = continueLabelId });
         if (stmt.Update is not null)
         {
             LowerExpression(stmt.Update);
         }
+
+        _currentInstructions.Add(new BranchInstruction { TargetLabelId = headerLabelId });
+        _currentInstructions.Add(new LabelInstruction { LabelId = mergeLabelId });
     }
 
     #endregion
@@ -950,11 +978,12 @@ public sealed class ShaderAstLowering
                 break;
         }
 
-        _currentInstructions.Add(new ShaderIrInstruction
+        _currentInstructions.Add(new LoadInstruction
         {
-            OpCode = ShaderIrOpCode.Constant,
+            ResultId = resultId,
             ResultType = resultType,
-            Operands = [resultId, value]
+            PointerId = 0,
+            Value = Convert.ToUInt32(value)
         });
 
         return resultId;
@@ -977,6 +1006,9 @@ public sealed class ShaderAstLowering
         var rightId = LowerExpression(expr.Right);
         var resultId = AllocateId();
 
+        var isCompare = expr.Operator is "==" or "!=" or "<" or ">" or "<=" or ">=";
+        var isLogical = expr.Operator is "&&" or "||";
+
         var opCode = expr.Operator switch
         {
             "+" => ShaderIrOpCode.Add,
@@ -995,18 +1027,43 @@ public sealed class ShaderAstLowering
             _ => ShaderIrOpCode.Nop
         };
 
-        var isCompare = expr.Operator is "==" or "!=" or "<" or ">" or "<=" or ">=";
-        var isLogical = expr.Operator is "&&" or "||";
         var resultType = isCompare ? ShaderIrType.Bool
             : isLogical ? ShaderIrType.Bool
             : ShaderIrType.Float32;
 
-        _currentInstructions.Add(new ShaderIrInstruction
+        if (isCompare)
         {
-            OpCode = opCode,
-            ResultType = resultType,
-            Operands = [resultId, leftId, rightId]
-        });
+            _currentInstructions.Add(new CompareInstruction
+            {
+                ResultId = resultId,
+                ResultType = resultType,
+                OpCode = opCode,
+                LeftId = leftId,
+                RightId = rightId
+            });
+        }
+        else if (isLogical)
+        {
+            _currentInstructions.Add(new LogicalInstruction
+            {
+                ResultId = resultId,
+                ResultType = resultType,
+                OpCode = opCode,
+                LeftId = leftId,
+                RightId = rightId
+            });
+        }
+        else
+        {
+            _currentInstructions.Add(new ArithmeticInstruction
+            {
+                ResultId = resultId,
+                ResultType = resultType,
+                OpCode = opCode,
+                LeftId = leftId,
+                RightId = rightId
+            });
+        }
 
         return resultId;
     }
@@ -1024,12 +1081,28 @@ public sealed class ShaderAstLowering
             _ => ShaderIrOpCode.Nop
         };
 
-        _currentInstructions.Add(new ShaderIrInstruction
+        if (opCode == ShaderIrOpCode.LogicalNot)
         {
-            OpCode = opCode,
-            ResultType = ShaderIrType.Float32,
-            Operands = [resultId, operandId]
-        });
+            _currentInstructions.Add(new LogicalInstruction
+            {
+                ResultId = resultId,
+                ResultType = ShaderIrType.Bool,
+                OpCode = opCode,
+                LeftId = operandId,
+                RightId = 0
+            });
+        }
+        else
+        {
+            _currentInstructions.Add(new ArithmeticInstruction
+            {
+                ResultId = resultId,
+                ResultType = ShaderIrType.Float32,
+                OpCode = opCode,
+                LeftId = operandId,
+                RightId = 0
+            });
+        }
 
         return resultId;
     }
@@ -1046,20 +1119,22 @@ public sealed class ShaderAstLowering
 
             if (isBuiltin)
             {
-                _currentInstructions.Add(new ShaderIrInstruction
+                _currentInstructions.Add(new CallBuiltinInstruction
                 {
-                    OpCode = ShaderIrOpCode.CallBuiltin,
+                    ResultId = resultId,
                     ResultType = InferBuiltinReturnType(builtinName),
-                    Operands = [resultId, builtinName, ..argIds.Cast<object>()]
+                    BuiltinName = builtinName,
+                    ArgumentIds = argIds
                 });
             }
             else
             {
-                _currentInstructions.Add(new ShaderIrInstruction
+                _currentInstructions.Add(new CallInstruction
                 {
-                    OpCode = ShaderIrOpCode.Call,
+                    ResultId = resultId,
                     ResultType = ShaderIrType.Void,
-                    Operands = [resultId, builtinName, ..argIds.Cast<object>()]
+                    FunctionName = builtinName,
+                    ArgumentIds = argIds
                 });
             }
         }
@@ -1072,11 +1147,12 @@ public sealed class ShaderAstLowering
         var objId = LowerExpression(expr.Target);
         var resultId = AllocateId();
 
-        _currentInstructions.Add(new ShaderIrInstruction
+        _currentInstructions.Add(new AccessChainInstruction
         {
-            OpCode = ShaderIrOpCode.AccessChain,
+            ResultId = resultId,
             ResultType = ShaderIrType.Void,
-            Operands = [resultId, objId, expr.MemberName]
+            BaseId = objId,
+            IndexIds = []
         });
 
         return resultId;
@@ -1094,11 +1170,12 @@ public sealed class ShaderAstLowering
                 ? ShaderIrType.Float32
                 : ShaderIrType.Vec4();
 
-            _currentInstructions.Add(new ShaderIrInstruction
+            _currentInstructions.Add(new VectorSwizzleInstruction
             {
-                OpCode = ShaderIrOpCode.VectorShuffle,
+                ResultId = resultId,
                 ResultType = resultType,
-                Operands = [resultId, objId, ..components.Select(c => (uint)c)]
+                VectorId = objId,
+                Components = components
             });
         }
 
@@ -1111,21 +1188,19 @@ public sealed class ShaderAstLowering
 
         if (expr.Target is IdentifierNode idNode && _variableIds.TryGetValue(idNode.Name, out var targetId))
         {
-            _currentInstructions.Add(new ShaderIrInstruction
+            _currentInstructions.Add(new StoreInstruction
             {
-                OpCode = ShaderIrOpCode.Store,
-                ResultType = ShaderIrType.Void,
-                Operands = [targetId, valueId]
+                PointerId = targetId,
+                ValueId = valueId
             });
         }
         else if (expr.Target is MemberAccessExpr memberExpr)
         {
             var objId = LowerExpression(memberExpr.Target);
-            _currentInstructions.Add(new ShaderIrInstruction
+            _currentInstructions.Add(new StoreInstruction
             {
-                OpCode = ShaderIrOpCode.Store,
-                ResultType = ShaderIrType.Void,
-                Operands = [objId, memberExpr.MemberName, valueId]
+                PointerId = objId,
+                ValueId = valueId
             });
         }
 

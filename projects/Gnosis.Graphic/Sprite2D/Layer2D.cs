@@ -13,6 +13,17 @@ public sealed class Layer2D
     public float Opacity { get; set; } = 1.0f;
     public Vector2 Offset { get; set; }
     public float Scale { get; set; } = 1.0f;
+
+    /// <summary>
+    /// 视差滚动因子，1.0 为正常速度，0.0 为固定不动，大于 1.0 为前景加速
+    /// </summary>
+    public float ParallaxFactor { get; set; } = 1.0f;
+
+    /// <summary>
+    /// 图层是否随相机移动（受视差因子影响）
+    /// </summary>
+    public bool UseParallax { get; set; } = true;
+
     public IReadOnlyList<Sprite> Sprites => _sprites;
 
     #endregion

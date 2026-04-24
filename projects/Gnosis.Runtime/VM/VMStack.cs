@@ -23,13 +23,19 @@ public struct CallFrame
     public GGValue[] Locals;
 
     /// <summary>
+    /// 返回时需要切换回的模块名称，为 null 表示同模块返回
+    /// </summary>
+    public string? ReturnModuleName;
+
+    /// <summary>
     /// 初始化调用帧
     /// </summary>
-    public CallFrame(int returnAddress, int basePointer, int localCount)
+    public CallFrame(int returnAddress, int basePointer, int localCount, string? returnModuleName = null)
     {
         ReturnAddress = returnAddress;
         BasePointer = basePointer;
         Locals = new GGValue[localCount];
+        ReturnModuleName = returnModuleName;
     }
 }
 
@@ -193,6 +199,14 @@ public class VMStack
     public void PushFrame(int returnAddress, int basePointer, int localCount)
     {
         _callFrames.Add(new CallFrame(returnAddress, basePointer, localCount));
+    }
+
+    /// <summary>
+    /// 压入调用帧（带返回模块名称）
+    /// </summary>
+    public void PushFrame(int returnAddress, int basePointer, int localCount, string? returnModuleName)
+    {
+        _callFrames.Add(new CallFrame(returnAddress, basePointer, localCount, returnModuleName));
     }
 
     /// <summary>

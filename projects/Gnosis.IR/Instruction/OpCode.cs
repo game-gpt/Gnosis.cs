@@ -59,6 +59,7 @@ public enum OpCode : byte
     Call = 0x50,
     CallNative = 0x51,
     Return = 0x52,
+    CallModule = 0x53,
 
     LoadLocal = 0x60,
     StoreLocal = 0x61,
