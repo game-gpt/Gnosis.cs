@@ -28,8 +28,7 @@ public sealed class SpirvValidator
 
         try
         {
-            var decoder = new SpirvDecoder();
-            var module = decoder.Decode(data);
+            var module = new SpirvDecoder(data).Decode();
 
             ValidateStructure(module, errors);
         }
@@ -112,7 +111,7 @@ public sealed class SpirvValidator
         }
     }
 
-    private static bool IsResultProducingInstruction(ushort opcode)
+    private static bool IsResultProducingInstruction(SpirvOpCode opcode)
     {
         return opcode is
             SpirvOpCode.OpTypeVoid or SpirvOpCode.OpTypeBool or SpirvOpCode.OpTypeInt or SpirvOpCode.OpTypeFloat

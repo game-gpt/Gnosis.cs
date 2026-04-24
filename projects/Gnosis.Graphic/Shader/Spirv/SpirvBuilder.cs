@@ -734,7 +734,7 @@ public sealed class SpirvBuilder
     /// <summary>
     ///     添加算术指令（通用）。
     /// </summary>
-    public uint AddArithmetic(ushort opcode, uint resultTypeId, uint operand1Id, uint operand2Id)
+    public uint AddArithmetic(SpirvOpCode opcode, uint resultTypeId, uint operand1Id, uint operand2Id)
     {
         var resultId = AllocateId();
 
@@ -751,7 +751,7 @@ public sealed class SpirvBuilder
     /// <summary>
     ///     添加一元指令（通用）。
     /// </summary>
-    public uint AddUnaryOp(ushort opcode, uint resultTypeId, uint operandId)
+    public uint AddUnaryOp(SpirvOpCode opcode, uint resultTypeId, uint operandId)
     {
         var resultId = AllocateId();
 
@@ -943,7 +943,7 @@ public sealed class SpirvBuilder
     /// <summary>
     ///     添加类型转换指令。
     /// </summary>
-    public uint AddConvert(ushort opcode, uint resultTypeId, uint valueId)
+    public uint AddConvert(SpirvOpCode opcode, uint resultTypeId, uint valueId)
     {
         var resultId = AllocateId();
 
@@ -1031,7 +1031,7 @@ public sealed class SpirvBuilder
     /// </summary>
     /// <param name="opcode">操作码。</param>
     /// <param name="operands">操作数。</param>
-    public void AddRawInstruction(ushort opcode, uint[] operands)
+    public void AddRawInstruction(SpirvOpCode opcode, uint[] operands)
     {
         _instructions.Add(new SpirvInstruction
         {

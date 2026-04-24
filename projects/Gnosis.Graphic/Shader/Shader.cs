@@ -51,11 +51,12 @@ public sealed class DelegateShaderModule : IShaderModule
         string name,
         IReadOnlyList<IMicroFunction> functions,
         ShaderLanguage language = ShaderLanguage.Valkyrie,
-        ShaderTarget target = ShaderTarget.Spirv)
+        ShaderTarget target = ShaderTarget.Spirv,
+        byte[]? bytecode = null)
     {
         Name = name;
         Functions = functions;
-        Bytecode = [];
+        Bytecode = bytecode ?? [];
         Language = language;
         Target = target;
     }

@@ -154,4 +154,7 @@ internal static class GlConstants
     public const uint GL_TEXTURE_LOD_BIAS = 0x8501;
     public const uint GL_TEXTURE_MIN_LOD = 0x813A;
     public const uint GL_TEXTURE_MAX_LOD = 0x813B;
+
+    public const uint GL_SHADER_BINARY_FORMAT_SPIR_V = 0x9551;
+    public const uint GL_SPIR_V_BINARY = 0x9552;
 }

@@ -120,6 +120,68 @@ public sealed unsafe class OpenGLDevice : IDevice
 
     public IResource CreateShader(in ShaderDesc desc)
     {
+        if (desc.IsSpirv && GlNative.ShaderBinary != null && GlNative.SpecializeShader != null)
+        {
+            return CreateShaderFromSpirv(in desc);
+        }
+
+        return CreateShaderFromSource(in desc);
+    }
+
+    private IResource CreateShaderFromSpirv(in ShaderDesc desc)
+    {
+        var glStage = GlConversions.ToGlShaderStage(desc.Stage);
+        uint shader = GlNative.CreateShader!(glStage);
+
+        fixed (byte* pBinary = desc.Bytecode)
+        {
+            GlNative.ShaderBinary!(1, &shader, GlConstants.GL_SHADER_BINARY_FORMAT_SPIR_V,
+                pBinary, desc.Bytecode.Length);
+        }
+
+        var entryPointBytes = System.Text.Encoding.ASCII.GetBytes(desc.EntryPoint);
+        fixed (byte* pEntryPoint = entryPointBytes)
+        {
+            GlNative.SpecializeShader!(shader, pEntryPoint, 0, null, null);
+        }
+
+        int specializeStatus;
+        GlNative.GetShaderiv!(shader, GlConstants.GL_COMPILE_STATUS, &specializeStatus);
+        if (specializeStatus == 0)
+        {
+            int infoLogLength;
+            GlNative.GetShaderiv!(shader, GlConstants.GL_INFO_LOG_LENGTH, &infoLogLength);
+            byte* infoLog = stackalloc byte[infoLogLength > 0 ? infoLogLength : 1];
+            GlNative.GetShaderInfoLog!(shader, infoLogLength, &infoLogLength, infoLog);
+            GlNative.DeleteShader!(shader);
+            throw new InvalidOperationException($"SPIR-V 着色器特化失败：{Marshal.PtrToStringAnsi((nint)infoLog)}");
+        }
+
+        uint program = GlNative.CreateProgram!();
+        GlNative.AttachShader!(program, shader);
+        GlNative.LinkProgram!(program);
+
+        int linkStatus;
+        GlNative.GetProgramiv!(program, GlConstants.GL_LINK_STATUS, &linkStatus);
+        if (linkStatus == 0)
+        {
+            int infoLogLength;
+            GlNative.GetProgramiv!(program, GlConstants.GL_INFO_LOG_LENGTH, &infoLogLength);
+            byte* infoLog = stackalloc byte[infoLogLength > 0 ? infoLogLength : 1];
+            GlNative.GetProgramInfoLog!(program, infoLogLength, &infoLogLength, infoLog);
+            GlNative.DeleteProgram!(program);
+            GlNative.DeleteShader!(shader);
+            throw new InvalidOperationException($"SPIR-V 着色器链接失败：{Marshal.PtrToStringAnsi((nint)infoLog)}");
+        }
+
+        var resource = new OpenGLResource(ResourceType.Shader, ResourceFormat.Unknown, (ulong)desc.Bytecode.Length,
+            glProgram: program, glShader: shader, shaderStage: desc.Stage);
+        _resources[resource.Id] = resource;
+        return resource;
+    }
+
+    private IResource CreateShaderFromSource(in ShaderDesc desc)
+    {
         var glStage = GlConversions.ToGlShaderStage(desc.Stage);
         uint shader = GlNative.CreateShader!(glStage);
 

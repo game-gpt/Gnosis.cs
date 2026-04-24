@@ -1,5 +1,4 @@
 using Gnosis.Core;
-using Gnosis.Core.Entity;
 using Gnosis.ECS.Component;
 using Gnosis.ECS.World;
 
@@ -84,18 +83,14 @@ public sealed class GnosisECSWorld : IGameWorld
 
         var eid = DecodeEntityId(entityId);
 
-        var pool = ((Gnosis.ECS.World.World)_world).Components.GetPool(type);
-        if (pool is null) return;
-
-        var componentData = pool.GetComponentData(eid);
-        if (componentData is null) return;
+        var component = InvokeGenericMethod("GetComponent", type, eid);
+        if (component is null) return;
 
         var prop = type.GetProperty(fieldName);
-        if (prop is not null && prop.CanWrite)
-        {
-            prop.SetValue(componentData, value);
-            pool.AddComponentData(eid, componentData);
-        }
+        if (prop is null || !prop.CanWrite) return;
+
+        prop.SetValue(component, value);
+        InvokeGenericMethod("SetComponent", type, eid, component);
     }
 
     /// <inheritdoc />

@@ -15,6 +15,8 @@ public sealed class ShaderFunctionIr
 
     public List<ShaderIrInstruction> Instructions { get; } = [];
 
+    public List<LocalVariableInstruction> LocalVariables { get; } = [];
+
     public bool IsEntryPoint { get; set; }
 
     public ShaderExecutionModel? EntryPointModel { get; set; }

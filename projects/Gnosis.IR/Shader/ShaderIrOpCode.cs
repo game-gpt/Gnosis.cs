@@ -191,5 +191,12 @@ public enum ShaderIrOpCode
     RayQueryGetIntersectionTriangleVertexPositions,
     RayQueryGetIntersectionMatrixObjectToWorld,
     RayQueryGetIntersectionMatrixWorldToObject,
+    MatrixMultiply,
+    MatrixInverse,
+    LogicalAnd = And,
+    LogicalOr = Or,
+    LogicalNot = Not,
+    LessEqual = LessThanOrEqual,
+    GreaterEqual = GreaterThanOrEqual,
     Undefined
 }

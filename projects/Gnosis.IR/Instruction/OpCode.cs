@@ -109,4 +109,8 @@ public enum OpCode : byte
     IsNull = 0xC0,
     IsType = 0xC1,
     TypeOf = 0xC2,
+
+    // 协程操作
+    Yield = 0xD0,
+    Resume = 0xD1
 }

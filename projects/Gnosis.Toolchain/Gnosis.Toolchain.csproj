@@ -28,6 +28,8 @@
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
         <ProjectReference Include="..\Gnosis.Graphic\Gnosis.Graphic.csproj" />
+        <ProjectReference Include="..\..\..\NyarVM.cs\projects\Nyar.Core\Nyar.Core.csproj" />
+        <ProjectReference Include="..\..\..\NyarVM.cs\projects\Nyar.Dialect.Game\Nyar.Dialect.Game.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak\Oak.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Valkyrie\Oak.Valkyrie.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Von\Oak.Von.csproj" />

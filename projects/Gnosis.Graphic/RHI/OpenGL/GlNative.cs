@@ -93,6 +93,8 @@ internal static unsafe class GlNative
     public delegate void GlBindSamplerProc(uint unit, uint sampler);
     public delegate void GlBindBufferBaseProc(uint target, uint index, uint buffer);
     public delegate void GlBindBufferRangeProc(uint target, uint index, uint buffer, nint offset, nint size);
+    public delegate void GlShaderBinaryProc(uint count, uint* shaders, uint binaryFormat, void* binary, nint length);
+    public delegate void GlSpecializeShaderProc(uint shader, byte* pEntryPoint, uint numSpecializationConstants, uint* pConstantIndex, uint* pConstantValue);
 
     public static GlCreateShaderProc? CreateShader;
     public static GlShaderSourceProc? ShaderSource;
@@ -168,6 +170,8 @@ internal static unsafe class GlNative
     public static GlBindSamplerProc? BindSampler;
     public static GlBindBufferBaseProc? BindBufferBase;
     public static GlBindBufferRangeProc? BindBufferRange;
+    public static GlShaderBinaryProc? ShaderBinary;
+    public static GlSpecializeShaderProc? SpecializeShader;
 
     public static void LoadFunctions(Func<string, nint> getProcAddress)
     {
@@ -245,6 +249,8 @@ internal static unsafe class GlNative
         BindSampler = LoadDelegate<GlBindSamplerProc>(getProcAddress, "glBindSampler");
         BindBufferBase = LoadDelegate<GlBindBufferBaseProc>(getProcAddress, "glBindBufferBase");
         BindBufferRange = LoadDelegate<GlBindBufferRangeProc>(getProcAddress, "glBindBufferRange");
+        ShaderBinary = LoadDelegate<GlShaderBinaryProc>(getProcAddress, "glShaderBinary");
+        SpecializeShader = LoadDelegate<GlSpecializeShaderProc>(getProcAddress, "glSpecializeShaderARB");
     }
 
     private static T LoadDelegate<T>(Func<string, nint> getProcAddress, string name) where T : Delegate

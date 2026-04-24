@@ -21,6 +21,7 @@
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.Runtime\Gnosis.Runtime.csproj" />
         <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.SpirV\SpirV.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Valkyrie\Oak.Valkyrie.csproj" />
     </ItemGroup>
 
     <ItemGroup>

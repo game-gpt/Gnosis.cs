@@ -29,7 +29,7 @@ public sealed class SpirvGenerator
 
     public byte[] Generate(ShaderModuleIr module)
     {
-        _builder.AddCapability(SpirvConstants.Capability.Shader);
+        _builder.AddCapability((uint)SpirvCapability.Shader);
 
         var hasRayTracing = module.EntryPoints.Any(ep =>
             ep.ExecutionModel is ShaderExecutionModel.RayGenerationKHR
@@ -39,17 +39,17 @@ public sealed class SpirvGenerator
 
         if (hasRayTracing)
         {
-            _builder.AddCapability(SpirvConstants.Capability.RayTracingKHR);
+            _builder.AddCapability((uint)SpirvCapability.RayTracingKHR);
             _builder.AddExtension("SPV_KHR_ray_tracing");
         }
 
         _glslStd450Id = _builder.AddExtInstImport("GLSL.std.450");
 
         _builder.SetMemoryModel(
-            SpirvConstants.AddressingModel.Logical,
-            SpirvConstants.MemoryModel.GLSL450);
+            (uint)SpirvAddressingModel.Logical,
+            (uint)SpirvMemoryModel.GLSL450);
 
-        _builder.AddSource(SpirvConstants.SourceLanguage.GLSL, 450);
+        _builder.AddSource((uint)SpirvSourceLanguage.GLSL, 450);
 
         GenerateStructs(module.Structs);
         GenerateGlobalVariables(module.GlobalVariables);
@@ -75,7 +75,7 @@ public sealed class SpirvGenerator
             for (var i = 0; i < structIr.Fields.Count; i++)
             {
                 _builder.AddMemberName(structId, (uint)i, structIr.Fields[i].Name);
-                _builder.AddMemberDecorate(structId, (uint)i, SpirvConstants.Decoration.Offset, [structIr.Fields[i].Offset]);
+                _builder.AddMemberDecorate(structId, (uint)i, (uint)SpirvDecoration.Offset, [structIr.Fields[i].Offset]);
             }
         }
     }
@@ -133,8 +133,8 @@ public sealed class SpirvGenerator
         foreach (var local in function.LocalVariables)
         {
             var localTypeId = MapType(local.ResultType);
-            var ptrTypeId = _typeCache.GetPointerType(SpirvConstants.StorageClass.Function, localTypeId);
-            var localVarId = _builder.AddVariable(ptrTypeId, SpirvConstants.StorageClass.Function);
+            var ptrTypeId = _typeCache.GetPointerType((uint)SpirvStorageClass.Function, localTypeId);
+            var localVarId = _builder.AddVariable(ptrTypeId, (uint)SpirvStorageClass.Function);
             _builder.AddName(localVarId, local.Name);
             _variableIds[local.ResultId] = localVarId;
         }
@@ -167,11 +167,11 @@ public sealed class SpirvGenerator
 
             if (entry.ExecutionModel == ShaderExecutionModel.Fragment)
             {
-                _builder.AddExecutionMode(funcId, SpirvConstants.ExecutionMode.OriginUpperLeft);
+                _builder.AddExecutionMode(funcId, (uint)SpirvExecutionMode.OriginUpperLeft);
             }
             else if (entry.ExecutionModel == ShaderExecutionModel.GLCompute)
             {
-                _builder.AddExecutionMode(funcId, SpirvConstants.ExecutionMode.LocalSize, [1, 1, 1]);
+                _builder.AddExecutionMode(funcId, (uint)SpirvExecutionMode.LocalSize, [1, 1, 1]);
             }
         }
     }
@@ -191,19 +191,19 @@ public sealed class SpirvGenerator
 
             if (global.Location.HasValue)
             {
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.Location, [global.Location.Value]);
+                _builder.AddDecorate(varId, (uint)SpirvDecoration.Location, [global.Location.Value]);
             }
 
             if (global.Builtin != null)
             {
                 var builtinValue = MapBuiltin(global.Builtin);
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.BuiltIn, [builtinValue]);
+                _builder.AddDecorate(varId, (uint)SpirvDecoration.BuiltIn, [builtinValue]);
             }
 
             if (global.Resource != null)
             {
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.DescriptorSet, [global.Resource.DescriptorSet]);
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.Binding, [global.Resource.Binding]);
+                _builder.AddDecorate(varId, (uint)SpirvDecoration.DescriptorSet, [global.Resource.DescriptorSet]);
+                _builder.AddDecorate(varId, (uint)SpirvDecoration.Binding, [global.Resource.Binding]);
 
                 if (global.Resource.Kind == ShaderResourceKind.UniformBuffer)
                 {
@@ -212,7 +212,7 @@ public sealed class SpirvGenerator
                             ? s.Fields.Select(f => MapType(f.Type)).ToArray()
                             : [],
                         global.Resource.Type is ShaderIrType.StructType s2 ? s2.Name : "unknown");
-                    _builder.AddDecorate(structTypeId, SpirvConstants.Decoration.Block);
+                    _builder.AddDecorate(structTypeId, (uint)SpirvDecoration.Block);
                 }
             }
         }
@@ -380,7 +380,9 @@ public sealed class SpirvGenerator
             ShaderIrOpCode.LessThan => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdLessThan : SpirvOpCode.OpSLessThan,
             ShaderIrOpCode.GreaterThan => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdGreaterThan : SpirvOpCode.OpSGreaterThan,
             ShaderIrOpCode.LessEqual => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdLessEqual : SpirvOpCode.OpSLessEqual,
-            ShaderIrOpCode.GreaterEqual => IsFloatType(cmp.ResultType) ? SpirvOpCode.OpFOrdGreaterEqual : SpirvOpCode.OpSGreaterEqual,
+            ShaderIrOpCode.GreaterEqual => IsFloatType(cmp.ResultType)
+                ? SpirvOpCode.OpFOrdGreaterEqual
+                : (SpirvOpCode)169,
             _ => SpirvOpCode.OpFOrdEqual
         };
 
@@ -439,10 +441,10 @@ public sealed class SpirvGenerator
 
         var glslInstruction = vecBuiltin.OpCode switch
         {
-            ShaderIrOpCode.Cross => SpirvConstants.GLSLstd450.Cross,
-            ShaderIrOpCode.Normalize => SpirvConstants.GLSLstd450.Normalize,
-            ShaderIrOpCode.Length => SpirvConstants.GLSLstd450.Length,
-            _ => SpirvConstants.GLSLstd450.Normalize
+            ShaderIrOpCode.Cross => (uint)SpirvGLSLstd450.Cross,
+            ShaderIrOpCode.Normalize => (uint)SpirvGLSLstd450.Normalize,
+            ShaderIrOpCode.Length => (uint)SpirvGLSLstd450.Length,
+            _ => (uint)SpirvGLSLstd450.Normalize
         };
 
         var extResultId = _builder.AddExtInst(resultType, _glslStd450Id, glslInstruction, vecBuiltin.OperandIds);
@@ -462,7 +464,7 @@ public sealed class SpirvGenerator
 
         if (mat.OpCode == ShaderIrOpCode.MatrixInverse)
         {
-            var resultId = _builder.AddExtInst(resultType, _glslStd450Id, SpirvConstants.GLSLstd450.MatrixInverse, [mat.LeftId]);
+            var resultId = _builder.AddExtInst(resultType, _glslStd450Id, (uint)SpirvGLSLstd450.MatrixInverse, [mat.LeftId]);
             _variableIds[mat.ResultId] = resultId;
         }
     }
@@ -590,88 +592,88 @@ public sealed class SpirvGenerator
 
     private uint MapStorageClass(StorageClass storage) => storage switch
     {
-        StorageClass.UniformConstant => SpirvConstants.StorageClass.UniformConstant,
-        StorageClass.Input => SpirvConstants.StorageClass.Input,
-        StorageClass.Uniform => SpirvConstants.StorageClass.Uniform,
-        StorageClass.Output => SpirvConstants.StorageClass.Output,
-        StorageClass.Function => SpirvConstants.StorageClass.Function,
-        StorageClass.PushConstant => SpirvConstants.StorageClass.PushConstant,
-        StorageClass.StorageBuffer => SpirvConstants.StorageClass.StorageBuffer,
-        _ => SpirvConstants.StorageClass.Function
+        StorageClass.UniformConstant => (uint)SpirvStorageClass.UniformConstant,
+        StorageClass.Input => (uint)SpirvStorageClass.Input,
+        StorageClass.Uniform => (uint)SpirvStorageClass.Uniform,
+        StorageClass.Output => (uint)SpirvStorageClass.Output,
+        StorageClass.Function => (uint)SpirvStorageClass.Function,
+        StorageClass.PushConstant => (uint)SpirvStorageClass.PushConstant,
+        StorageClass.StorageBuffer => (uint)SpirvStorageClass.StorageBuffer,
+        _ => (uint)SpirvStorageClass.Function
     };
 
     private uint MapExecutionModel(ShaderExecutionModel model) => model switch
     {
-        ShaderExecutionModel.Vertex => SpirvConstants.ExecutionModel.Vertex,
-        ShaderExecutionModel.Fragment => SpirvConstants.ExecutionModel.Fragment,
-        ShaderExecutionModel.GLCompute => SpirvConstants.ExecutionModel.GLCompute,
-        ShaderExecutionModel.RayGenerationKHR => SpirvConstants.ExecutionModel.RayGenerationKHR,
-        ShaderExecutionModel.ClosestHitKHR => SpirvConstants.ExecutionModel.ClosestHitKHR,
-        ShaderExecutionModel.MissKHR => SpirvConstants.ExecutionModel.MissKHR,
-        ShaderExecutionModel.AnyHitKHR => SpirvConstants.ExecutionModel.AnyHitKHR,
-        ShaderExecutionModel.IntersectionKHR => SpirvConstants.ExecutionModel.IntersectionKHR,
-        _ => SpirvConstants.ExecutionModel.Vertex
+        ShaderExecutionModel.Vertex => (uint)SpirvExecutionModel.Vertex,
+        ShaderExecutionModel.Fragment => (uint)SpirvExecutionModel.Fragment,
+        ShaderExecutionModel.GLCompute => (uint)SpirvExecutionModel.GLCompute,
+        ShaderExecutionModel.RayGenerationKHR => (uint)SpirvExecutionModel.RayGenerationKHR,
+        ShaderExecutionModel.ClosestHitKHR => (uint)SpirvExecutionModel.ClosestHitKHR,
+        ShaderExecutionModel.MissKHR => (uint)SpirvExecutionModel.MissKHR,
+        ShaderExecutionModel.AnyHitKHR => (uint)SpirvExecutionModel.AnyHitKHR,
+        ShaderExecutionModel.IntersectionKHR => (uint)SpirvExecutionModel.IntersectionKHR,
+        _ => (uint)SpirvExecutionModel.Vertex
     };
 
     private uint MapBuiltin(string builtin) => builtin.ToLowerInvariant() switch
     {
-        "position" => SpirvConstants.BuiltIn.Position,
-        "vertexindex" => SpirvConstants.BuiltIn.VertexIndex,
-        "instanceindex" => SpirvConstants.BuiltIn.InstanceIndex,
-        "fragcoord" => SpirvConstants.BuiltIn.FragCoord,
-        "frontfacing" => SpirvConstants.BuiltIn.FrontFacing,
-        "fragdepth" => SpirvConstants.BuiltIn.FragDepth,
-        "localinvocationid" => SpirvConstants.BuiltIn.LocalInvocationId,
-        "globalinvocationid" => SpirvConstants.BuiltIn.GlobalInvocationId,
-        "workgroupid" => SpirvConstants.BuiltIn.WorkgroupId,
-        "numworkgroups" => SpirvConstants.BuiltIn.NumWorkgroups,
-        "launchidkhr" => SpirvConstants.BuiltIn.LaunchIdKHR,
-        "launchsizekhr" => SpirvConstants.BuiltIn.LaunchSizeKHR,
-        "worldrayoriginkhr" => SpirvConstants.BuiltIn.WorldRayOriginKHR,
-        "worldraydirectionkhr" => SpirvConstants.BuiltIn.WorldRayDirectionKHR,
-        "objectrayoriginkhr" => SpirvConstants.BuiltIn.ObjectRayOriginKHR,
-        "objectraydirectionkhr" => SpirvConstants.BuiltIn.ObjectRayDirectionKHR,
-        "hittkhr" => SpirvConstants.BuiltIn.HitTKHR,
-        "hitkindkhr" => SpirvConstants.BuiltIn.HitKindKHR,
-        "instancecustomindexkhr" => SpirvConstants.BuiltIn.InstanceCustomIndexKHR,
+        "position" => (uint)SpirvBuiltIn.Position,
+        "vertexindex" => (uint)SpirvBuiltIn.VertexIndex,
+        "instanceindex" => (uint)SpirvBuiltIn.InstanceIndex,
+        "fragcoord" => (uint)SpirvBuiltIn.FragCoord,
+        "frontfacing" => (uint)SpirvBuiltIn.FrontFacing,
+        "fragdepth" => (uint)SpirvBuiltIn.FragDepth,
+        "localinvocationid" => (uint)SpirvBuiltIn.LocalInvocationId,
+        "globalinvocationid" => (uint)SpirvBuiltIn.GlobalInvocationId,
+        "workgroupid" => (uint)SpirvBuiltIn.WorkgroupId,
+        "numworkgroups" => (uint)SpirvBuiltIn.NumWorkgroups,
+        "launchidkhr" => (uint)SpirvBuiltIn.LaunchIdKHR,
+        "launchsizekhr" => (uint)SpirvBuiltIn.LaunchSizeKHR,
+        "worldrayoriginkhr" => (uint)SpirvBuiltIn.WorldRayOriginKHR,
+        "worldraydirectionkhr" => (uint)SpirvBuiltIn.WorldRayDirectionKHR,
+        "objectrayoriginkhr" => (uint)SpirvBuiltIn.ObjectRayOriginKHR,
+        "objectraydirectionkhr" => (uint)SpirvBuiltIn.ObjectRayDirectionKHR,
+        "hittkhr" => (uint)SpirvBuiltIn.HitTKHR,
+        "hitkindkhr" => (uint)SpirvBuiltIn.HitKindKHR,
+        "instancecustomindexkhr" => (uint)SpirvBuiltIn.InstanceCustomIndexKHR,
         _ => 0
     };
 
     private uint MapBuiltinToGLSLstd450(string name) => name switch
     {
-        "abs" => SpirvConstants.GLSLstd450.FAbs,
-        "sign" => SpirvConstants.GLSLstd450.FSign,
-        "floor" => SpirvConstants.GLSLstd450.Floor,
-        "ceil" => SpirvConstants.GLSLstd450.Ceil,
-        "round" => SpirvConstants.GLSLstd450.Round,
-        "min" => SpirvConstants.GLSLstd450.FMin,
-        "max" => SpirvConstants.GLSLstd450.FMax,
-        "clamp" => SpirvConstants.GLSLstd450.FClamp,
-        "mix" or "lerp" => SpirvConstants.GLSLstd450.FMix,
-        "step" => SpirvConstants.GLSLstd450.Step,
-        "smoothstep" => SpirvConstants.GLSLstd450.SmoothStep,
-        "sin" => SpirvConstants.GLSLstd450.Sin,
-        "cos" => SpirvConstants.GLSLstd450.Cos,
-        "tan" => SpirvConstants.GLSLstd450.Tan,
-        "asin" => SpirvConstants.GLSLstd450.Asin,
-        "acos" => SpirvConstants.GLSLstd450.Acos,
-        "atan" => SpirvConstants.GLSLstd450.Atan,
-        "atan2" => SpirvConstants.GLSLstd450.Atan2,
-        "pow" => SpirvConstants.GLSLstd450.Pow,
-        "exp" => SpirvConstants.GLSLstd450.Exp,
-        "log" => SpirvConstants.GLSLstd450.Log,
-        "exp2" => SpirvConstants.GLSLstd450.Exp2,
-        "log2" => SpirvConstants.GLSLstd450.Log2,
-        "sqrt" => SpirvConstants.GLSLstd450.Sqrt,
-        "inversesqrt" => SpirvConstants.GLSLstd450.InverseSqrt,
-        "dot" => SpirvConstants.GLSLstd450.Length + 1,
-        "cross" => SpirvConstants.GLSLstd450.Cross,
-        "normalize" => SpirvConstants.GLSLstd450.Normalize,
-        "length" => SpirvConstants.GLSLstd450.Length,
-        "reflect" => SpirvConstants.GLSLstd450.Reflect,
-        "refract" => SpirvConstants.GLSLstd450.Refract,
-        "determinant" => SpirvConstants.GLSLstd450.Determinant,
-        "matrixinverse" => SpirvConstants.GLSLstd450.MatrixInverse,
+        "abs" => (uint)SpirvGLSLstd450.FAbs,
+        "sign" => (uint)SpirvGLSLstd450.FSign,
+        "floor" => (uint)SpirvGLSLstd450.Floor,
+        "ceil" => (uint)SpirvGLSLstd450.Ceil,
+        "round" => (uint)SpirvGLSLstd450.Round,
+        "min" => (uint)SpirvGLSLstd450.FMin,
+        "max" => (uint)SpirvGLSLstd450.FMax,
+        "clamp" => (uint)SpirvGLSLstd450.FClamp,
+        "mix" or "lerp" => (uint)SpirvGLSLstd450.FMix,
+        "step" => (uint)SpirvGLSLstd450.Step,
+        "smoothstep" => (uint)SpirvGLSLstd450.SmoothStep,
+        "sin" => (uint)SpirvGLSLstd450.Sin,
+        "cos" => (uint)SpirvGLSLstd450.Cos,
+        "tan" => (uint)SpirvGLSLstd450.Tan,
+        "asin" => (uint)SpirvGLSLstd450.Asin,
+        "acos" => (uint)SpirvGLSLstd450.Acos,
+        "atan" => (uint)SpirvGLSLstd450.Atan,
+        "atan2" => (uint)SpirvGLSLstd450.Atan2,
+        "pow" => (uint)SpirvGLSLstd450.Pow,
+        "exp" => (uint)SpirvGLSLstd450.Exp,
+        "log" => (uint)SpirvGLSLstd450.Log,
+        "exp2" => (uint)SpirvGLSLstd450.Exp2,
+        "log2" => (uint)SpirvGLSLstd450.Log2,
+        "sqrt" => (uint)SpirvGLSLstd450.Sqrt,
+        "inversesqrt" => (uint)SpirvGLSLstd450.InverseSqrt,
+        "dot" => (uint)SpirvGLSLstd450.Length + 1,
+        "cross" => (uint)SpirvGLSLstd450.Cross,
+        "normalize" => (uint)SpirvGLSLstd450.Normalize,
+        "length" => (uint)SpirvGLSLstd450.Length,
+        "reflect" => (uint)SpirvGLSLstd450.Reflect,
+        "refract" => (uint)SpirvGLSLstd450.Refract,
+        "determinant" => (uint)SpirvGLSLstd450.Determinant,
+        "matrixinverse" => (uint)SpirvGLSLstd450.MatrixInverse,
         _ => 0
     };
 

@@ -87,6 +87,9 @@ public enum IrOpcode
 
     Phi,
 
+    Yield,
+    Resume,
+
     Discard
 }
 

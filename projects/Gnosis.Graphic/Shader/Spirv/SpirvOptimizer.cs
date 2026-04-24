@@ -52,8 +52,7 @@ public sealed class SpirvOptimizer
             return data;
         }
 
-        var decoder = new SpirvDecoder();
-        var module = decoder.Decode(data);
+        var module = new SpirvDecoder(data).Decode();
 
         var context = new SpirvOptContext(module);
         var instructions = new List<SpirvInstruction>(module.Instructions);
@@ -158,7 +157,7 @@ public sealed class SpirvOptimizer
         return usedIds;
     }
 
-    private static bool IsSideEffectInstruction(ushort opcode)
+    private static bool IsSideEffectInstruction(SpirvOpCode opcode)
     {
         return opcode is
             SpirvOpCode.OpCapability or SpirvOpCode.OpMemoryModel or SpirvOpCode.OpEntryPoint
@@ -168,7 +167,7 @@ public sealed class SpirvOptimizer
             or SpirvOpCode.OpSourceExtension;
     }
 
-    private static bool IsResultProducingInstruction(ushort opcode)
+    private static bool IsResultProducingInstruction(SpirvOpCode opcode)
     {
         return opcode is
             SpirvOpCode.OpTypeVoid or SpirvOpCode.OpTypeBool or SpirvOpCode.OpTypeInt or SpirvOpCode.OpTypeFloat

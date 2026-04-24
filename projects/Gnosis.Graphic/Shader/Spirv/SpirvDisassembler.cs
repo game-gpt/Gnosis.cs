@@ -20,8 +20,7 @@ public sealed class SpirvDisassembler
     /// <returns>反汇编文本。</returns>
     public string Disassemble(byte[] data)
     {
-        var decoder = new SpirvDecoder();
-        var module = decoder.Decode(data);
+        var module = new SpirvDecoder(data).Decode();
 
         var sb = new StringBuilder();
 
@@ -72,7 +71,7 @@ public sealed class SpirvDisassembler
         return string.Join(", ", parts);
     }
 
-    private static string GetOpName(ushort opcode)
+    private static string GetOpName(SpirvOpCode opcode)
     {
         return opcode switch
         {

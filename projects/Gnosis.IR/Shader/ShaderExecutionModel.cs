@@ -1,22 +1,27 @@
 namespace Gnosis.IR.Shader;
 
-/// <summary>
-/// Shader 执行模型枚举
-/// </summary>
 public enum ShaderExecutionModel
 {
     Vertex,
-    Fragment,
-    Compute,
-    Geometry,
     TessellationControl,
     TessellationEvaluation,
-    RayGeneration,
-    Intersection,
-    AnyHit,
-    ClosestHit,
-    Miss,
-    Callable,
+    Geometry,
+    Fragment,
+    GLCompute,
+    Kernel,
+    RayGenerationKHR,
+    IntersectionKHR,
+    AnyHitKHR,
+    ClosestHitKHR,
+    MissKHR,
+    CallableKHR,
     Mesh,
-    Task
+    Task,
+    Compute = GLCompute,
+    RayGeneration = RayGenerationKHR,
+    Intersection = IntersectionKHR,
+    AnyHit = AnyHitKHR,
+    ClosestHit = ClosestHitKHR,
+    Miss = MissKHR,
+    Callable = CallableKHR
 }
