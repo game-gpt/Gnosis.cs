@@ -41,7 +41,5 @@
         <Compile Remove="Compute\ComputeDispatcher.cs" />
         <Compile Remove="Pipeline\ClusteredRenderer.cs" />
         <Compile Remove="PostProcess\ToneMappingEffect.cs" />
-        <Compile Remove="Light\LightSystem.cs" />
-        <Compile Remove="Shadow\ShadowSystem.cs" />
     </ItemGroup>
 </Project>

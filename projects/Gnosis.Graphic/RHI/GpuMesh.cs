@@ -34,7 +34,7 @@ public sealed class GpuMesh : IMesh
     {
         _device = device;
         Name = name;
-        VertexStride = (uint)sizeof(Vertex3D);
+        VertexStride = (uint)Marshal.SizeOf<Vertex3D>();
         Bounds = BoundingBox.Empty;
     }
 
@@ -51,7 +51,8 @@ public sealed class GpuMesh : IMesh
             return;
         }
 
-        var dataSize = (uint)(vertices.Length * sizeof(Vertex3D));
+        var vertexSize = Marshal.SizeOf<Vertex3D>();
+        var dataSize = (uint)(vertices.Length * vertexSize);
         var data = MemoryMarshal.AsBytes(vertices);
 
         _vertexBuffer?.Dispose();
