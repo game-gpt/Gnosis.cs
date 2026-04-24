@@ -1,5 +1,5 @@
 using Oak.Diagnostics;
-using Oak.GGScript.AST;
+using Oak.Valkyrie.AST;
 
 namespace Gnosis.Toolchain.ScriptCompiler;
 

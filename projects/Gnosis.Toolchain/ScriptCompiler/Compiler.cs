@@ -1,7 +1,7 @@
 using Oak.Diagnostics;
-using Oak.GGScript.AST;
-using Oak.GGScript.Lexer;
-using Oak.GGScript.Parser;
+using Oak.Valkyrie.AST;
+using Oak.Valkyrie.Lexer;
+using Oak.Valkyrie.Parser;
 using Gnosis.IR.Graph;
 using Gnosis.IR.Transform;
 using Gnosis.Toolchain.Compiler;
@@ -198,10 +198,10 @@ public class Compiler : ICompiler
         ChannelMacros macros,
         bool isEditorBuild)
     {
-        var lexer = new GGScriptLexer();
+        var lexer = new ValkyrieLexer();
         var tokens = lexer.Tokenize(source);
 
-        var parser = new GGScriptParser();
+        var parser = new ValkyrieParser();
         return parser.Parse(tokens);
     }
 

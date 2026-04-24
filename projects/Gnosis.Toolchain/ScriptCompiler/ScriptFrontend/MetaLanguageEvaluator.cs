@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Oak.GGScript.AST;
-using Oak.GGScript.Lexer;
-using Oak.GGScript.Parser;
+using Oak.Valkyrie.AST;
+using Oak.Valkyrie.Lexer;
+using Oak.Valkyrie.Parser;
 
 namespace Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
@@ -212,10 +212,10 @@ public partial class MetaLanguageEvaluator : IMetaLanguageEvaluator
             return new BlockStmt([]);
         }
 
-        var lexer = new GGScriptLexer();
+        var lexer = new ValkyrieLexer();
         var tokens = lexer.Tokenize(expanded);
 
-        var parser = new GGScriptParser();
+        var parser = new ValkyrieParser();
         var ast = parser.Parse(tokens);
 
         if (ast is CompilationUnit unit)

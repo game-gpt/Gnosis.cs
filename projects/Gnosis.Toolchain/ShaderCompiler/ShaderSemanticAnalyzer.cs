@@ -1,6 +1,6 @@
 using Gnosis.Toolchain.ScriptCompiler;
 using Oak.Diagnostics;
-using Oak.GGScript.AST;
+using Oak.Valkyrie.AST;
 using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
 
 namespace Gnosis.Toolchain.ShaderCompiler;
@@ -454,7 +454,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 string.Empty,
                 func.Span,
                 "GG5005",
-                "计算着色器入口必须有 [WorkgroupSize] GGShader 特性标注",
+                "计算着色器入口必须有 [WorkgroupSize] ValkyrieShader 特性标注",
                 new[] { "添加 [WorkgroupSize] GGShader 特性标注" });
         }
 
@@ -472,7 +472,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5006",
                 "计算着色器入口必须有 [Builtin(global_invocation_id)] 参数",
-                new[] { "添加带有 [Builtin(global_invocation_id)] GGShader 特性标注的参数" });
+                new[] { "添加带有 [Builtin(global_invocation_id)] ValkyrieShader 特性标注的参数" });
         }
     }
 
@@ -501,7 +501,7 @@ public class ShaderSemanticAnalyzer : BaseSemanticAnalyzer
                 func.Span,
                 "GG5008",
                 "最近命中着色器入口必须有 [HitAttr] 参数",
-                new[] { "添加带有 [HitAttr] GGShader 特性标注的参数" });
+                new[] { "添加带有 [HitAttr] ValkyrieShader 特性标注的参数" });
         }
     }
 

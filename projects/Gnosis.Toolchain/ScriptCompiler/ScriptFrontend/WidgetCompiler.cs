@@ -1,5 +1,5 @@
 using Oak.Diagnostics;
-using Oak.GGScript.AST;
+using Oak.Valkyrie.AST;
 using Oak.Widget;
 
 namespace Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;

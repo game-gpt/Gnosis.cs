@@ -1,23 +1,23 @@
-# gg 语言语法与 ECS 编程指南
+# Valkyrie 语言语法与 ECS 编程指南
 
-本文档介绍 gg 语言的语法特性，以及如何使用 gg 语言进行 ECS 编程。
+本文档介绍 Valkyrie 语言的语法特性，以及如何使用 Valkyrie 语言进行 ECS 编程。
 
 ## ⚠️ 语言归属声明
 
-**gg-script 是游戏对象语言，不是 C#。** 以下概念在 GG 语言中与 C# 完全不同，切勿混淆：
+**Valkyrie 是游戏对象语言，不是 C#。** 以下概念在 Valkyrie 语言中与 C# 完全不同，切勿混淆：
 
-| GG 语言概念 | GG 语法示例 | 易混淆的 C# 概念 | 区别 |
+| Valkyrie 语言概念 | Valkyrie 语法示例 | 易混淆的 C# 概念 | 区别 |
 |---|---|---|---|
-| GGScript 特性标注 | `[Encrypted]`、`[Replicated]` | C# `System.Attribute` | GG 特性标注由编译器在编译时处理，不依赖 C# 反射 |
-| GGShader 特性标注 | `[Vertex]`、`[Compute]`、`[WorkgroupSize]` | C# `System.Attribute` | GG 特性标注定义着色器入口和管线语义 |
-| 成员访问 | `person.name` | C# 属性 (Property) | GG 语言只有字段 (Field)，没有 C# 意义上的属性 |
+| Valkyrie 特性标注 | `[Encrypted]`、`[Replicated]` | C# `System.Attribute` | Valkyrie 特性标注由编译器在编译时处理，不依赖 C# 反射 |
+| ValkyrieShader 特性标注 | `[Vertex]`、`[Compute]`、`[WorkgroupSize]` | C# `System.Attribute` | ValkyrieShader 特性标注定义着色器入口和管线语义 |
+| 成员访问 | `person.name` | C# 属性 (Property) | Valkyrie 语言只有字段 (Field)，没有 C# 意义上的属性 |
 | 元编程块 | `<% %>` | C# 源生成器 | `<% %>` 内部是 C# 语法，由 C# 元语言层在编译时执行 |
 
-**核心原则**：无论是游戏本体、插件 (Plugin)、Mod、DLC，还是编辑器 Widget，都使用 GGScript、GGShader、GGWidget 编写，**而非 C#**。C# 仅用于 Layer 1（元引擎）和 Layer 2（游戏引擎）。详见 [项目介绍 - 三层蛋糕模型](../overview/introduction.md#⚠️-关键概念三层蛋糕模型)。
+**核心原则**：无论是游戏本体、插件 (Plugin)、Mod、DLC，还是编辑器 Widget，都使用 Valkyrie、ValkyrieShader、AWSL 编写，**而非 C#**。C# 仅用于 Layer 1（元引擎）和 Layer 2（游戏引擎）。详见 [项目介绍 - 三层蛋糕模型](../overview/introduction.md#⚠️-关键概念三层蛋糕模型)。
 
 ## 语言概述
 
-gg 语言专为游戏逻辑设计，具有以下特性：
+Valkyrie 专为游戏逻辑设计，具有以下特性：
 
 | 特性              | 描述              |
 | :-------------- | :-------------- |
@@ -29,14 +29,14 @@ gg 语言专为游戏逻辑设计，具有以下特性：
 
 ### 注释
 
-gg 语言支持两种注释语法：
+Valkyrie 支持两种注释语法：
 
 | 语法 | 描述 |
 | :--- | :--- |
 | `#` | 行注释，从 `#` 到行末的内容被忽略 |
 | `<# #>` | 块注释，支持嵌套 |
 
-```tsx
+```valkyrie
 # 这是行注释
 let x = 1; # 行末注释
 
@@ -51,7 +51,7 @@ let z = 3;
 
 ### 变量声明
 
-```tsx
+```valkyrie
 let x: i32 = 42;
 let mut y: f32 = 3.14;
 let name: string = "hello";
@@ -60,7 +60,7 @@ let flag: bool = true;
 
 ### 函数定义
 
-```tsx
+```valkyrie
 micro add(a: i32, b: i32): i32 {
     return a + b;
 }
@@ -72,7 +72,7 @@ micro main() {
 
 ### 控制流
 
-```tsx
+```valkyrie
 if x > 0 {
     # ...
 } else {
@@ -96,7 +96,7 @@ while condition {
 
 组件是纯数据容器，不包含任何逻辑：
 
-```tsx
+```valkyrie
 component Position {
     x: f32;
     y: f32;
@@ -119,7 +119,7 @@ component PlayerTag {
 
 ### 组件属性
 
-```tsx
+```valkyrie
 [Encrypted]
 component PlayerData {
     gold: int;
@@ -140,7 +140,7 @@ component PlayerData {
 
 系统包含游戏逻辑，通过查询访问组件：
 
-```tsx
+```valkyrie
 system MoveSystem {
     query = Query.all(Position, Velocity);
 
@@ -155,7 +155,7 @@ system MoveSystem {
 
 ### 系统生命周期
 
-```tsx
+```valkyrie
 system MySystem {
     on_load() {
         # 系统加载时调用
@@ -173,7 +173,7 @@ system MySystem {
 
 ### 网络系统
 
-```tsx
+```valkyrie
 [ServerOnly]
 micro handle_attack(player: Entity, target: Entity) {
     # 仅在服务器执行
@@ -208,7 +208,7 @@ system ClientPredictionMovement {
 
 ### 查询示例
 
-```tsx
+```valkyrie
 system DamageSystem {
     query_all = Query.all(Health, Damage);
     query_players = Query.all(PlayerTag, Health);
@@ -228,7 +228,7 @@ system DamageSystem {
 
 ### 静态循环展开
 
-```tsx
+```valkyrie
 on_update(delta: float) {
     <% loop (pos, vel) in query %>
         pos.x += vel.vx * delta;
@@ -239,7 +239,7 @@ on_update(delta: float) {
 
 ### 条件编译
 
-```tsx
+```valkyrie
 <% if (MACRO.NET_BACKEND == "STEAM") { %>
     import SteamMock;
     type NetBackend = SteamBackend;
@@ -251,7 +251,7 @@ on_update(delta: float) {
 
 ### 循环语法
 
-```tsx
+```valkyrie
 <% loop i in range(0, 10) %>
     let value_<%= i %> = <%= i * 2 %>;
 <% end loop %>
@@ -259,7 +259,7 @@ on_update(delta: float) {
 
 ### 模式匹配
 
-```tsx
+```valkyrie
 <% match value %>
     <% case 0 %>
         # 处理 0 的情况
@@ -272,7 +272,7 @@ on_update(delta: float) {
 
 ### 编译时 ECS 特化
 
-`<% loop %>` 并非运行时循环，而是**编译时宏展开**。gg 编译器分析 ECS 世界的 Archetype 结构，生成针对特定组件组合的线性遍历代码，避免虚调用与缓存未命中。
+`<% loop %>` 并非运行时循环，而是**编译时宏展开**。Valkyrie 编译器分析 ECS 世界的 Archetype 结构，生成针对特定组件组合的线性遍历代码，避免虚调用与缓存未命中。
 
 **生成的字节码 (伪汇编)**：
 
@@ -289,16 +289,16 @@ ST_FIELD R0, offsetof(Position.x), R1
 
 ## Widget 系统
 
-编辑器本身完全由 gg 语言编写，运行于 gg 虚拟机之上。UI 组件称为 **Widget**，与 ECS 的 **Component** 明确区分。
+编辑器本身完全由 Valkyrie 语言编写，运行于 Valkyrie 虚拟机之上。UI 组件称为 **Widget**，与 ECS 的 **Component** 明确区分。
 
-> **注意**：Widget 仅用于编辑器 UI。游戏运行时 UI（HUD、血条、技能轮盘等）使用独立的 **Game UI** 系统，基于 ECS 组件和系统构建，与 Widget 是两套完全不同的体系。详见 [gg-widget 语言指南 - Game UI 系统](gg-widget.md#game-ui-系统)。
+> **注意**：Widget 仅用于编辑器 UI。游戏运行时 UI（HUD、血条、技能轮盘等）使用独立的 **Game UI** 系统，基于 ECS 组件和系统构建，与 Widget 是两套完全不同的体系。详见 [AWSL 语言指南 - Game UI 系统](awsl.md#game-ui-系统)。
 
 ### Widget 与 Component 区别
 
 | 概念            | 定义位置      | 用途        | 运行时表现               |
 | :------------ | :-------- | :-------- | :------------------ |
-| **Widget**    | 编辑器 gg 模块 | 绘制编辑器用户界面 | 由 UI 渲染系统绘制，不进入游戏世界 |
-| **Component** | 游戏 gg 模块  | 存储游戏实体数据  | 存储于 ECS 世界，由系统查询并处理 |
+| **Widget**    | 编辑器 Valkyrie 模块 | 绘制编辑器用户界面 | 由 UI 渲染系统绘制，不进入游戏世界 |
+| **Component** | 游戏 Valkyrie 模块  | 存储游戏实体数据  | 存储于 ECS 世界，由系统查询并处理 |
 
 ### Inspector Widget 示例
 
@@ -312,7 +312,7 @@ ST_FIELD R0, offsetof(Position.x), R1
 
 ### 创建实体
 
-```tsx
+```valkyrie
 let entity = create_entity();
 entity.add(Position { x: 100.0, y: 200.0 });
 entity.add(Velocity { vx: 0.0, vy: 0.0 });
@@ -320,13 +320,13 @@ entity.add(Velocity { vx: 0.0, vy: 0.0 });
 
 ### 销毁实体
 
-```tsx
+```valkyrie
 destroy_entity(entity);
 ```
 
 ### 组件访问
 
-```tsx
+```valkyrie
 let pos = entity.get<Position>();
 pos.x = 150.0;
 
@@ -366,7 +366,7 @@ Scene {
 
 场景的加载与切换：
 
-```tsx
+```valkyrie
 micro on_load() {
     let scene = asset.load<SceneData>("scenes/game_main.scene");
     scene_manager.load(scene);
@@ -377,11 +377,11 @@ micro on_update(delta: f32) {
 }
 ```
 
-> 有关 GON 格式的详细语法，请参阅 [gon 语言语法指南](gg-object.md)。
+> 有关 Gon 格式的详细语法，请参阅 [Gon 语言语法指南](gon.md)。
 
 ## 插件定义
 
-```tsx
+```valkyrie
 plugin WeChatChannel {
     requires_arch = ["WASM"];
     provides_macros = ["WECHAT", "WECHAT_SHARE"];
@@ -422,4 +422,3 @@ plugin WeChatChannel {
 - 阅读 [网络架构](../development/network.md) 了解帧同步与状态同步
 - 阅读 [反作弊体系](../development/anti-cheat.md) 了解安全防护
 - 查看 [示例项目](../../examples/) 了解实际用法
-

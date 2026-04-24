@@ -1,6 +1,6 @@
 using System.Text;
 using Oak.Diagnostics;
-using Oak.GGScript.AST;
+using Oak.Valkyrie.AST;
 using Gnosis.IR.Instruction;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;
