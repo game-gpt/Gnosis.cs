@@ -19,8 +19,11 @@ public sealed class VerseIrGenerator
     private readonly Dictionary<string, IrValue> _variables = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BasicBlock> _labelBlocks = new(StringComparer.Ordinal);
     private readonly List<(IrValue Condition, BasicBlock TrueTarget, BasicBlock FalseTarget)> _pendingBranches = [];
+    private readonly Dictionary<string, int> _stringPoolMap = new(StringComparer.Ordinal);
+    private readonly List<string> _stringPoolEntries = [];
     private int _tempCounter;
     private int _blockCounter;
+    private int _stringConstantCounter;
     private string _currentFilePath = string.Empty;
 
     #endregion
@@ -44,8 +47,11 @@ public sealed class VerseIrGenerator
         _module = new IrModule(unit.FilePath ?? "verse_module");
         _variables.Clear();
         _labelBlocks.Clear();
+        _stringPoolMap.Clear();
+        _stringPoolEntries.Clear();
         _tempCounter = 0;
         _blockCounter = 0;
+        _stringConstantCounter = 0;
         _currentFilePath = unit.FilePath ?? string.Empty;
 
         CollectLabels(unit);
@@ -696,22 +702,30 @@ public sealed class VerseIrGenerator
 
     private IrValue GenerateStringConstant(string value)
     {
+        if (!_stringPoolMap.TryGetValue(value, out var index))
+        {
+            index = _stringConstantCounter++;
+            _stringPoolMap[value] = index;
+            _stringPoolEntries.Add(value);
+        }
+
         var result = NewTemp(IrType.String);
-        _currentBlock.Append(IrInstruction.CallNative(result, "push_string", [GenerateI32Constant(value.GetHashCode())]));
+        _currentBlock.Append(new IrInstruction(IrOpcode.CallNative, result,
+            [GenerateI32Constant(index)], ["push_string", value]));
         return result;
     }
 
     private IrValue GenerateI32Constant(int value)
     {
         var result = NewTemp(IrType.I32);
-        _currentBlock.Append(IrInstruction.CallNative(result, "push_i32", []));
+        _currentBlock.Append(new IrInstruction(IrOpcode.CallNative, result, [], ["push_i32", value]));
         return result;
     }
 
     private IrValue GenerateF64Constant(double value)
     {
         var result = NewTemp(IrType.F64);
-        _currentBlock.Append(IrInstruction.CallNative(result, "push_f64", []));
+        _currentBlock.Append(new IrInstruction(IrOpcode.CallNative, result, [], ["push_f64", value]));
         return result;
     }
 

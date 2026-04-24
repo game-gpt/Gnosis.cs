@@ -179,6 +179,10 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
                 result.Add(new BytecodeInstruction(OpCode.QueryAny, GetQueryTypeIndex(instr, constants)));
                 break;
 
+            case IrOpcode.CallNative:
+                ConvertCallNative(instr, constants, result);
+                break;
+
             default:
                 result.Add(new BytecodeInstruction(OpCode.Nop));
                 break;
@@ -236,6 +240,80 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
         return 0;
     }
 
+    private static void ConvertCallNative(IrInstruction instr, List<object> constants, List<BytecodeInstruction> result)
+    {
+        if (instr.Arguments.Count == 0 || instr.Arguments[0] is not string nativeName)
+        {
+            result.Add(new BytecodeInstruction(OpCode.Nop));
+            return;
+        }
+
+        switch (nativeName)
+        {
+            case "push_i32":
+            {
+                var value = instr.Arguments.Count > 1 && instr.Arguments[1] is int i32Val ? i32Val : 0;
+                var idx = constants.Count;
+                constants.Add(value);
+                result.Add(new BytecodeInstruction(OpCode.PushInt32, idx));
+                break;
+            }
+
+            case "push_f64":
+            {
+                var value = instr.Arguments.Count > 1 && instr.Arguments[1] is double f64Val ? f64Val : 0.0;
+                var idx = constants.Count;
+                constants.Add(value);
+                result.Add(new BytecodeInstruction(OpCode.PushFloat64, idx));
+                break;
+            }
+
+            case "push_f32":
+            {
+                var value = instr.Arguments.Count > 1 && instr.Arguments[1] is float f32Val ? f32Val : 0.0f;
+                var idx = constants.Count;
+                constants.Add(value);
+                result.Add(new BytecodeInstruction(OpCode.PushFloat32, idx));
+                break;
+            }
+
+            case "push_bool":
+            {
+                var value = instr.Arguments.Count > 1 && instr.Arguments[1] is int boolVal ? boolVal : 0;
+                result.Add(new BytecodeInstruction(value != 0 ? OpCode.PushTrue : OpCode.PushFalse));
+                break;
+            }
+
+            case "push_null":
+                result.Add(new BytecodeInstruction(OpCode.PushNull));
+                break;
+
+            case "push_string":
+            {
+                var strValue = instr.Arguments.Count > 1 && instr.Arguments[1] is string str ? str : "";
+                var idx = constants.Count;
+                constants.Add(strValue);
+                result.Add(new BytecodeInstruction(OpCode.PushString, idx));
+                break;
+            }
+
+            default:
+                result.Add(new BytecodeInstruction(OpCode.CallNative, GetNativeNameIndex(instr, constants)));
+                break;
+        }
+    }
+
+    private static int GetNativeNameIndex(IrInstruction instr, List<object> constants)
+    {
+        if (instr.Arguments.Count > 0 && instr.Arguments[0] is string nativeName)
+        {
+            var idx = constants.Count;
+            constants.Add(nativeName);
+            return idx;
+        }
+        return 0;
+    }
+
     #endregion
 
     #region 辅助方法
@@ -248,6 +326,7 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
             IrOpcode.Branch or
             IrOpcode.ConditionalBranch or
             IrOpcode.Call or
+            IrOpcode.CallNative or
             IrOpcode.Add or
             IrOpcode.Sub or
             IrOpcode.Mul or

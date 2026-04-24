@@ -55,7 +55,7 @@ public sealed class Forward3DRenderPass : IRenderPass
         UpdateFrameParameters(context);
         UpdateLightParameters();
 
-        _meshRenderer.Render(commandTable, context.View as ICamera);
+        _meshRenderer.Render(commandTable, (ICamera)context.View);
         _voxelRenderer?.Render(commandTable);
     }
 

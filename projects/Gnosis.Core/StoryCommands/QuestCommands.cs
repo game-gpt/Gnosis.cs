@@ -1,6 +1,6 @@
 namespace Gnosis.Core.StoryCommands;
 
-public sealed class QuestCommands
+public sealed class QuestCommands : IStoryQuestCommands
 {
     #region 事件
 
@@ -18,32 +18,24 @@ public sealed class QuestCommands
 
     #region Quest 命令
 
-    public object? StoryQuestStart(object?[] args)
+    public void StartQuest(string questId, string description)
     {
-        var questId = args.ElementAtOrDefault(0)?.ToString();
-
         if (questId is null)
         {
-            return null;
+            return;
         }
-
-        var description = args.ElementAtOrDefault(1)?.ToString() ?? "";
 
         var quest = new QuestState(questId, description, QuestStatus.Active, 0);
         _activeQuests[questId] = quest;
 
         OnQuestStarted?.Invoke(quest);
-
-        return null;
     }
 
-    public object? StoryQuestComplete(object?[] args)
+    public void CompleteQuest(string questId)
     {
-        var questId = args.ElementAtOrDefault(0)?.ToString();
-
         if (questId is null)
         {
-            return null;
+            return;
         }
 
         if (_activeQuests.TryGetValue(questId, out var quest))
@@ -51,28 +43,20 @@ public sealed class QuestCommands
             quest.Status = QuestStatus.Completed;
             OnQuestCompleted?.Invoke(quest);
         }
-
-        return null;
     }
 
-    public object? StoryQuestUpdate(object?[] args)
+    public void UpdateQuest(string questId, int progress)
     {
-        var questId = args.ElementAtOrDefault(0)?.ToString();
-
         if (questId is null)
         {
-            return null;
+            return;
         }
-
-        var progress = Convert.ToInt32(args.ElementAtOrDefault(1) ?? 1);
 
         if (_activeQuests.TryGetValue(questId, out var quest))
         {
             quest.Progress += progress;
             OnQuestUpdated?.Invoke(quest);
         }
-
-        return null;
     }
 
     #endregion

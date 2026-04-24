@@ -1,4 +1,3 @@
-using System.Numerics;
 using Gnosis.Graphic.Light;
 using Gnosis.Graphic.RHI;
 using Gnosis.Graphic.Shadow;
@@ -13,7 +12,6 @@ public sealed class ShadowRenderPass : IRenderPass, IDisposable
     private readonly LightSystem _lightSystem;
     private readonly MeshRenderer _meshRenderer;
     private readonly IDevice _device;
-    private IPipelineState? _shadowPipelineState;
     private bool _isDisposed;
 
     #endregion
@@ -173,7 +171,6 @@ public sealed class ShadowRenderPass : IRenderPass, IDisposable
         }
 
         _shadowSystem.Dispose();
-        _shadowPipelineState?.Dispose();
 
         _isDisposed = true;
     }

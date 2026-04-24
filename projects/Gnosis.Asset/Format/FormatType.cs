@@ -15,5 +15,6 @@ public enum FormatType
     Script = 10,
     Config = 11,
     Localization = 12,
-    ConfigTable = 13
+    ConfigTable = 13,
+    VectorGraphic = 14
 }

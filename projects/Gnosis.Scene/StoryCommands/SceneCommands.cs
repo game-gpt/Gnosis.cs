@@ -5,7 +5,7 @@ using Gnosis.Scene.Stream;
 
 namespace Gnosis.Scene.StoryCommands;
 
-public sealed class SceneCommands
+public sealed class SceneCommands : IStorySceneCommands
 {
     #region 字段
 
@@ -26,37 +26,46 @@ public sealed class SceneCommands
 
     /// <summary>
     /// 切换场景背景
-    /// Story 语法: %scene::change("bg_school", "fade")
-    /// 参数: args[0] = 场景路径, args[1] = 过渡效果 (可选, 默认 "instant")
     /// </summary>
-    [NativeFunctionBinding(StoryCommandNames.SceneChange, StoryCommandIds.SceneChange)]
-    public object? StorySceneChange(IVMState vm, object?[] args)
+    public void ChangeScene(string scenePath, string transition)
     {
-        var scenePath = args.ElementAtOrDefault(0)?.ToString();
-
         if (scenePath is null)
         {
-            return null;
+            return;
         }
 
-        var transition = args.ElementAtOrDefault(1)?.ToString() ?? "instant";
-
         _streamer.LoadScene(scenePath);
-
-        return null;
     }
 
     /// <summary>
     /// 场景过渡效果
-    /// Story 语法: %scene::transition("fade", 1.0)
-    /// 参数: args[0] = 过渡类型, args[1] = 过渡时长 (可选, 默认 1.0)
     /// </summary>
+    public void SceneTransition(string type, float duration)
+    {
+        var transitionType = type ?? "fade";
+    }
+
+    #endregion
+
+    #region VM 绑定方法
+
+    [NativeFunctionBinding(StoryCommandNames.SceneChange, StoryCommandIds.SceneChange)]
+    public object? StorySceneChange(IVMState vm, object?[] args)
+    {
+        var scenePath = args.ElementAtOrDefault(0)?.ToString();
+        var transition = args.ElementAtOrDefault(1)?.ToString() ?? "instant";
+
+        ChangeScene(scenePath ?? "", transition);
+        return null;
+    }
+
     [NativeFunctionBinding(StoryCommandNames.SceneTransition, StoryCommandIds.SceneTransition)]
     public object? StorySceneTransition(IVMState vm, object?[] args)
     {
         var transitionType = args.ElementAtOrDefault(0)?.ToString() ?? "fade";
         var duration = Convert.ToSingle(args.ElementAtOrDefault(1) ?? 1.0);
 
+        SceneTransition(transitionType, duration);
         return null;
     }
 
