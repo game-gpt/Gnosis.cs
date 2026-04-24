@@ -86,6 +86,14 @@ internal static unsafe class GlNative
     public delegate void GlFinishProc();
     public delegate nint GlGetProcAddressProc(byte* name);
 
+    public delegate void GlGenSamplersProc(int n, uint* samplers);
+    public delegate void GlDeleteSamplersProc(int n, uint* samplers);
+    public delegate void GlSamplerParameteriProc(uint sampler, uint pname, int param);
+    public delegate void GlSamplerParameterfProc(uint sampler, uint pname, float param);
+    public delegate void GlBindSamplerProc(uint unit, uint sampler);
+    public delegate void GlBindBufferBaseProc(uint target, uint index, uint buffer);
+    public delegate void GlBindBufferRangeProc(uint target, uint index, uint buffer, nint offset, nint size);
+
     public static GlCreateShaderProc? CreateShader;
     public static GlShaderSourceProc? ShaderSource;
     public static GlCompileShaderProc? CompileShader;

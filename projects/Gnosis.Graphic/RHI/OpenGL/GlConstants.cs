@@ -143,4 +143,15 @@ internal static class GlConstants
     public const uint GL_MAX = 0x8008;
 
     public const uint GL_UNPACK_ALIGNMENT = 0x0CF5;
+
+    public const uint GL_TEXTURE_MAX_ANISOTROPY = 0x84FE;
+    public const uint GL_MAX_TEXTURE_MAX_ANISOTROPY = 0x84FF;
+
+    public const uint GL_TEXTURE_COMPARE_MODE = 0x884C;
+    public const uint GL_TEXTURE_COMPARE_FUNC = 0x884D;
+    public const uint GL_COMPARE_REF_TO_TEXTURE = 0x884E;
+
+    public const uint GL_TEXTURE_LOD_BIAS = 0x8501;
+    public const uint GL_TEXTURE_MIN_LOD = 0x813A;
+    public const uint GL_TEXTURE_MAX_LOD = 0x813B;
 }

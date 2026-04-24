@@ -11,7 +11,14 @@ public sealed class Transition2D
     public float Progress { get; private set; }
     public bool IsPlaying { get; private set; }
     public bool IsComplete => Progress >= 1.0f;
+    public bool IsReverse { get; private set; }
     public EasingFunction Easing { get; set; } = EasingFunction.Linear;
+
+    #endregion
+
+    #region 事件
+
+    public event Action? OnComplete;
 
     #endregion
 
@@ -36,8 +43,17 @@ public sealed class Transition2D
     public void Play()
     {
         IsPlaying = true;
+        IsReverse = false;
         _elapsedTime = 0.0f;
         Progress = 0.0f;
+    }
+
+    public void PlayReverse()
+    {
+        IsPlaying = true;
+        IsReverse = true;
+        _elapsedTime = 0.0f;
+        Progress = 1.0f;
     }
 
     public void Stop()
@@ -48,7 +64,7 @@ public sealed class Transition2D
     public void Reset()
     {
         _elapsedTime = 0.0f;
-        Progress = 0.0f;
+        Progress = IsReverse ? 1.0f : 0.0f;
         IsPlaying = false;
     }
 
@@ -63,12 +79,28 @@ public sealed class Transition2D
             return;
         }
 
-        _elapsedTime += deltaTime;
-        Progress = Math.Min(_elapsedTime / Duration, 1.0f);
-
-        if (IsComplete)
+        if (IsReverse)
         {
-            IsPlaying = false;
+            _elapsedTime += deltaTime;
+            Progress = Math.Max(1.0f - _elapsedTime / Duration, 0.0f);
+
+            if (Progress <= 0.0f)
+            {
+                Progress = 0.0f;
+                IsPlaying = false;
+                OnComplete?.Invoke();
+            }
+        }
+        else
+        {
+            _elapsedTime += deltaTime;
+            Progress = Math.Min(_elapsedTime / Duration, 1.0f);
+
+            if (IsComplete)
+            {
+                IsPlaying = false;
+                OnComplete?.Invoke();
+            }
         }
     }
 

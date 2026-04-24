@@ -29,6 +29,7 @@
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Obj\Oak.Obj.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Ktx\Oak.Ktx.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Svg\Oak.Svg.csproj" />
+        <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Von\Oak.Von.csproj" />
         <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Gltf\Acorn.Gltf.csproj" />
     </ItemGroup>
 </Project>

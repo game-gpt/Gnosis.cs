@@ -100,6 +100,13 @@ public sealed class BytecodeModuleAdapter : IModule
             case OpCode.JumpIfFalse:
             case OpCode.Call:
             case OpCode.CallNative:
+            {
+                Span<byte> bytes = stackalloc byte[4];
+                BinaryPrimitives.WriteInt32LittleEndian(bytes, (int)operand);
+                stream.Write(bytes);
+                break;
+            }
+
             case OpCode.CallModule:
             {
                 Span<byte> bytes = stackalloc byte[8];
