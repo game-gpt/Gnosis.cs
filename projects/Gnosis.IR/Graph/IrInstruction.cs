@@ -65,9 +65,17 @@ public enum IrOpcode
     DestroyEntity,
     AddComponent,
     GetComponent,
+    SetComponent,
     RemoveComponent,
+    HasComponent,
+    DefineComponent,
+    DefineSystem,
+    SystemSchedule,
     QueryAll,
     QueryAny,
+    QueryWith,
+    QueryWithout,
+    WorldUpdate,
 
     MakeClosure,
     GetUpvalue,
@@ -306,14 +314,38 @@ public sealed class IrInstruction
     public static IrInstruction GetComponent(IrValue result, IrValue entity, string componentType, SourceSpan? span = null)
         => new(IrOpcode.GetComponent, result, [entity], [componentType], span);
 
+    public static IrInstruction SetComponent(IrValue entity, string componentType, IrValue value, SourceSpan? span = null)
+        => new(IrOpcode.SetComponent, result: null, operands: [entity, value], arguments: [componentType], span: span);
+
     public static IrInstruction RemoveComponent(IrValue entity, string componentType, SourceSpan? span = null)
         => new(IrOpcode.RemoveComponent, result: null, operands: [entity], arguments: [componentType], span: span);
+
+    public static IrInstruction HasComponent(IrValue result, IrValue entity, string componentType, SourceSpan? span = null)
+        => new(IrOpcode.HasComponent, result, [entity], [componentType], span);
+
+    public static IrInstruction DefineComponent(IrValue result, string componentType, IReadOnlyList<(string Name, IrType Type)> fields, SourceSpan? span = null)
+        => new(IrOpcode.DefineComponent, result, arguments: [componentType, .. fields.Select(f => (object)f)], span: span);
+
+    public static IrInstruction DefineSystem(IrValue result, string systemName, string phase, IrValue function, SourceSpan? span = null)
+        => new(IrOpcode.DefineSystem, result, [function], [systemName, phase], span);
+
+    public static IrInstruction SystemSchedule(IrValue system, IReadOnlyList<IrValue> dependencies, SourceSpan? span = null)
+        => new(IrOpcode.SystemSchedule, result: null, operands: [system, .. dependencies], span: span);
 
     public static IrInstruction QueryAll(IrValue result, string componentType, SourceSpan? span = null)
         => new(IrOpcode.QueryAll, result, arguments: [componentType], span: span);
 
     public static IrInstruction QueryAny(IrValue result, string componentType, SourceSpan? span = null)
         => new(IrOpcode.QueryAny, result, arguments: [componentType], span: span);
+
+    public static IrInstruction QueryWith(IrValue result, IrValue query, string componentType, SourceSpan? span = null)
+        => new(IrOpcode.QueryWith, result, [query], [componentType], span);
+
+    public static IrInstruction QueryWithout(IrValue result, IrValue query, string componentType, SourceSpan? span = null)
+        => new(IrOpcode.QueryWithout, result, [query], [componentType], span);
+
+    public static IrInstruction WorldUpdate(IrValue deltaTime, SourceSpan? span = null)
+        => new(IrOpcode.WorldUpdate, result: null, operands: [deltaTime], span: span);
 
     #endregion
 

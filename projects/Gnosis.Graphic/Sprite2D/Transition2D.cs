@@ -74,7 +74,7 @@ public sealed class Transition2D
 
     public void Update(float deltaTime)
     {
-        if (!IsPlaying || IsComplete)
+        if (!IsPlaying)
         {
             return;
         }

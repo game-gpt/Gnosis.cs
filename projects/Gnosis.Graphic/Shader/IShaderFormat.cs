@@ -1,6 +1,8 @@
+using Gnosis.IR.Shader;
+
 namespace Gnosis.Graphic.Shader;
 
-public interface IShaderFormat : IFormatHandler
+public interface IShaderFormat
 {
     Task<ShaderData> LoadShaderAsync(string path, CancellationToken cancellationToken = default);
     Task SaveShaderAsync(string path, ShaderData shader, CancellationToken cancellationToken = default);

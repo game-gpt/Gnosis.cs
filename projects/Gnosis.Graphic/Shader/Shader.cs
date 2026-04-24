@@ -50,7 +50,7 @@ public sealed class DelegateShaderModule : IShaderModule
     public DelegateShaderModule(
         string name,
         IReadOnlyList<IMicroFunction> functions,
-        ShaderLanguage language = ShaderLanguage.GgShader,
+        ShaderLanguage language = ShaderLanguage.Valkyrie,
         ShaderTarget target = ShaderTarget.Spirv)
     {
         Name = name;

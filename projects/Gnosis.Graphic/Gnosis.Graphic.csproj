@@ -27,17 +27,13 @@
         <Compile Remove="Capture\CameraControllerComponent.cs" />
         <Compile Remove="Shader\DiffusionShaderBackend.cs" />
         <Compile Remove="RHI\IrGenerator.cs" />
-        <Compile Remove="Shader\IShaderFormat.cs" />
         <Compile Remove="RHI\ITransform.cs" />
         <Compile Remove="Light\LightComponent.cs" />
         <Compile Remove="Shader\NeuralShaderBackend.cs" />
         <Compile Remove="FX\ParticleSystemComponent.cs" />
-        <Compile Remove="Shader\ShaderFormatHandler.cs" />
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
         <Compile Remove="RHI\Software\SoftwareDevice.cs" />
-        <Compile Remove="Shader\ShaderIrOpCode.cs" />
-        <Compile Remove="Shader\Spirv\**" />
         <Compile Remove="StoryCommands\EffectCommands.cs" />
         <Compile Remove="Compute\ComputeDispatcher.cs" />
         <Compile Remove="Pipeline\ClusteredRenderer.cs" />

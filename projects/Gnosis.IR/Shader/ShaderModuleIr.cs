@@ -28,7 +28,7 @@ public sealed class ShaderModuleIr
 
     public string Name { get; set; } = string.Empty;
 
-    public ShaderLanguage Language { get; set; } = ShaderLanguage.GgShader;
+    public ShaderLanguage Language { get; set; } = ShaderLanguage.Valkyrie;
 
     public ShaderTarget Target { get; set; } = ShaderTarget.Spirv;
 

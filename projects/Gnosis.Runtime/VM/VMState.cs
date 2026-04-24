@@ -250,7 +250,7 @@ public class VMState : IVMState
             return globals.GetValueOrDefault(index);
         }
 
-        return default;
+        return GGValue.Null;
     }
 
     /// <summary>

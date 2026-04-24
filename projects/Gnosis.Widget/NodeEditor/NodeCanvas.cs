@@ -212,7 +212,7 @@ public sealed class NodeCanvas : ContainerElement
                     portColor.R, portColor.G, portColor.B, portColor.A);
 
                 renderer.DrawText(port.Name, px + portRadius + 4 * _zoom, py - 4 * _zoom, 8 * _zoom,
-                    0.8f, 0.8f, 0.8f, 1.0f);
+                    0.8f, 0.8f, 0.8f);
 
                 portY += 18 * _zoom;
             }
@@ -230,7 +230,7 @@ public sealed class NodeCanvas : ContainerElement
 
                 var textWidth = port.Name.Length * 6 * _zoom;
                 renderer.DrawText(port.Name, px - portRadius - textWidth - 4 * _zoom, py - 4 * _zoom, 8 * _zoom,
-                    0.8f, 0.8f, 0.8f, 1.0f);
+                    0.8f, 0.8f, 0.8f);
 
                 portY += 18 * _zoom;
             }

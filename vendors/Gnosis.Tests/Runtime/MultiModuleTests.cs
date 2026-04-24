@@ -489,13 +489,15 @@ public class MultiModuleTests
             [new BytecodeFunction("func", 0, 0, [new BytecodeInstruction(OpCode.Halt)])],
             exports: ["base::func"]);
 
-        var leftModule = CreateModule("left",
-            [new BytecodeInstruction(OpCode.Halt)],
-            imports: ["base::func"]);
+        var leftModule = CreateModuleWithFunctions("left",
+            [new BytecodeFunction("func", 0, 0, [new BytecodeInstruction(OpCode.Halt)])],
+            imports: ["base::func"],
+            exports: ["left::func"]);
 
-        var rightModule = CreateModule("right",
-            [new BytecodeInstruction(OpCode.Halt)],
-            imports: ["base::func"]);
+        var rightModule = CreateModuleWithFunctions("right",
+            [new BytecodeFunction("func", 0, 0, [new BytecodeInstruction(OpCode.Halt)])],
+            imports: ["base::func"],
+            exports: ["right::func"]);
 
         var topModule = CreateModule("top",
             [new BytecodeInstruction(OpCode.Halt)],

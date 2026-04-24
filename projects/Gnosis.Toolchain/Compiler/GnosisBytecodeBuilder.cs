@@ -167,8 +167,28 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
                 result.Add(new BytecodeInstruction(OpCode.GetComponent, GetComponentTypeIndex(instr, constants)));
                 break;
 
+            case IrOpcode.SetComponent:
+                result.Add(new BytecodeInstruction(OpCode.SetComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
             case IrOpcode.RemoveComponent:
                 result.Add(new BytecodeInstruction(OpCode.RemoveComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.HasComponent:
+                result.Add(new BytecodeInstruction(OpCode.HasComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.DefineComponent:
+                result.Add(new BytecodeInstruction(OpCode.DefineComponent, GetComponentTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.DefineSystem:
+                result.Add(new BytecodeInstruction(OpCode.DefineSystem, GetSystemNameIndex(instr, constants)));
+                break;
+
+            case IrOpcode.SystemSchedule:
+                result.Add(new BytecodeInstruction(OpCode.SystemSchedule));
                 break;
 
             case IrOpcode.QueryAll:
@@ -177,6 +197,18 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
 
             case IrOpcode.QueryAny:
                 result.Add(new BytecodeInstruction(OpCode.QueryAny, GetQueryTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.QueryWith:
+                result.Add(new BytecodeInstruction(OpCode.QueryWith, GetQueryTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.QueryWithout:
+                result.Add(new BytecodeInstruction(OpCode.QueryWithout, GetQueryTypeIndex(instr, constants)));
+                break;
+
+            case IrOpcode.WorldUpdate:
+                result.Add(new BytecodeInstruction(OpCode.WorldUpdate));
                 break;
 
             case IrOpcode.CallNative:
@@ -235,6 +267,17 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
         {
             var idx = constants.Count;
             constants.Add(typeName);
+            return idx;
+        }
+        return 0;
+    }
+
+    private static int GetSystemNameIndex(IrInstruction instr, List<object> constants)
+    {
+        if (instr.Arguments.Count > 0 && instr.Arguments[0] is string systemName)
+        {
+            var idx = constants.Count;
+            constants.Add(systemName);
             return idx;
         }
         return 0;
@@ -337,9 +380,17 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
             IrOpcode.DestroyEntity or
             IrOpcode.AddComponent or
             IrOpcode.GetComponent or
+            IrOpcode.SetComponent or
             IrOpcode.RemoveComponent or
+            IrOpcode.HasComponent or
+            IrOpcode.DefineComponent or
+            IrOpcode.DefineSystem or
+            IrOpcode.SystemSchedule or
             IrOpcode.QueryAll or
-            IrOpcode.QueryAny;
+            IrOpcode.QueryAny or
+            IrOpcode.QueryWith or
+            IrOpcode.QueryWithout or
+            IrOpcode.WorldUpdate;
     }
 
     private static int GetOperandSize(OpCode opCode)
@@ -356,8 +407,11 @@ public sealed class GnosisBytecodeBuilder : IGnosisCompilerBackend
                 or OpCode.StoreGlobal or OpCode.LoadField or OpCode.StoreField
                 or OpCode.NewObject or OpCode.GetField or OpCode.SetField
                 or OpCode.AddComponent or OpCode.GetComponent or OpCode.RemoveComponent
+                or OpCode.SetComponent or OpCode.HasComponent or OpCode.DefineComponent
+                or OpCode.DefineSystem or OpCode.QueryAll or OpCode.QueryAny
+                or OpCode.QueryWith or OpCode.QueryWithout or OpCode.SystemSchedule
                 or OpCode.PushString or OpCode.NewArray or OpCode.MakeClosure
-                or OpCode.IsType or OpCode.TypeOf or OpCode.QueryAll or OpCode.QueryAny => 4,
+                or OpCode.IsType or OpCode.TypeOf => 4,
             _ => 0
         };
     }

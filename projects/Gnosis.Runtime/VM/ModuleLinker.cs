@@ -156,7 +156,6 @@ public sealed class ModuleLinker
             VisitModule(module.Name, moduleMap, visited, visiting, result);
         }
 
-        result.Reverse();
         return result;
     }
 
