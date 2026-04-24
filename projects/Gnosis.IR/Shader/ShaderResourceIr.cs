@@ -11,7 +11,7 @@ public sealed class ShaderResourceIr
 
     public ShaderResourceKind Kind { get; set; }
 
-    public ShaderIrType Type { get; set; }
+    public ShaderIrType Type { get; set; } = ShaderIrType.Void;
 
     public uint DescriptorSet { get; set; }
 

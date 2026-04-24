@@ -9,7 +9,7 @@ public sealed class LocalVariableInstruction
 
     public string Name { get; set; } = string.Empty;
 
-    public ShaderIrType Type { get; set; }
+    public ShaderIrType Type { get; set; } = ShaderIrType.Void;
 
     public int StackOffset { get; set; }
 

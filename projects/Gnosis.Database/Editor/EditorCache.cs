@@ -67,12 +67,13 @@ public sealed class EditorCache
         Interlocked.Increment(ref _cacheMisses);
 
         var dbValue = await _database.GetAsync(key, ct);
-        if (dbValue is not null)
+        if (dbValue.HasValue && !dbValue.Value.IsEmpty)
         {
-            await PutToCacheAsync(key, dbValue);
+            await PutToCacheAsync(key, dbValue.Value);
+            return dbValue.Value;
         }
 
-        return dbValue;
+        return GnosisDatabaseCore.DatabaseValue.Empty;
     }
 
     #endregion

@@ -1,17 +1,36 @@
 namespace Gnosis.IR.Shader;
 
-/// <summary>
-/// Shader 模块 IR 定义
-/// </summary>
 public sealed class ShaderModuleIr
 {
+    #region Constructors
+
+    public ShaderModuleIr() { }
+
+    public ShaderModuleIr(
+        string name,
+        List<ShaderFunctionIr> functions,
+        List<ShaderStructIr> structs,
+        List<ShaderGlobalVariableIr> globalVariables,
+        List<ShaderEntryPointIr> entryPoints,
+        List<ExternalFunctionRef> externalFunctions)
+    {
+        Name = name;
+        Functions = functions;
+        Structs = structs;
+        GlobalVariables = globalVariables;
+        EntryPoints = entryPoints;
+        ExternalFunctions = externalFunctions;
+    }
+
+    #endregion
+
     #region Properties
 
     public string Name { get; set; } = string.Empty;
 
-    public ShaderLanguage Language { get; set; }
+    public ShaderLanguage Language { get; set; } = ShaderLanguage.GgShader;
 
-    public ShaderTarget Target { get; set; }
+    public ShaderTarget Target { get; set; } = ShaderTarget.Spirv;
 
     public List<ShaderStructIr> Structs { get; } = [];
 

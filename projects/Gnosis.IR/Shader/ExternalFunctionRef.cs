@@ -11,7 +11,7 @@ public sealed class ExternalFunctionRef
 
     public string Library { get; set; } = string.Empty;
 
-    public ShaderIrType ReturnType { get; set; }
+    public ShaderIrType ReturnType { get; set; } = ShaderIrType.Void;
 
     public List<ShaderIrType> ParameterTypes { get; } = [];
 

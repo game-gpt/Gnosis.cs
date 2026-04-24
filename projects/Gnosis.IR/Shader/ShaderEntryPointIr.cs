@@ -1,8 +1,5 @@
 namespace Gnosis.IR.Shader;
 
-/// <summary>
-/// Shader 入口点 IR 定义
-/// </summary>
 public sealed class ShaderEntryPointIr
 {
     #region Properties
@@ -12,6 +9,8 @@ public sealed class ShaderEntryPointIr
     public ShaderExecutionModel ExecutionModel { get; set; }
 
     public string FunctionName { get; set; } = string.Empty;
+
+    public List<string> InterfaceVariables { get; } = [];
 
     #endregion
 }

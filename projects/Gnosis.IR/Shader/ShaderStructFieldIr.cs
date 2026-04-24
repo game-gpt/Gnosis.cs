@@ -9,7 +9,7 @@ public sealed class ShaderStructFieldIr
 
     public string Name { get; set; } = string.Empty;
 
-    public ShaderIrType Type { get; set; }
+    public ShaderIrType Type { get; set; } = ShaderIrType.Void;
 
     public uint Offset { get; set; }
 

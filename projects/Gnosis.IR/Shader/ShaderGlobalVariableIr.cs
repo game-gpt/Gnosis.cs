@@ -1,27 +1,22 @@
 namespace Gnosis.IR.Shader;
 
-/// <summary>
-/// Shader 全局变量 IR 定义
-/// </summary>
 public sealed class ShaderGlobalVariableIr
 {
     #region Properties
 
     public string Name { get; set; } = string.Empty;
 
-    public ShaderIrType Type { get; set; }
+    public ShaderIrType Type { get; set; } = ShaderIrType.Void;
 
-    public StorageClass StorageClass { get; set; }
+    public StorageClass Storage { get; set; }
 
-    public ShaderResourceKind? ResourceKind { get; set; }
+    public uint ResultId { get; set; }
 
-    public uint? DescriptorSet { get; set; }
-
-    public uint? Binding { get; set; }
+    public ShaderResourceIr? Resource { get; set; }
 
     public uint? Location { get; set; }
 
-    public uint? BuiltIn { get; set; }
+    public string? Builtin { get; set; }
 
     #endregion
 }

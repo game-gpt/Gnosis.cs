@@ -9,7 +9,7 @@ public sealed class ShaderFunctionIr
 
     public string Name { get; set; } = string.Empty;
 
-    public ShaderIrType ReturnType { get; set; }
+    public ShaderIrType ReturnType { get; set; } = ShaderIrType.Void;
 
     public List<ShaderIrParameter> Parameters { get; } = [];
 

@@ -1,12 +1,13 @@
 using Oak.Diagnostics;
+using Oak.Valkyrie;
 using Oak.Valkyrie.AST;
-using Oak.ValkyrieShader.Lexer;
-using Oak.ValkyrieShader.Parser;
+using Oak.Valkyrie.Lexer;
+using Oak.Valkyrie.Parser;
+using Gnosis.Toolchain.ScriptCompiler;
 using Gnosis.Toolchain.ScriptCompiler.ScriptFrontend;
-using Gnosis.Toolchain.ScriptCompiler.Backend;
+using Gnosis.Toolchain.ShaderCompiler.Backend;
 using Gnosis.IR.Shader;
-using Gnosis.Rendering.Backends.ShaderIR;
-using Gnosis.Rendering.Backends.Spirv;
+using Gnosis.Graphic.Shader;
 
 namespace Gnosis.Toolchain.ShaderCompiler;
 
@@ -29,29 +30,22 @@ public class ShaderCompiler : IShaderCompiler
 
     #region Properties
 
-    public ShaderTarget Target => ShaderTarget.SPIRV;
+    public ShaderTarget Target => ShaderTarget.Spirv;
 
-    // 暴露诊断信息给调用方
     public DiagnosticSink Diagnostics => _diagnostics;
 
     #endregion
 
     #region Public Methods
 
-    // 便捷重载，使用空的通道宏
     public byte[] CompileToSpirV(string source)
     {
         return CompileToSpirV(source, new ChannelMacros());
     }
 
-    // 使用显式通道宏编译着色器到 SPIR-V
     public byte[] CompileToSpirV(string source, ChannelMacros macros)
     {
-        var lexer = new ValkyrieShaderLexer(_diagnostics);
-        var tokens = lexer.Tokenize(source);
-
-        var parser = new ValkyrieShaderParser(_diagnostics);
-        var ast = parser.Parse(tokens);
+        var ast = ParseToAst(source);
 
         var macroTable = new MacroTable();
         RegisterBuiltInMacros(macroTable);
@@ -75,34 +69,31 @@ public class ShaderCompiler : IShaderCompiler
             throw new ShaderCompilationException(_diagnostics.Errors);
         }
 
-        var irGenerator = new IrGenerator(_diagnostics);
-        var ir = irGenerator.Generate((CompilationUnit)ast);
+        var lowering = new ShaderAstLowering(_diagnostics);
+        var shaderModule = lowering.Lower((CompilationUnit)ast);
 
-        var spirvGenerator = new SpirvGenerator();
-        return spirvGenerator.Generate(ir);
+        var spirvGenerator = new Gnosis.Graphic.Shader.Spirv.SpirvGenerator();
+        return spirvGenerator.Generate(shaderModule);
     }
 
     public IShaderModule Compile(string sourceCode, string moduleName, ShaderCompileOptions options)
     {
         var bytecode = CompileToSpirV(sourceCode);
 
-        var irGenerator = new IrGenerator(_diagnostics);
-        var lexer = new ValkyrieShaderLexer(_diagnostics);
-        var tokens = lexer.Tokenize(sourceCode);
-        var parser = new ValkyrieShaderParser(_diagnostics);
-        var ast = parser.Parse(tokens);
-        var ir = irGenerator.Generate((CompilationUnit)ast);
+        var lowering = new ShaderAstLowering(_diagnostics);
+        var shaderModule = ParseAndLower(sourceCode);
 
         var functions = new List<IMicroFunction>();
-        foreach (var funcIr in ir.Functions)
+        foreach (var entryPoint in shaderModule.EntryPoints)
         {
             functions.Add(new DelegateMicroFunction(
-                funcIr.Name,
-                MapExecutionModelToKind(funcIr.ExecutionModel)));
+                entryPoint.FunctionName,
+                MapExecutionModelToKind(entryPoint.ExecutionModel)));
         }
 
         return new DelegateShaderModule(moduleName, functions)
         {
+            Bytecode = bytecode
         };
     }
 
@@ -112,11 +103,7 @@ public class ShaderCompiler : IShaderCompiler
 
         try
         {
-            var lexer = new ValkyrieShaderLexer(_diagnostics);
-            var tokens = lexer.Tokenize(sourceCode);
-
-            var parser = new ValkyrieShaderParser(_diagnostics);
-            var ast = parser.Parse(tokens);
+            var ast = ParseToAst(sourceCode);
 
             if (_diagnostics.Errors.Any())
             {
@@ -126,7 +113,7 @@ public class ShaderCompiler : IShaderCompiler
 
             return true;
         }
-        catch (Exception ex)
+        catch (ShaderCompilationException ex)
         {
             errorMessage = ex.Message;
             return false;
@@ -137,7 +124,31 @@ public class ShaderCompiler : IShaderCompiler
 
     #region Private Methods
 
-    // 注册着色器内置宏的默认值
+    private AstNode ParseToAst(string source)
+    {
+        var lexer = new ValkyrieLexer(_diagnostics);
+        var tokens = lexer.Tokenize(source);
+
+        var parser = new ValkyrieParser(ValkyrieLanguage.Shader, _diagnostics);
+        return parser.Parse(tokens);
+    }
+
+    private ShaderModuleIr ParseAndLower(string source)
+    {
+        var ast = ParseToAst(source);
+
+        if (ast is CompilationUnit unit)
+        {
+            var semanticAnalyzer = new ShaderSemanticAnalyzer(_diagnostics);
+            var analyzed = semanticAnalyzer.Analyze(unit);
+
+            var lowering = new ShaderAstLowering(_diagnostics);
+            return lowering.Lower(analyzed);
+        }
+
+        throw new ShaderCompilationException(_diagnostics.Errors);
+    }
+
     private static void RegisterBuiltInMacros(MacroTable macroTable)
     {
         macroTable.Add("RENDER_MODE", "RASTER");
@@ -147,7 +158,7 @@ public class ShaderCompiler : IShaderCompiler
         macroTable.Add("HAS_DIFFUSION", "false");
     }
 
-    private static MicroFunctionKind MapExecutionModelToKind(ShaderExecutionModel? model) => model switch
+    private static MicroFunctionKind MapExecutionModelToKind(ShaderExecutionModel model) => model switch
     {
         ShaderExecutionModel.Vertex => MicroFunctionKind.Vertex,
         ShaderExecutionModel.Fragment => MicroFunctionKind.Fragment,
@@ -158,30 +169,6 @@ public class ShaderCompiler : IShaderCompiler
         ShaderExecutionModel.AnyHitKHR => MicroFunctionKind.RayAnyHit,
         _ => MicroFunctionKind.Fragment
     };
-
-    private void GenerateDeclarationSpirV(BinaryWriter writer, AstNode decl)
-    {
-        switch (decl.Type)
-        {
-            case NodeType.FunctionDecl:
-                break;
-            case NodeType.ComponentDecl:
-                break;
-            case NodeType.StructDecl:
-                GenerateStructSpirV(writer, (StructDecl)decl);
-                break;
-            case NodeType.UniformBindingDecl:
-                break;
-            case NodeType.UsingDecl:
-                break;
-        }
-    }
-
-    private void GenerateStructSpirV(BinaryWriter writer, StructDecl decl)
-    {
-        writer.Write(0x0000001B);
-        writer.Write(0x00000000);
-    }
 
     #endregion
 }
