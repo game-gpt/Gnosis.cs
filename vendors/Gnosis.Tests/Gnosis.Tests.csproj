@@ -25,6 +25,7 @@
         <ProjectReference Include="..\..\projects\Gnosis.ECS\Gnosis.ECS.csproj"/>
         <ProjectReference Include="..\..\projects\Gnosis.IR\Gnosis.IR.csproj"/>
         <ProjectReference Include="..\..\projects\Gnosis.Runtime\Gnosis.Runtime.csproj"/>
+        <ProjectReference Include="..\..\projects\Gnosis.Graphic\Gnosis.Graphic.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
