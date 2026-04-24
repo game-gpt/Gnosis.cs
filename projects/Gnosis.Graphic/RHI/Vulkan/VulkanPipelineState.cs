@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Gnosis.IR.Shader;
+using Gnosis.Graphic.Shader;
 
 namespace Gnosis.Graphic.RHI.Vulkan;
 
@@ -145,10 +145,15 @@ internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
     /// </summary>
     private void CreateGraphicsPipeline(VkDevice vkDevice)
     {
-        var shaderResource = _device.GetResource(_desc.Shader.Name) as VulkanResource;
+        VulkanResource? shaderResource = null;
+        if (_desc.ShaderResources is { Length: > 0 })
+        {
+            shaderResource = _desc.ShaderResources[0] as VulkanResource;
+        }
+
         if (shaderResource == null || shaderResource.ShaderModuleHandle.IsNull)
         {
-            throw new InvalidOperationException($"未找到着色器资源：{_desc.ShaderHandle}");
+            throw new InvalidOperationException("未找到着色器资源");
         }
 
         var pEntryPoint = (byte*)Marshal.StringToHGlobalAnsi(shaderResource.EntryPoint);

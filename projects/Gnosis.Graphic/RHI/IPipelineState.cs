@@ -6,6 +6,7 @@ namespace Gnosis.Graphic.RHI;
 public record PipelineStateDesc
 {
     public required IShaderProgram Shader { get; init; }
+    public IResource[]? ShaderResources { get; init; }
     public PrimitiveTopology Topology { get; init; } = PrimitiveTopology.TriangleList;
     public BlendMode BlendMode { get; init; }
     public bool DepthTest { get; init; }

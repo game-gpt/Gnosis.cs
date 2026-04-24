@@ -1,9 +1,6 @@
 namespace Gnosis.Graphic.RHI.Vulkan;
 
-/// <summary>
-/// Vulkan 栅栏实现
-/// </summary>
-internal sealed class VulkanFence : RHI.IRhiFence
+internal sealed unsafe class VulkanFence : RHI.IRhiFence
 {
     /// <summary>
     /// Vulkan 栅栏句柄
@@ -85,7 +82,7 @@ internal sealed class VulkanFence : RHI.IRhiFence
 /// <summary>
 /// Vulkan 信号量实现
 /// </summary>
-internal sealed class VulkanSemaphore : RHI.IRhiSemaphore
+internal sealed unsafe class VulkanSemaphore : RHI.IRhiSemaphore
 {
     /// <summary>
     /// Vulkan 信号量句柄
