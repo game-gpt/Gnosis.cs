@@ -1,3 +1,5 @@
+using System.Numerics;
+using Gnosis.Core.Math;
 using Gnosis.Physics.Query;
 using Gnosis.Physics.Shape;
 
@@ -6,7 +8,7 @@ namespace Gnosis.Physics.Dynamics;
 public class StubPhysicsWorld : IPhysicsWorld
 {
     public float FixedDeltaTime { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
-    public float[] Gravity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
+    public Vector3 Gravity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
     public int BodyCount => throw new NotImplementedException("物理系统尚未实现");
 
     public void AttachCollider(IRigidBody body, ICollider collider)
@@ -44,22 +46,22 @@ public class StubPhysicsWorld : IPhysicsWorld
         throw new NotImplementedException("物理系统尚未实现");
     }
 
-    public IOverlapResult OverlapBox(float[] center, float[] halfExtents)
+    public IOverlapResult OverlapBox(Vector3 center, Vector3 halfExtents)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }
 
-    public IOverlapResult OverlapSphere(float[] center, float radius)
+    public IOverlapResult OverlapSphere(Vector3 center, float radius)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }
 
-    public IRaycastResult Raycast(float[] origin, float[] direction, float maxDistance)
+    public IRaycastResult Raycast(Vector3 origin, Vector3 direction, float maxDistance)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }
 
-    public IRaycastResult[] RaycastAll(float[] origin, float[] direction, float maxDistance)
+    public IRaycastResult[] RaycastAll(Vector3 origin, Vector3 direction, float maxDistance)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }

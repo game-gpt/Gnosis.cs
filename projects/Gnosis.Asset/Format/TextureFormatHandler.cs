@@ -292,6 +292,94 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
 
     #endregion
 
+    #region 生成 Mipmap
+
+    /// <summary>
+    /// 为纹理自动生成 Mipmap 链，使用指定的采样过滤器
+    /// </summary>
+    public async Task<TextureData> GenerateMipmapsAsync(TextureData texture, ResizeFilter filter = ResizeFilter.Lanczos3, CancellationToken cancellationToken = default)
+    {
+        return await GenerateMipmapsAsync(texture, filter, 0, cancellationToken);
+    }
+
+    /// <summary>
+    /// 为纹理自动生成 Mipmap 链，可指定最大 Mipmap 级别数（0 表示自动计算）
+    /// </summary>
+    public async Task<TextureData> GenerateMipmapsAsync(TextureData texture, ResizeFilter filter, int maxLevels, CancellationToken cancellationToken = default)
+    {
+        if (texture.Format != TextureFormat.R8G8B8A8_UNorm)
+        {
+            throw new NotSupportedException($"仅支持 R8G8B8A8_UNorm 格式的 Mipmap 生成，当前格式：{texture.Format}");
+        }
+
+        if (texture.RawData.Length == 0)
+        {
+            throw new ArgumentException("纹理数据不能为空");
+        }
+
+        int autoLevels = CalculateMipLevels(texture.Width, texture.Height);
+        int mipLevels = maxLevels > 0 ? Math.Min(maxLevels, autoLevels) : autoLevels;
+
+        if (mipLevels <= 1)
+        {
+            return texture with { MipLevels = 1 };
+        }
+
+        return await Task.Run(() =>
+        {
+            var mipDataList = new List<byte[]> { texture.RawData };
+
+            int currentWidth = texture.Width;
+            int currentHeight = texture.Height;
+
+            using var baseImage = RgbaBytesToImage(texture.RawData, texture.Width, texture.Height);
+            var sampler = GetResampler(filter);
+
+            for (int level = 1; level < mipLevels; level++)
+            {
+                int mipWidth = Math.Max(1, currentWidth >> 1);
+                int mipHeight = Math.Max(1, currentHeight >> 1);
+
+                using var mipImage = baseImage.Clone();
+                mipImage.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Size = new Size(mipWidth, mipHeight),
+                    Sampler = sampler
+                }));
+
+                mipDataList.Add(ImageToRgbaBytes(mipImage));
+
+                currentWidth = mipWidth;
+                currentHeight = mipHeight;
+            }
+
+            return texture with
+            {
+                MipLevels = mipLevels,
+                MipData = mipDataList.Skip(1).ToList()
+            };
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// 计算给定尺寸的最大 Mipmap 级别数
+    /// </summary>
+    private static int CalculateMipLevels(int width, int height)
+    {
+        int maxDim = Math.Max(width, height);
+        int levels = 0;
+
+        while (maxDim > 0)
+        {
+            levels++;
+            maxDim >>= 1;
+        }
+
+        return levels;
+    }
+
+    #endregion
+
     #region 压缩纹理
 
     /// <summary>
@@ -323,9 +411,9 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
                 TextureCompressionFormat.BC4 => BcCompressor.CompressBc4(texture.RawData, texture.Width, texture.Height),
                 TextureCompressionFormat.BC5 => BcCompressor.CompressBc5(texture.RawData, texture.Width, texture.Height),
                 TextureCompressionFormat.BC7 => BcCompressor.CompressBc7(texture.RawData, texture.Width, texture.Height),
-                TextureCompressionFormat.ASTC_4x4 => AstcCompressor.Compress4x4(texture.RawData, texture.Width, texture.Height),
-                TextureCompressionFormat.ASTC_6x6 => AstcCompressor.Compress6x6(texture.RawData, texture.Width, texture.Height),
-                TextureCompressionFormat.ASTC_8x8 => AstcCompressor.Compress8x8(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ASTC_4x4 => AstcEncoder.Compress4x4(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ASTC_6x6 => AstcEncoder.Compress6x6(texture.RawData, texture.Width, texture.Height),
+                TextureCompressionFormat.ASTC_8x8 => AstcEncoder.Compress8x8(texture.RawData, texture.Width, texture.Height),
                 TextureCompressionFormat.ETC2 => HasAlphaChannel(texture.RawData)
                     ? EtcCompressor.CompressEtc2Rgba(texture.RawData, texture.Width, texture.Height)
                     : EtcCompressor.CompressEtc2Rgb(texture.RawData, texture.Width, texture.Height),

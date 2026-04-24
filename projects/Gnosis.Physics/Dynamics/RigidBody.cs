@@ -1,3 +1,5 @@
+using System.Numerics;
+using Gnosis.Core.Math;
 using Gnosis.Physics.Shape;
 
 namespace Gnosis.Physics.Dynamics;
@@ -6,12 +8,12 @@ public sealed class RigidBody : IRigidBody
 {
     #region 字段
 
-    private float[] _velocity = [0f, 0f, 0f];
-    private float[] _angularVelocity = [0f, 0f, 0f];
-    private float[] _position = [0f, 0f, 0f];
-    private float[] _rotation = [0f, 0f, 0f];
-    private float[] _accumulatedForce = [0f, 0f, 0f];
-    private float[] _accumulatedTorque = [0f, 0f, 0f];
+    private Vector3 _velocity;
+    private Vector3 _angularVelocity;
+    private Vector3 _position;
+    private Quaternion _rotation;
+    private Vector3 _accumulatedForce;
+    private Vector3 _accumulatedTorque;
 
     #endregion
 
@@ -31,28 +33,28 @@ public sealed class RigidBody : IRigidBody
 
     public bool IsKinematic { get; set; }
 
-    public float[] Velocity
+    public Vector3 Velocity
     {
         get => _velocity;
-        set => _velocity = value ?? [0f, 0f, 0f];
+        set => _velocity = value;
     }
 
-    public float[] AngularVelocity
+    public Vector3 AngularVelocity
     {
         get => _angularVelocity;
-        set => _angularVelocity = value ?? [0f, 0f, 0f];
+        set => _angularVelocity = value;
     }
 
-    public float[] Position
+    public Vector3 Position
     {
         get => _position;
-        set => _position = value ?? [0f, 0f, 0f];
+        set => _position = value;
     }
 
-    public float[] Rotation
+    public Quaternion Rotation
     {
         get => _rotation;
-        set => _rotation = value ?? [0f, 0f, 0f];
+        set => _rotation = value;
     }
 
     internal IReadOnlyList<ICollider> Colliders => _colliders;
@@ -77,74 +79,42 @@ public sealed class RigidBody : IRigidBody
 
     #region IRigidBody 实现
 
-    public void AddForce(float[] force, ForceMode mode = ForceMode.Force)
+    public void AddForce(Vector3 force, ForceMode mode = ForceMode.Force)
     {
-        if (force is null || force.Length < 3)
-        {
-            return;
-        }
-
         switch (mode)
         {
             case ForceMode.Force:
-                _accumulatedForce[0] += force[0];
-                _accumulatedForce[1] += force[1];
-                _accumulatedForce[2] += force[2];
+                _accumulatedForce += force;
                 break;
             case ForceMode.Impulse:
                 if (Mass > 0f)
                 {
-                    _velocity[0] += force[0] / Mass;
-                    _velocity[1] += force[1] / Mass;
-                    _velocity[2] += force[2] / Mass;
+                    _velocity += force / Mass;
                 }
-
                 break;
             case ForceMode.VelocityChange:
-                _velocity[0] += force[0];
-                _velocity[1] += force[1];
-                _velocity[2] += force[2];
+                _velocity += force;
                 break;
             case ForceMode.Acceleration:
                 if (Mass > 0f)
                 {
-                    _accumulatedForce[0] += force[0] * Mass;
-                    _accumulatedForce[1] += force[1] * Mass;
-                    _accumulatedForce[2] += force[2] * Mass;
+                    _accumulatedForce += force * Mass;
                 }
-
                 break;
         }
     }
 
-    public void AddTorque(float[] torque, ForceMode mode = ForceMode.Force)
+    public void AddTorque(Vector3 torque, ForceMode mode = ForceMode.Force)
     {
-        if (torque is null || torque.Length < 3)
-        {
-            return;
-        }
-
-        _accumulatedTorque[0] += torque[0];
-        _accumulatedTorque[1] += torque[1];
-        _accumulatedTorque[2] += torque[2];
+        _accumulatedTorque += torque;
     }
 
-    public void AddForceAtPosition(float[] force, float[] position, ForceMode mode = ForceMode.Force)
+    public void AddForceAtPosition(Vector3 force, Vector3 position, ForceMode mode = ForceMode.Force)
     {
         AddForce(force, mode);
 
-        if (position is null || position.Length < 3)
-        {
-            return;
-        }
-
-        var rx = position[0] - _position[0];
-        var ry = position[1] - _position[1];
-        var rz = position[2] - _position[2];
-
-        _accumulatedTorque[0] += ry * force[2] - rz * force[1];
-        _accumulatedTorque[1] += rz * force[0] - rx * force[2];
-        _accumulatedTorque[2] += rx * force[1] - ry * force[0];
+        var r = position - _position;
+        _accumulatedTorque += Vector3.Cross(r, force);
     }
 
     #endregion
@@ -161,27 +131,23 @@ public sealed class RigidBody : IRigidBody
         _colliders.Remove(collider);
     }
 
-    internal void Integrate(float delta, float[] gravity)
+    internal void Integrate(float delta, Vector3 gravity)
     {
         if (BodyType != RigidBodyType.Dynamic || IsKinematic)
         {
-            _accumulatedForce = [0f, 0f, 0f];
-            _accumulatedTorque = [0f, 0f, 0f];
+            _accumulatedForce = Vector3.Zero;
+            _accumulatedTorque = Vector3.Zero;
             return;
         }
 
         if (UseGravity && Mass > 0f)
         {
-            _velocity[0] += gravity[0] * delta;
-            _velocity[1] += gravity[1] * delta;
-            _velocity[2] += gravity[2] * delta;
+            _velocity += gravity * delta;
         }
 
         if (Mass > 0f)
         {
-            _velocity[0] += (_accumulatedForce[0] / Mass) * delta;
-            _velocity[1] += (_accumulatedForce[1] / Mass) * delta;
-            _velocity[2] += (_accumulatedForce[2] / Mass) * delta;
+            _velocity += (_accumulatedForce / Mass) * delta;
         }
 
         var dragFactor = 1f - Drag * delta;
@@ -191,16 +157,12 @@ public sealed class RigidBody : IRigidBody
             dragFactor = 0f;
         }
 
-        _velocity[0] *= dragFactor;
-        _velocity[1] *= dragFactor;
-        _velocity[2] *= dragFactor;
+        _velocity *= dragFactor;
 
-        _position[0] += _velocity[0] * delta;
-        _position[1] += _velocity[1] * delta;
-        _position[2] += _velocity[2] * delta;
+        _position += _velocity * delta;
 
-        _accumulatedForce = [0f, 0f, 0f];
-        _accumulatedTorque = [0f, 0f, 0f];
+        _accumulatedForce = Vector3.Zero;
+        _accumulatedTorque = Vector3.Zero;
     }
 
     #endregion

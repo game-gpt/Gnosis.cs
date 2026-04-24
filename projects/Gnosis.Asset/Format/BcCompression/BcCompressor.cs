@@ -169,7 +169,7 @@ public static class BcCompressor
     #region BC7 压缩
 
     /// <summary>
-    /// 将 RGBA 数据压缩为 BC7 格式（简化 Mode 6），每 4x4 像素块输出 16 字节
+    /// 将 RGBA 数据压缩为 BC7 格式（多模式择优：Mode 5 + Mode 6），每 4x4 像素块输出 16 字节
     /// </summary>
     public static byte[] CompressBc7(byte[] rgbaData, int width, int height)
     {
@@ -187,7 +187,7 @@ public static class BcCompressor
             for (int bx = 0; bx < blocksX; bx++)
             {
                 ExtractBlock(rgbaData, width, height, bx, by, block);
-                BcBlockEncoder.EncodeBc7Mode6Block(block, encoded);
+                Bc7Encoder.EncodeBc7Block(block, encoded);
 
                 int offset = (by * blocksX + bx) * 16;
                 encoded.CopyTo(output.AsSpan(offset, 16));

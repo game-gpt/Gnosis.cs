@@ -1,3 +1,5 @@
+using System.Numerics;
+using Gnosis.Core.Math;
 using Gnosis.Physics.Shape;
 
 namespace Gnosis.Physics.Collision;
@@ -10,9 +12,9 @@ public sealed class CollisionEvent : ICollisionEvent
 
     public ICollider OtherCollider { get; }
 
-    public float[] ContactPoint { get; }
+    public Vector3 ContactPoint { get; }
 
-    public float[] ContactNormal { get; }
+    public Vector3 ContactNormal { get; }
 
     public float PenetrationDepth { get; }
 
@@ -25,8 +27,8 @@ public sealed class CollisionEvent : ICollisionEvent
     public CollisionEvent(
         ICollider thisCollider,
         ICollider otherCollider,
-        float[] contactPoint,
-        float[] contactNormal,
+        Vector3 contactPoint,
+        Vector3 contactNormal,
         float penetrationDepth,
         float relativeVelocity)
     {

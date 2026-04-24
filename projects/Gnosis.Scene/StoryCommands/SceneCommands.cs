@@ -10,6 +10,13 @@ public sealed class SceneCommands : IStorySceneCommands
     #region 字段
 
     private readonly SceneStreamer _streamer;
+    private readonly SceneTransitionController _transition;
+
+    #endregion
+
+    #region 属性
+
+    public SceneTransitionController ActiveTransition => _transition;
 
     #endregion
 
@@ -18,6 +25,7 @@ public sealed class SceneCommands : IStorySceneCommands
     public SceneCommands(SceneStreamer streamer)
     {
         _streamer = streamer;
+        _transition = new SceneTransitionController();
     }
 
     #endregion
@@ -42,7 +50,19 @@ public sealed class SceneCommands : IStorySceneCommands
     /// </summary>
     public void SceneTransition(string type, float duration)
     {
-        var transitionType = type ?? "fade";
+        var transitionType = SceneTransitionController.ParseTransitionType(type ?? "fade");
+        _transition.Play(transitionType, duration);
+    }
+
+    /// <summary>
+    /// 更新过渡动画，每帧调用
+    /// </summary>
+    public void Update(float deltaTime)
+    {
+        if (_transition.IsPlaying)
+        {
+            _transition.Update(deltaTime);
+        }
     }
 
     #endregion

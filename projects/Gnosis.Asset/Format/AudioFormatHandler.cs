@@ -5,7 +5,7 @@ using NVorbis;
 namespace Gnosis.Asset.Format;
 
 /// <summary>
-/// 音频格式处理器，支持 WAV、MP3 及引擎格式的音频加载、保存和转换
+/// 音频格式处理器，支持 WAV、MP3、OGG/Vorbis 及引擎格式的音频加载、保存和转换
 /// </summary>
 public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
 {
@@ -49,7 +49,7 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
     }
 
     /// <summary>
-    /// 异步保存音频数据到文件，支持引擎格式和 WAV 格式
+    /// 异步保存音频数据到文件，支持引擎格式、WAV、MP3 和 OGG 格式
     /// </summary>
     public async Task SaveAudioAsync(string path, AudioData audio, CancellationToken cancellationToken = default)
     {
@@ -64,13 +64,19 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
             case ".wav":
                 await SaveWavAsync(path, audio, cancellationToken);
                 break;
+            case ".mp3":
+                await SaveMp3Async(path, audio, cancellationToken);
+                break;
+            case ".ogg":
+                await SaveOggAsync(path, audio, cancellationToken);
+                break;
             default:
                 throw new NotSupportedException($"不支持的导出格式：{extension}");
         }
     }
 
     /// <summary>
-    /// 异步转换音频编码格式，支持 PCM ↔ ADPCM 转换
+    /// 异步转换音频编码格式，支持 PCM ↔ ADPCM、PCM → MP3、PCM → Vorbis 转换
     /// </summary>
     public Task<AudioData> ConvertAsync(AudioData audio, AudioEncoding targetEncoding, CancellationToken cancellationToken = default)
     {
@@ -83,8 +89,8 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
         {
             AudioEncoding.PCM => ConvertToPcmAsync(audio, cancellationToken),
             AudioEncoding.ADPCM => ConvertToAdpcmAsync(audio, cancellationToken),
-            AudioEncoding.Vorbis => throw new NotSupportedException("Vorbis 编码需要外部编码器库支持"),
-            AudioEncoding.MP3 => throw new NotSupportedException("MP3 编码需要 NAudio.Lame NuGet 包支持"),
+            AudioEncoding.Vorbis => ConvertToVorbisAsync(audio, cancellationToken),
+            AudioEncoding.MP3 => ConvertToMp3Async(audio, cancellationToken),
             AudioEncoding.FLAC => throw new NotSupportedException("FLAC 编码需要专用编码库支持"),
             AudioEncoding.AAC => throw new NotSupportedException("AAC 编码暂不支持"),
             AudioEncoding.Opus => throw new NotSupportedException("Opus 编码暂不支持"),
@@ -253,6 +259,42 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
         await WriteAsync(path, wavData, null, cancellationToken);
     }
 
+    private async Task SaveMp3Async(string path, AudioData audio, CancellationToken cancellationToken)
+    {
+        var pcmAudio = audio.Encoding == AudioEncoding.PCM
+            ? audio
+            : await ConvertToPcmAsync(audio, cancellationToken);
+
+        var mp3Data = await Task.Run(() =>
+        {
+            var format = new WaveFormat(pcmAudio.SampleRate, pcmAudio.BitsPerSample, pcmAudio.Channels);
+            using var pcmStream = new RawSourceWaveStream(pcmAudio.RawData, 0, pcmAudio.RawData.Length, format);
+            using var ms = new MemoryStream();
+            using (var writer = new NAudio.Lame.LameMP3FileWriter(ms, format, NAudio.Lame.LAMEPreset.STANDARD))
+            {
+                pcmStream.CopyTo(writer);
+            }
+
+            return ms.ToArray();
+        }, cancellationToken);
+
+        await WriteAsync(path, mp3Data, null, cancellationToken);
+    }
+
+    private async Task SaveOggAsync(string path, AudioData audio, CancellationToken cancellationToken)
+    {
+        var pcmAudio = audio.Encoding == AudioEncoding.PCM
+            ? audio
+            : await ConvertToPcmAsync(audio, cancellationToken);
+
+        var oggData = await Task.Run(() =>
+        {
+            return VorbisEncoder.EncodePcmToOgg(pcmAudio.RawData, pcmAudio.SampleRate, pcmAudio.Channels, 0.5f);
+        }, cancellationToken);
+
+        await WriteAsync(path, oggData, null, cancellationToken);
+    }
+
     #endregion
 
     #region 转换方法
@@ -322,6 +364,64 @@ public class AudioFormatHandler : FormatHandlerBase, IAudioFormat
                 Compression = AudioCompression.None,
                 BitsPerSample = 16,
                 RawData = pcmData
+            };
+        }, cancellationToken);
+    }
+
+    private Task<AudioData> ConvertToMp3Async(AudioData audio, CancellationToken cancellationToken)
+    {
+        if (audio.Encoding != AudioEncoding.PCM)
+        {
+            throw new ArgumentException("只能将 PCM 格式转换为 MP3", nameof(audio));
+        }
+
+        if (audio.BitsPerSample != 16)
+        {
+            throw new ArgumentException("MP3 转换需要 16 位 PCM 输入", nameof(audio));
+        }
+
+        return Task.Run(() =>
+        {
+            var format = new WaveFormat(audio.SampleRate, 16, audio.Channels);
+            using var pcmStream = new RawSourceWaveStream(audio.RawData, 0, audio.RawData.Length, format);
+            using var ms = new MemoryStream();
+            using (var writer = new NAudio.Lame.LameMP3FileWriter(ms, format, NAudio.Lame.LAMEPreset.STANDARD))
+            {
+                pcmStream.CopyTo(writer);
+            }
+
+            var mp3Data = ms.ToArray();
+
+            return audio with
+            {
+                Encoding = AudioEncoding.MP3,
+                Compression = AudioCompression.Lossy,
+                RawData = mp3Data
+            };
+        }, cancellationToken);
+    }
+
+    private Task<AudioData> ConvertToVorbisAsync(AudioData audio, CancellationToken cancellationToken)
+    {
+        if (audio.Encoding != AudioEncoding.PCM)
+        {
+            throw new ArgumentException("只能将 PCM 格式转换为 Vorbis", nameof(audio));
+        }
+
+        if (audio.BitsPerSample != 16)
+        {
+            throw new ArgumentException("Vorbis 转换需要 16 位 PCM 输入", nameof(audio));
+        }
+
+        return Task.Run(() =>
+        {
+            var oggData = VorbisEncoder.EncodePcmToOgg(audio.RawData, audio.SampleRate, audio.Channels, 0.5f);
+
+            return audio with
+            {
+                Encoding = AudioEncoding.Vorbis,
+                Compression = AudioCompression.Lossy,
+                RawData = oggData
             };
         }, cancellationToken);
     }

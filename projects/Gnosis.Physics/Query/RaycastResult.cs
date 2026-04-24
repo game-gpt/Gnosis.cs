@@ -1,3 +1,5 @@
+using System.Numerics;
+using Gnosis.Core.Math;
 using Gnosis.Physics.Shape;
 
 namespace Gnosis.Physics.Query;
@@ -10,9 +12,9 @@ public sealed class RaycastResult : IRaycastResult
 
     public ICollider? Collider { get; }
 
-    public float[] Point { get; }
+    public Vector3 Point { get; }
 
-    public float[] Normal { get; }
+    public Vector3 Normal { get; }
 
     public float Distance { get; }
 
@@ -23,12 +25,12 @@ public sealed class RaycastResult : IRaycastResult
     public RaycastResult()
     {
         HasHit = false;
-        Point = [0f, 0f, 0f];
-        Normal = [0f, 1f, 0f];
+        Point = Vector3.Zero;
+        Normal = Vector3.UnitY;
         Distance = 0f;
     }
 
-    public RaycastResult(ICollider collider, float[] point, float[] normal, float distance)
+    public RaycastResult(ICollider collider, Vector3 point, Vector3 normal, float distance)
     {
         HasHit = true;
         Collider = collider;

@@ -1,3 +1,6 @@
+using System.Numerics;
+using Gnosis.Core.Math;
+
 namespace Gnosis.Physics.Dynamics;
 
 public class StubRigidBody : IRigidBody
@@ -9,22 +12,22 @@ public class StubRigidBody : IRigidBody
     public float AngularDrag { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
     public bool UseGravity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
     public bool IsKinematic { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
-    public float[] Velocity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
-    public float[] AngularVelocity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
-    public float[] Position { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
-    public float[] Rotation { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
+    public Vector3 Velocity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
+    public Vector3 AngularVelocity { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
+    public Vector3 Position { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
+    public Quaternion Rotation { get => throw new NotImplementedException("物理系统尚未实现"); set => throw new NotImplementedException("物理系统尚未实现"); }
 
-    public void AddForce(float[] force, ForceMode mode = ForceMode.Force)
+    public void AddForce(Vector3 force, ForceMode mode = ForceMode.Force)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }
 
-    public void AddForceAtPosition(float[] force, float[] position, ForceMode mode = ForceMode.Force)
+    public void AddForceAtPosition(Vector3 force, Vector3 position, ForceMode mode = ForceMode.Force)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }
 
-    public void AddTorque(float[] torque, ForceMode mode = ForceMode.Force)
+    public void AddTorque(Vector3 torque, ForceMode mode = ForceMode.Force)
     {
         throw new NotImplementedException("物理系统尚未实现");
     }

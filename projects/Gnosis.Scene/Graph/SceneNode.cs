@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Gnosis.Scene.Graph;
 
 public sealed class SceneNode : ISceneNode
@@ -6,6 +8,7 @@ public sealed class SceneNode : ISceneNode
 
     private readonly List<ISceneNode> _children = new();
     private readonly Dictionary<string, ISceneNode> _childrenByName = new();
+    private Vector2 _position;
 
     #endregion
 
@@ -16,6 +19,16 @@ public sealed class SceneNode : ISceneNode
     public ISceneNode? Parent { get; private set; }
 
     public IReadOnlyList<ISceneNode> Children => _children;
+
+    public Vector2 Position
+    {
+        get => _position;
+        set
+        {
+            _position = value;
+            IsDirty = true;
+        }
+    }
 
     public bool IsDirty { get; private set; }
 

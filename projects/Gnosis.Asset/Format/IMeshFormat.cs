@@ -58,4 +58,7 @@ public record MeshOptimizationOptions
     public bool GenerateTangents { get; init; }
     public bool Simplify { get; init; }
     public float SimplifyTarget { get; init; } = 0.5f;
+    public bool UseQemSimplification { get; init; } = true;
+    public bool DeduplicateVertices { get; init; }
+    public bool OptimizeUvLayout { get; init; }
 }

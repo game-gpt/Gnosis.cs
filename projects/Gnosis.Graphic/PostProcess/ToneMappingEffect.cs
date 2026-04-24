@@ -1,6 +1,4 @@
 using Gnosis.Graphic.RHI;
-using System.Numerics;
-using Gnosis.Core.Math;
 
 namespace Gnosis.Graphic.PostProcess;
 
@@ -38,6 +36,7 @@ public sealed class ToneMappingEffect : PostProcessEffect
     private IResource? _indexBuffer;
     private IResource? _sampler;
     private IResource? _parameterBuffer;
+    private IShaderProgram? _shaderProgram;
     private uint _currentWidth;
     private uint _currentHeight;
 
@@ -48,6 +47,15 @@ public sealed class ToneMappingEffect : PostProcessEffect
     public ToneMappingMode Mode { get; set; }
     public float Exposure { get; set; }
     public float WhitePoint { get; set; }
+
+    /// <summary>
+    /// 关联的着色器程序，需在外部设置后调用 RebuildPipeline
+    /// </summary>
+    public IShaderProgram? ShaderProgram
+    {
+        get => _shaderProgram;
+        set => _shaderProgram = value;
+    }
 
     #endregion
 
@@ -159,6 +167,31 @@ public sealed class ToneMappingEffect : PostProcessEffect
         commandTable.EndRenderPass();
     }
 
+    /// <summary>
+    /// 重建管线状态，在设置 ShaderProgram 后调用
+    /// </summary>
+    public void RebuildPipeline()
+    {
+        if (Device is null || _shaderProgram is null)
+        {
+            return;
+        }
+
+        _pipelineState?.Dispose();
+
+        _pipelineState = Device.CreatePipelineState(new PipelineStateDesc
+        {
+            Shader = _shaderProgram,
+            Topology = PrimitiveTopology.TriangleList,
+            BlendMode = BlendMode.None,
+            DepthTest = false,
+            DepthWrite = false,
+            CullMode = CullMode.None,
+            ColorAttachmentCount = 1,
+            ColorFormats = [ResourceFormat.R16G16B16A16Float]
+        });
+    }
+
     #endregion
 
     #region 私有方法
@@ -170,7 +203,6 @@ public sealed class ToneMappingEffect : PostProcessEffect
             return;
         }
 
-        // 全屏四边形顶点数据（位置 + UV）
         float[] vertices =
         [
             -1.0f, -1.0f, 0.0f, 0.0f,
@@ -183,7 +215,7 @@ public sealed class ToneMappingEffect : PostProcessEffect
         {
             Size = (ulong)(vertices.Length * sizeof(float)),
             Usage = BufferUsage.VertexBuffer | BufferUsage.TransferDst,
-            MemoryType = MemoryType.GpuLocal
+            DeviceLocal = true
         });
 
         uint[] indices = [0, 1, 2, 0, 2, 3];
@@ -192,7 +224,7 @@ public sealed class ToneMappingEffect : PostProcessEffect
         {
             Size = (ulong)(indices.Length * sizeof(uint)),
             Usage = BufferUsage.IndexBuffer | BufferUsage.TransferDst,
-            MemoryType = MemoryType.GpuLocal
+            DeviceLocal = true
         });
     }
 
@@ -224,7 +256,7 @@ public sealed class ToneMappingEffect : PostProcessEffect
         {
             Size = 256,
             Usage = BufferUsage.UniformBuffer | BufferUsage.TransferDst,
-            MemoryType = MemoryType.GpuLocal
+            DeviceLocal = true
         });
     }
 
@@ -237,7 +269,6 @@ public sealed class ToneMappingEffect : PostProcessEffect
 
         _renderPass?.Dispose();
         _framebuffer?.Dispose();
-        _pipelineState?.Dispose();
         _descriptorSet?.Dispose();
 
         _renderPass = Device.CreateRenderPass(new RenderPassDesc
@@ -262,21 +293,19 @@ public sealed class ToneMappingEffect : PostProcessEffect
             ]
         });
 
-        // 注意：这里需要 outputTexture 作为附件，但 outputTexture 在 Execute 时才传入
-        // 因此我们在 Execute 中动态创建 framebuffer 或采用其他方式
-        // 为简化实现，这里先创建基础资源，实际 framebuffer 在 Execute 中重建
-
         _descriptorSet = Device.CreateDescriptorSet(
         [
             new DescriptorSetBinding
             {
                 Binding = BindingInputTexture,
-                DescriptorType = DescriptorType.CombinedImageSampler
+                DescriptorType = DescriptorType.CombinedImageSampler,
+                StageFlags = ShaderStageFlag.Fragment
             },
             new DescriptorSetBinding
             {
                 Binding = BindingParameters,
-                DescriptorType = DescriptorType.UniformBuffer
+                DescriptorType = DescriptorType.UniformBuffer,
+                StageFlags = ShaderStageFlag.Fragment
             }
         ]);
     }

@@ -462,6 +462,110 @@ public sealed class SvgToSdfConverter
                         break;
                     }
 
+                case SvgPathCommandType.SmoothCurveTo:
+                    {
+                        float cp1X, cp1Y;
+                        if (IsCubicCommand(lastCommand))
+                        {
+                            cp1X = 2f * currentX - lastControlX;
+                            cp1Y = 2f * currentY - lastControlY;
+                        }
+                        else
+                        {
+                            cp1X = currentX;
+                            cp1Y = currentY;
+                        }
+
+                        var cp2X = cmd.Arguments[0];
+                        var cp2Y = cmd.Arguments[1];
+                        var endX = cmd.Arguments[2];
+                        var endY = cmd.Arguments[3];
+                        var dist = CubicBezierDistance(px, py, currentX, currentY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+                        if (dist < minDist) minDist = dist;
+                        lastControlX = cp2X;
+                        lastControlY = cp2Y;
+                        currentX = endX;
+                        currentY = endY;
+                        break;
+                    }
+
+                case SvgPathCommandType.RelativeSmoothCurveTo:
+                    {
+                        float cp1X, cp1Y;
+                        if (IsCubicCommand(lastCommand))
+                        {
+                            cp1X = 2f * currentX - lastControlX;
+                            cp1Y = 2f * currentY - lastControlY;
+                        }
+                        else
+                        {
+                            cp1X = currentX;
+                            cp1Y = currentY;
+                        }
+
+                        var cp2X = currentX + cmd.Arguments[0];
+                        var cp2Y = currentY + cmd.Arguments[1];
+                        var endX = currentX + cmd.Arguments[2];
+                        var endY = currentY + cmd.Arguments[3];
+                        var dist = CubicBezierDistance(px, py, currentX, currentY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+                        if (dist < minDist) minDist = dist;
+                        lastControlX = cp2X;
+                        lastControlY = cp2Y;
+                        currentX = endX;
+                        currentY = endY;
+                        break;
+                    }
+
+                case SvgPathCommandType.SmoothQuadraticCurveTo:
+                    {
+                        float cpX, cpY;
+                        if (IsQuadraticCommand(lastCommand))
+                        {
+                            cpX = 2f * currentX - lastControlX;
+                            cpY = 2f * currentY - lastControlY;
+                        }
+                        else
+                        {
+                            cpX = currentX;
+                            cpY = currentY;
+                        }
+
+                        var endX = cmd.Arguments[0];
+                        var endY = cmd.Arguments[1];
+                        var dist = QuadraticBezierDistance(px, py, currentX, currentY, cpX, cpY, endX, endY);
+                        if (dist < minDist) minDist = dist;
+                        lastControlX = cpX;
+                        lastControlY = cpY;
+                        currentX = endX;
+                        currentY = endY;
+                        break;
+                    }
+
+                case SvgPathCommandType.RelativeSmoothQuadraticCurveTo:
+                    {
+                        float cpX, cpY;
+                        if (IsQuadraticCommand(lastCommand))
+                        {
+                            cpX = 2f * currentX - lastControlX;
+                            cpY = 2f * currentY - lastControlY;
+                        }
+                        else
+                        {
+                            cpX = currentX;
+                            cpY = currentY;
+                        }
+
+                        var endX = currentX + cmd.Arguments[0];
+                        var endY = currentY + cmd.Arguments[1];
+                        var dist = QuadraticBezierDistance(px, py, currentX, currentY, cpX, cpY, endX, endY);
+                        if (dist < minDist) minDist = dist;
+                        lastControlX = cpX;
+                        lastControlY = cpY;
+                        currentX = endX;
+                        currentY = endY;
+                        break;
+                    }
+
                 case SvgPathCommandType.ArcTo:
                     {
                         var dist = ArcDistance(px, py, currentX, currentY,
@@ -502,6 +606,22 @@ public sealed class SvgToSdfConverter
         }
 
         return minDist;
+    }
+
+    private static bool IsCubicCommand(SvgPathCommandType type)
+    {
+        return type is SvgPathCommandType.CurveTo
+            or SvgPathCommandType.RelativeCurveTo
+            or SvgPathCommandType.SmoothCurveTo
+            or SvgPathCommandType.RelativeSmoothCurveTo;
+    }
+
+    private static bool IsQuadraticCommand(SvgPathCommandType type)
+    {
+        return type is SvgPathCommandType.QuadraticCurveTo
+            or SvgPathCommandType.RelativeQuadraticCurveTo
+            or SvgPathCommandType.SmoothQuadraticCurveTo
+            or SvgPathCommandType.RelativeSmoothQuadraticCurveTo;
     }
 
     private static float PolygonDistance(float px, float py, SvgPolygonElement polygon)

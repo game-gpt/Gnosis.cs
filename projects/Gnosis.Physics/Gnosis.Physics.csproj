@@ -19,4 +19,8 @@
         <Compile Remove="Collision\ColliderComponent.cs" />
         <Compile Remove="Dynamics\RigidBodyComponent.cs" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+    </ItemGroup>
 </Project>

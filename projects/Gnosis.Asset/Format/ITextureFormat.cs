@@ -6,6 +6,7 @@ public interface ITextureFormat : IFormatHandler
     Task SaveTextureAsync(string path, TextureData texture, CancellationToken cancellationToken = default);
     Task<TextureData> ResizeAsync(TextureData texture, int width, int height, CancellationToken cancellationToken = default);
     Task<TextureData> CompressAsync(TextureData texture, TextureCompressionFormat format, CancellationToken cancellationToken = default);
+    Task<TextureData> GenerateMipmapsAsync(TextureData texture, ResizeFilter filter = ResizeFilter.Lanczos3, CancellationToken cancellationToken = default);
 }
 
 public record TextureData

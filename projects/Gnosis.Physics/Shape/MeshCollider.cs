@@ -1,3 +1,6 @@
+using System.Numerics;
+using Gnosis.Core.Math;
+
 namespace Gnosis.Physics.Shape;
 
 public sealed class MeshCollider : IMeshCollider
@@ -10,9 +13,9 @@ public sealed class MeshCollider : IMeshCollider
 
     public IPhysicsMaterial? Material { get; set; }
 
-    public float[] Center { get; set; } = [0f, 0f, 0f];
+    public Vector3 Center { get; set; } = Vector3.Zero;
 
-    public float[] Size { get; set; } = [1f, 1f, 1f];
+    public Vector3 Size { get; set; } = Vector3.One;
 
     public string MeshPath { get; set; } = "";
 

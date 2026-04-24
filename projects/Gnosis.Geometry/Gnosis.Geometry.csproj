@@ -14,4 +14,7 @@
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+    </ItemGroup>
 </Project>

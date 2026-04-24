@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Gnosis.Audio.Listener;
 
 public sealed class AudioListener : IAudioListener
@@ -6,11 +8,11 @@ public sealed class AudioListener : IAudioListener
 
     public float Volume { get; set; } = 1.0f;
 
-    public float[] Position { get; set; } = [0f, 0f, 0f];
+    public Vector3 Position { get; set; } = Vector3.Zero;
 
-    public float[] Forward { get; set; } = [0f, 0f, -1f];
+    public Vector3 Forward { get; set; } = -Vector3.UnitZ;
 
-    public float[] Up { get; set; } = [0f, 1f, 0f];
+    public Vector3 Up { get; set; } = Vector3.UnitY;
 
     #endregion
 }

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Acorn.Dxil.Data;
+using Gnosis.Graphic.Shader.Dxil;
 using Gnosis.IR.Shader;
 
 namespace Gnosis.Graphic.Shader;
@@ -16,6 +18,8 @@ public class ShaderFormatHandler : IShaderFormat
     private static readonly IReadOnlyList<string> _supportedExtensions = [".shader", ".ggs"];
 
     private IShaderCompiler? _compiler;
+
+    private readonly DxilGenerator _dxilGenerator = new();
 
     #endregion
 
@@ -57,6 +61,14 @@ public class ShaderFormatHandler : IShaderFormat
         {
             var module = _compiler.Compile(shader.SourceCode, shader.Name, new ShaderCompileOptions());
             return Task.FromResult(module.Bytecode);
+        }
+
+        if (target == ShaderTarget.Dxil && shader.Language == ShaderLanguage.Valkyrie)
+        {
+            var module = _compiler.Compile(shader.SourceCode, shader.Name, new ShaderCompileOptions());
+            var shaderModel = DxilShaderModelKind.Pixel;
+            var dxilBytecode = _dxilGenerator.Generate(module.Bytecode, shaderModel);
+            return Task.FromResult(dxilBytecode);
         }
 
         throw new NotSupportedException($"不支持的编译目标或着色器语言：目标={target}，语言={shader.Language}");

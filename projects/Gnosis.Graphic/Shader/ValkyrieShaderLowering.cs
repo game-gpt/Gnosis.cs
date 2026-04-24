@@ -11,6 +11,8 @@ internal sealed class ValkyrieShaderLowering
     private readonly ShaderCompileOptions _options;
     private readonly Dictionary<string, ShaderIrType> _types = new();
     private uint _nextResultId = 1;
+    private uint _nextDescriptorSet = 0;
+    private uint _nextBinding = 0;
 
     #endregion
 
@@ -90,19 +92,19 @@ internal sealed class ValkyrieShaderLowering
                         i = ParseShaderStage(tokens, ref i, shaderName, ShaderExecutionModel.GLCompute, module);
                         break;
                     case "uniform":
-                        i = SkipToEndOfStatement(tokens, ref i);
+                        i = ParseUniformDecl(tokens, ref i, module);
                         break;
                     case "varying":
-                        i = SkipToEndOfStatement(tokens, ref i);
+                        i = ParseVaryingDecl(tokens, ref i, module);
                         break;
                     case "cbuffer":
-                        i = SkipBlock(tokens, ref i);
+                        i = ParseCBufferDecl(tokens, ref i, module);
                         break;
                     case "texture":
-                        i = SkipToEndOfStatement(tokens, ref i);
+                        i = ParseTextureDecl(tokens, ref i, module);
                         break;
                     case "sampler":
-                        i = SkipToEndOfStatement(tokens, ref i);
+                        i = ParseSamplerDecl(tokens, ref i, module);
                         break;
                     default:
                         i++;
@@ -217,6 +219,287 @@ internal sealed class ValkyrieShaderLowering
 
         module.Structs.Add(structIr);
         _types[structName] = new ShaderIrType.StructType(structName, fields);
+
+        return i;
+    }
+
+    private int ParseUniformDecl(IReadOnlyList<GreenLeafNode> tokens, ref int i, ShaderModuleIr module)
+    {
+        i++;
+
+        if (i >= tokens.Count) return i;
+        var name = tokens[i].Text;
+        i++;
+
+        ShaderIrType type = ShaderIrType.Float32;
+        if (i < tokens.Count && tokens[i].Text == ":")
+        {
+            i++;
+            if (i < tokens.Count)
+            {
+                type = ResolveType(tokens[i].Text);
+                i++;
+            }
+        }
+
+        uint descriptorSet = _nextDescriptorSet;
+        uint binding = _nextBinding++;
+
+        if (i < tokens.Count && tokens[i].Text == "@")
+        {
+            i++;
+            if (i < tokens.Count && tokens[i].Text == "binding")
+            {
+                i++;
+                if (i < tokens.Count && tokens[i].Text == "(")
+                {
+                    i++;
+                    if (i < tokens.Count)
+                    {
+                        if (uint.TryParse(tokens[i].Text, out var ds))
+                        {
+                            descriptorSet = ds;
+                            i++;
+                        }
+                    }
+                    if (i < tokens.Count && tokens[i].Text == ",")
+                    {
+                        i++;
+                        if (i < tokens.Count)
+                        {
+                            if (uint.TryParse(tokens[i].Text, out var b))
+                            {
+                                binding = b;
+                                i++;
+                            }
+                        }
+                    }
+                    if (i < tokens.Count && tokens[i].Text == ")") i++;
+                }
+            }
+        }
+
+        if (i < tokens.Count && tokens[i].Text == ";") i++;
+
+        var kind = type is ShaderIrType.SamplerType
+            ? ShaderResourceKind.Sampler
+            : ShaderResourceKind.UniformBuffer;
+
+        module.Resources.Add(new ShaderResourceIr
+        {
+            Name = name,
+            Kind = kind,
+            Type = type,
+            DescriptorSet = descriptorSet,
+            Binding = binding
+        });
+
+        return i;
+    }
+
+    private int ParseVaryingDecl(IReadOnlyList<GreenLeafNode> tokens, ref int i, ShaderModuleIr module)
+    {
+        i++;
+
+        if (i >= tokens.Count) return i;
+        var name = tokens[i].Text;
+        i++;
+
+        ShaderIrType type = ShaderIrType.Vec4();
+        if (i < tokens.Count && tokens[i].Text == ":")
+        {
+            i++;
+            if (i < tokens.Count)
+            {
+                type = ResolveType(tokens[i].Text);
+                i++;
+            }
+        }
+
+        if (i < tokens.Count && tokens[i].Text == ";") i++;
+
+        module.Resources.Add(new ShaderResourceIr
+        {
+            Name = name,
+            Kind = ShaderResourceKind.InputAttachment,
+            Type = type,
+            DescriptorSet = 0,
+            Binding = _nextBinding++
+        });
+
+        return i;
+    }
+
+    private int ParseCBufferDecl(IReadOnlyList<GreenLeafNode> tokens, ref int i, ShaderModuleIr module)
+    {
+        i++;
+
+        if (i >= tokens.Count) return i;
+        var bufferName = tokens[i].Text;
+        i++;
+
+        uint descriptorSet = _nextDescriptorSet;
+        uint binding = _nextBinding++;
+
+        if (i < tokens.Count && tokens[i].Text == "@")
+        {
+            i++;
+            if (i < tokens.Count && tokens[i].Text == "binding")
+            {
+                i++;
+                if (i < tokens.Count && tokens[i].Text == "(")
+                {
+                    i++;
+                    if (i < tokens.Count)
+                    {
+                        if (uint.TryParse(tokens[i].Text, out var ds))
+                        {
+                            descriptorSet = ds;
+                            i++;
+                        }
+                    }
+                    if (i < tokens.Count && tokens[i].Text == ",")
+                    {
+                        i++;
+                        if (i < tokens.Count)
+                        {
+                            if (uint.TryParse(tokens[i].Text, out var b))
+                            {
+                                binding = b;
+                                i++;
+                            }
+                        }
+                    }
+                    if (i < tokens.Count && tokens[i].Text == ")") i++;
+                }
+            }
+        }
+
+        var fields = new List<ShaderStructFieldIr>();
+        uint offset = 0;
+
+        if (i < tokens.Count && tokens[i].Text == "{")
+        {
+            i++;
+
+            while (i < tokens.Count && tokens[i].Text != "}")
+            {
+                if (tokens[i].Kind == ValkyrieNodeKind.Identifier)
+                {
+                    var fieldName = tokens[i].Text;
+                    i++;
+
+                    if (i < tokens.Count && tokens[i].Text == ":")
+                    {
+                        i++;
+                        if (i < tokens.Count)
+                        {
+                            var fieldType = ResolveType(tokens[i].Text);
+                            fields.Add(new ShaderStructFieldIr
+                            {
+                                Name = fieldName,
+                                Type = fieldType,
+                                Offset = offset
+                            });
+                            offset += (uint)fieldType.GetScalarSize();
+                            i++;
+                        }
+                    }
+
+                    if (i < tokens.Count && tokens[i].Text == ";") i++;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+
+            if (i < tokens.Count && tokens[i].Text == "}") i++;
+        }
+
+        if (i < tokens.Count && tokens[i].Text == ";") i++;
+
+        var structIr = new ShaderStructIr
+        {
+            Name = bufferName
+        };
+        foreach (var field in fields)
+        {
+            structIr.Fields.Add(field);
+        }
+        module.Structs.Add(structIr);
+
+        _types[bufferName] = new ShaderIrType.StructType(bufferName, fields);
+
+        module.Resources.Add(new ShaderResourceIr
+        {
+            Name = bufferName,
+            Kind = ShaderResourceKind.UniformBuffer,
+            Type = _types[bufferName],
+            DescriptorSet = descriptorSet,
+            Binding = binding
+        });
+
+        return i;
+    }
+
+    private int ParseTextureDecl(IReadOnlyList<GreenLeafNode> tokens, ref int i, ShaderModuleIr module)
+    {
+        i++;
+
+        if (i >= tokens.Count) return i;
+        var name = tokens[i].Text;
+        i++;
+
+        ShaderIrType type = new ShaderIrType.SamplerType();
+        if (i < tokens.Count && tokens[i].Text == ":")
+        {
+            i++;
+            if (i < tokens.Count)
+            {
+                type = ResolveType(tokens[i].Text);
+                i++;
+            }
+        }
+
+        uint descriptorSet = _nextDescriptorSet;
+        uint binding = _nextBinding++;
+
+        if (i < tokens.Count && tokens[i].Text == ";") i++;
+
+        module.Resources.Add(new ShaderResourceIr
+        {
+            Name = name,
+            Kind = ShaderResourceKind.SampledImage,
+            Type = type,
+            DescriptorSet = descriptorSet,
+            Binding = binding
+        });
+
+        return i;
+    }
+
+    private int ParseSamplerDecl(IReadOnlyList<GreenLeafNode> tokens, ref int i, ShaderModuleIr module)
+    {
+        i++;
+
+        if (i >= tokens.Count) return i;
+        var name = tokens[i].Text;
+        i++;
+
+        uint descriptorSet = _nextDescriptorSet;
+        uint binding = _nextBinding++;
+
+        if (i < tokens.Count && tokens[i].Text == ";") i++;
+
+        module.Resources.Add(new ShaderResourceIr
+        {
+            Name = name,
+            Kind = ShaderResourceKind.Sampler,
+            Type = new ShaderIrType.SamplerType(),
+            DescriptorSet = descriptorSet,
+            Binding = binding
+        });
 
         return i;
     }

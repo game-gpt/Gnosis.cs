@@ -68,6 +68,11 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
         var vertices = mesh.Vertices.ToList();
         var indices = mesh.Indices.ToList();
 
+        if (options.DeduplicateVertices)
+        {
+            (vertices, indices) = VertexDeduplicator.Deduplicate(vertices, indices);
+        }
+
         if (options.GenerateNormals)
         {
             vertices = GenerateNormalsForVertices(vertices, indices);
@@ -80,9 +85,16 @@ public class MeshFormatHandler : FormatHandlerBase, IMeshFormat
 
         if (options.Simplify)
         {
-            var (newVertices, newIndices) = EdgeCollapser.Simplify(vertices, indices, options.SimplifyTarget);
+            var (newVertices, newIndices) = options.UseQemSimplification
+                ? QemSimplifier.Simplify(vertices, indices, options.SimplifyTarget)
+                : EdgeCollapser.Simplify(vertices, indices, options.SimplifyTarget);
             vertices = newVertices;
             indices = newIndices;
+        }
+
+        if (options.OptimizeUvLayout)
+        {
+            vertices = UvOptimizer.PackUvCharts(vertices, indices);
         }
 
         if (options.OptimizeIndices)

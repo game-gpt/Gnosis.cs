@@ -1,3 +1,4 @@
+using System.Numerics;
 using Gnosis.Core.Math;
 
 namespace Gnosis.Physics.Dynamics;

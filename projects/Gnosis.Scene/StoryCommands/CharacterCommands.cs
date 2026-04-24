@@ -1,3 +1,4 @@
+using System.Numerics;
 using Gnosis.Core.StoryCommands;
 using Gnosis.Runtime.Interop;
 using Gnosis.Runtime.VM;
@@ -7,10 +8,26 @@ namespace Gnosis.Scene.StoryCommands;
 
 public sealed class CharacterCommands : IStoryCharacterCommands
 {
+    #region 常量
+
+    private const float ScreenWidth = 1920f;
+    private const float ScreenHeight = 1080f;
+
+    #endregion
+
     #region 字段
 
     private readonly SceneGraph _sceneGraph;
     private readonly Dictionary<string, ISceneNode> _characterNodes = new();
+
+    private static readonly Dictionary<string, Vector2> NamedPositions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "left", new Vector2(ScreenWidth * 0.25f, ScreenHeight * 0.5f) },
+        { "center", new Vector2(ScreenWidth * 0.5f, ScreenHeight * 0.5f) },
+        { "right", new Vector2(ScreenWidth * 0.75f, ScreenHeight * 0.5f) },
+        { "far-left", new Vector2(ScreenWidth * 0.1f, ScreenHeight * 0.5f) },
+        { "far-right", new Vector2(ScreenWidth * 0.9f, ScreenHeight * 0.5f) }
+    };
 
     #endregion
 
@@ -38,6 +55,7 @@ public sealed class CharacterCommands : IStoryCharacterCommands
         if (!_characterNodes.ContainsKey(name))
         {
             var node = new SceneNode(name);
+            node.Position = ResolvePosition(position);
             _sceneGraph.Root.AddChild(node);
             _characterNodes[name] = node;
         }
@@ -79,7 +97,7 @@ public sealed class CharacterCommands : IStoryCharacterCommands
 
         if (_characterNodes.TryGetValue(name, out var node))
         {
-            node.MarkDirty();
+            node.Position = ResolvePosition(targetPosition);
         }
     }
 
@@ -116,6 +134,15 @@ public sealed class CharacterCommands : IStoryCharacterCommands
 
         MoveCharacter(name ?? "", targetPosition, duration);
         return null;
+    }
+
+    #endregion
+
+    #region 私有方法
+
+    private static Vector2 ResolvePosition(string position)
+    {
+        return NamedPositions.TryGetValue(position, out var pos) ? pos : NamedPositions["center"];
     }
 
     #endregion

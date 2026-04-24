@@ -10,8 +10,8 @@
         <RootNamespace>Gnosis.Graphic</RootNamespace>
         <Version>0.0.1</Version>
         <Authors>Gnosis Engine Team</Authors>
-        <Description>Gnosis Graphic - 跨平台渲染系统，包含 RHI、着色器、材质、光照、视觉特效</Description>
-        <PackageTags>gnosis;game-engine;graphic;rendering;rhi;shader;material;lighting;vfx</PackageTags>
+        <Description>Gnosis Graphic - 跨平台渲染系统，包含 RHI、着色器、材质、光照、视觉特效、天空、地形、植被</Description>
+        <PackageTags>gnosis;game-engine;graphic;rendering;rhi;shader;material;lighting;vfx;sky;terrain;foliage</PackageTags>
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
@@ -20,8 +20,19 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.Runtime\Gnosis.Runtime.csproj" />
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
         <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.SpirV\SpirV.csproj" />
+        <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Dxil\Acorn.Dxil.csproj" />
+        <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Llvm\LLVM.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Valkyrie\Oak.Valkyrie.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Gnosis.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="shaders\**\*.shader" />
     </ItemGroup>
 
     <ItemGroup>
@@ -31,13 +42,10 @@
         <Compile Remove="RHI\ITransform.cs" />
         <Compile Remove="Light\LightComponent.cs" />
         <Compile Remove="Shader\NeuralShaderBackend.cs" />
-        <Compile Remove="FX\ParticleSystemComponent.cs" />
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
         <Compile Remove="RHI\Software\SoftwareDevice.cs" />
         <Compile Remove="StoryCommands\EffectCommands.cs" />
-        <Compile Remove="Compute\ComputeDispatcher.cs" />
         <Compile Remove="Pipeline\ClusteredRenderer.cs" />
-        <Compile Remove="PostProcess\ToneMappingEffect.cs" />
     </ItemGroup>
 </Project>

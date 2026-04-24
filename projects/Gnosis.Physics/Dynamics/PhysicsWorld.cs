@@ -1,3 +1,5 @@
+using System.Numerics;
+using Gnosis.Core.Math;
 using Gnosis.Physics.Query;
 using Gnosis.Physics.Shape;
 
@@ -16,7 +18,7 @@ public sealed class PhysicsWorld : IPhysicsWorld
 
     public float FixedDeltaTime { get; set; } = 1f / 60f;
 
-    public float[] Gravity { get; set; } = [0f, -9.81f, 0f];
+    public Vector3 Gravity { get; set; } = new(0f, -9.81f, 0f);
 
     public int BodyCount => _bodies.Count;
 
@@ -78,22 +80,22 @@ public sealed class PhysicsWorld : IPhysicsWorld
         }
     }
 
-    public IRaycastResult Raycast(float[] origin, float[] direction, float maxDistance)
+    public IRaycastResult Raycast(Vector3 origin, Vector3 direction, float maxDistance)
     {
         return new RaycastResult();
     }
 
-    public IRaycastResult[] RaycastAll(float[] origin, float[] direction, float maxDistance)
+    public IRaycastResult[] RaycastAll(Vector3 origin, Vector3 direction, float maxDistance)
     {
         return [];
     }
 
-    public IOverlapResult OverlapSphere(float[] center, float radius)
+    public IOverlapResult OverlapSphere(Vector3 center, float radius)
     {
         return new OverlapResult();
     }
 
-    public IOverlapResult OverlapBox(float[] center, float[] halfExtents)
+    public IOverlapResult OverlapBox(Vector3 center, Vector3 halfExtents)
     {
         return new OverlapResult();
     }

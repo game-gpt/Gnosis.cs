@@ -644,6 +644,783 @@ micro vs_ui(input: UIVertex, [Material] mat: UIMaterial) -> vec4 {
 
 通过这种清晰的分层，gg 引擎既能保证编辑器 **Widget** 的复杂交互逻辑易于编写（类 React 声明式），又能确保运行时 **游戏 UI** 的渲染性能达到 3A 级标准。
 
+## 布局系统规范
+
+GGWidget 布局系统基于 **Measure-Arrange 两遍布局协议**，与 Flutter/WPF 的布局模型一致。所有布局容器均为模板中的元素标签，通过属性配置布局行为。
+
+### 布局容器一览
+
+| 容器标签 | 布局模型 | 说明 |
+| :--- | :--- | :--- |
+| `Flex` | Flexbox | 弹性盒布局，最通用的布局容器 |
+| `HBox` | Flex (Row) | 水平排列语法糖 |
+| `VBox` | Flex (Column) | 垂直排列语法糖 |
+| `Grid` | CSS Grid | 行列网格布局，支持附加属性 |
+| `Dock` | Dock | 停靠布局，类似 WPF DockPanel |
+| `Stack` | 层叠 | 所有子元素从同一原点排列 |
+| `Wrap` | 流式换行 | 子元素超出主轴空间时自动换行 |
+| `ClipRect` | 裁剪 | 裁剪子元素溢出内容 |
+| `Flexible` | 弹性子项 | 在 Flex 中按比例分配剩余空间 |
+| `Expanded` | 扩展子项 | Flexible 的 Tight 变体，填满剩余空间 |
+
+### Flex 布局
+
+`Flex` 是最核心的布局容器，对应 CSS Flexbox 模型。`HBox` 和 `VBox` 是其语法糖。
+
+```vue
+<template>
+  <!-- 水平弹性布局 -->
+  <Flex direction="row" main-align="space-between" cross-align="center" spacing="8">
+    <Text>左侧</Text>
+    <Text>右侧</Text>
+  </Flex>
+
+  <!-- HBox = Flex direction="row" -->
+  <HBox spacing="4">
+    <Text>A</Text>
+    <Text>B</Text>
+  </HBox>
+
+  <!-- VBox = Flex direction="column" -->
+  <VBox spacing="4">
+    <Text>A</Text>
+    <Text>B</Text>
+  </VBox>
+</template>
+```
+
+#### Flex 属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `direction` | `row` \| `column` \| `row-reverse` \| `column-reverse` | `row` | 主轴方向 |
+| `main-align` | `start` \| `center` \| `end` \| `space-between` \| `space-around` \| `space-evenly` | `start` | 主轴对齐 |
+| `cross-align` | `start` \| `center` \| `end` \| `stretch` | `start` | 交叉轴对齐 |
+| `spacing` | `float` | `0` | 子元素间距 |
+| `wrap` | `no-wrap` \| `wrap` \| `wrap-reverse` | `no-wrap` | 换行模式 |
+
+#### Flexible / Expanded
+
+在 Flex 容器内，`Flexible` 和 `Expanded` 子元素按 `flex` 权重分配剩余空间：
+
+```vue
+<template>
+  <HBox>
+    <Text>固定宽度</Text>
+    <Expanded flex="1">
+      <Text>占据剩余空间</Text>
+    </Expanded>
+    <Expanded flex="2">
+      <Text>占据 2/3 剩余空间</Text>
+    </Expanded>
+  </HBox>
+</template>
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `flex` | `int` | `1` | 弹性权重 |
+
+> `Expanded` 等价于 `Flexible` 的 `fit="tight"` 模式，强制填满分配空间；`Flexible` 默认 `fit="loose"`，子元素可以小于分配空间。
+
+### Grid 布局
+
+`Grid` 提供行列网格布局，支持附加属性定位子元素。
+
+```vue
+<template>
+  <Grid
+    rows="auto 1* 200px"
+    columns="1* 2*"
+    row-spacing="4"
+    column-spacing="8"
+  >
+    <Text row="0" column="0">第 1 行第 1 列</Text>
+    <Text row="0" column="1">第 1 行第 2 列</Text>
+    <Text row="1" column="0" row-span="1" column-span="2">跨两列</Text>
+    <Text row="2" column="0">固定高度行</Text>
+  </Grid>
+</template>
+```
+
+#### Grid 行列定义语法
+
+`rows` 和 `columns` 属性使用空格分隔的尺寸列表，每个尺寸支持三种单位：
+
+| 语法 | 单位类型 | 说明 |
+| :--- | :--- | :--- |
+| `auto` | Auto | 根据子元素内容自动确定尺寸 |
+| `N*` | Star | 按比例分配剩余空间（如 `1*`、`2*`） |
+| `Npx` | Pixel | 固定像素尺寸（如 `200px`） |
+
+示例：`rows="auto 1* 200px"` 表示第一行自适应、第二行按比例、第三行固定 200px。
+
+#### Grid 附加属性
+
+附加属性以元素属性形式写在子元素上：
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `row` | `int` | `0` | 所在行索引 |
+| `column` | `int` | `0` | 所在列索引 |
+| `row-span` | `int` | `1` | 行跨越数 |
+| `column-span` | `int` | `1` | 列跨越数 |
+
+### Dock 布局
+
+`Dock` 布局将子元素停靠在容器的上/下/左/右边缘，最后一个子元素默认填充剩余空间。
+
+```vue
+<template>
+  <Dock>
+    <HBox dock="top" height="40">顶部工具栏</HBox>
+    <VBox dock="left" width="200">左侧面板</VBox>
+    <VBox dock="right" width="200">右侧面板</VBox>
+    <VBox dock="bottom" height="24">底部状态栏</VBox>
+    <VBox dock="fill">主内容区域</VBox>
+  </Dock>
+</template>
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `dock` | `top` \| `bottom` \| `left` \| `right` \| `fill` | `fill` | 停靠位置 |
+
+> 布局顺序：Top → Bottom → Left → Right → Fill。Top/Bottom 消耗高度，Left/Right 消耗剩余宽度，Fill 占据所有剩余空间。
+
+### Stack 布局
+
+`Stack` 是层叠布局，所有子元素从同一原点排列，后添加的子元素覆盖先添加的。子元素可通过 `left`/`top` 属性偏移位置。
+
+```vue
+<template>
+  <Stack>
+    <Image src="background.png" />
+    <Text left="10" top="20">叠加文字</Text>
+  </Stack>
+</template>
+```
+
+### Wrap 布局
+
+`Wrap` 是流式换行布局，子元素沿主轴排列，超出可用空间时自动换行。
+
+```vue
+<template>
+  <Wrap direction="horizontal" spacing="8" run-spacing="4">
+    <Text>标签1</Text>
+    <Text>标签2</Text>
+    <Text>标签3</Text>
+  </Wrap>
+</template>
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `direction` | `horizontal` \| `vertical` | `horizontal` | 排列方向 |
+| `spacing` | `float` | `0` | 同行元素间距 |
+| `run-spacing` | `float` | `0` | 行间间距 |
+
+### ClipRect
+
+`ClipRect` 裁剪容器，将子元素内容限制在容器边界内。
+
+```vue
+<template>
+  <ClipRect width="200" height="100">
+    <ScrollView>
+      <Text>很长的内容...</Text>
+    </ScrollView>
+  </ClipRect>
+</template>
+```
+
+### 通用盒模型属性
+
+所有布局容器和控件均支持以下盒模型属性：
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `margin` | `EdgeInsets` | `0` | 外边距 |
+| `padding` | `EdgeInsets` | `0` | 内边距 |
+| `border` | `EdgeInsets` | `0` | 边框宽度 |
+| `border-color` | `Color` | `transparent` | 边框颜色 |
+| `width` | `float?` | `null` | 显式宽度 |
+| `height` | `float?` | `null` | 显式高度 |
+| `min-width` | `float` | `0` | 最小宽度 |
+| `min-height` | `float` | `0` | 最小高度 |
+| `max-width` | `float` | `Infinity` | 最大宽度 |
+| `max-height` | `float` | `Infinity` | 最大高度 |
+| `background` | `Color` | `transparent` | 背景色 |
+| `foreground` | `Color` | `white` | 前景色 |
+| `visibility` | `visible` \| `hidden` \| `collapsed` | `visible` | 可见性 |
+| `id` | `string?` | `null` | 元素标识（用于样式选择器 `#id`） |
+| `class` | `string?` | `null` | 样式类名（用于样式选择器 `.class`） |
+
+#### EdgeInsets 语法
+
+`margin`/`padding`/`border` 支持 CSS 风格的简写语法：
+
+| 写法 | 含义 |
+| :--- | :--- |
+| `"8"` | 四边均为 8 |
+| `"8 16"` | 上下 8，左右 16 |
+| `"4 8 12 16"` | 上 4、右 8、下 12、左 16 |
+
+## 样式系统规范
+
+GGWidget 样式系统采用 **SCSS 兼容语法**，在 `<style>` 块中声明样式规则。样式系统由 `Oak.Scss` 解析器提供解析支持，由 `Gnosis.Widget.Style` 运行时提供匹配和应用能力。
+
+### `<style>` 块语法
+
+```vue
+<template>
+  <VBox class="container">
+    <Text class="title">标题</Text>
+    <Text class="subtitle">副标题</Text>
+  </VBox>
+</template>
+
+<style>
+.container {
+  background: var(--surface);
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text);
+  opacity: 0.6;
+}
+</style>
+```
+
+### 选择器
+
+GGWidget 支持以下选择器类型，与 CSS/SCSS 选择器语义一致：
+
+| 选择器 | 语法 | 说明 | 示例 |
+| :--- | :--- | :--- | :--- |
+| 类型选择器 | `TypeName` | 按元素类型匹配 | `Button { ... }` |
+| ID 选择器 | `#id` | 按元素 ID 匹配 | `#main-panel { ... }` |
+| 类选择器 | `.class` | 按样式类名匹配 | `.container { ... }` |
+| 伪类选择器 | `:pseudo` | 按交互状态匹配 | `:hover { ... }` |
+| 父引用选择器 | `&` | SCSS 嵌套中引用父选择器 | `&:hover { ... }` |
+
+#### 支持的伪类
+
+| 伪类 | 说明 |
+| :--- | :--- |
+| `:hover` | 鼠标悬停 |
+| `:pressed` | 鼠标按下 |
+| `:focus` | 获得焦点 |
+| `:disabled` | 控件禁用 |
+
+### SCSS 嵌套
+
+`<style>` 块支持 SCSS 风格的嵌套规则，使用 `&` 引用父选择器：
+
+```vue
+<style>
+.panel {
+  background: var(--surface);
+  padding: 16px;
+
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  &:hover {
+    background: var(--hover-overlay);
+  }
+
+  &:pressed {
+    background: var(--pressed-overlay);
+  }
+}
+</style>
+```
+
+### 特异性与优先级
+
+样式匹配遵循 CSS 特异性算法：
+
+```
+特异性 = (ID 选择器数 << 16) | (类选择器数 + 伪类选择器数 << 8) | 类型选择器数
+```
+
+优先级从高到低：
+1. `!important` 声明
+2. 高特异性规则
+3. 同特异性下后定义的规则覆盖先定义的
+4. 内联 `style` 属性（最高优先级）
+
+### CSS 属性映射
+
+GGWidget 支持的 CSS 属性及其映射到 Widget 属性的对应关系：
+
+| CSS 属性 | Widget 属性 | 值类型 |
+| :--- | :--- | :--- |
+| `background` / `background-color` | `Background` | Color |
+| `foreground` / `color` | `Foreground` | Color |
+| `border-color` | `BorderColor` | Color |
+| `margin` | `Margin` | EdgeInsets |
+| `padding` | `Padding` | EdgeInsets |
+| `border` | `Border` | EdgeInsets |
+| `width` | `Width` | float |
+| `height` | `Height` | float |
+| `min-width` | `MinWidth` | float |
+| `min-height` | `MinHeight` | float |
+| `max-width` | `MaxWidth` | float |
+| `max-height` | `MaxHeight` | float |
+| `visibility` | `Visibility` | `visible` \| `hidden` \| `collapsed` |
+
+### 主题变量
+
+GGWidget 支持通过 CSS 变量语法引用主题值，实现暗色/亮色主题切换：
+
+```vue
+<style>
+.panel {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.button {
+  background: var(--primary);
+  color: white;
+}
+</style>
+```
+
+#### 内置主题变量
+
+| 变量 | 说明 |
+| :--- | :--- |
+| `--surface` | 表面色 |
+| `--background` | 背景色 |
+| `--border` | 边框色 |
+| `--text` | 文本色 |
+| `--primary` | 主色调 |
+| `--accent` | 强调色 |
+| `--error` | 错误色 |
+| `--warning` | 警告色 |
+| `--success` | 成功色 |
+| `--hover-overlay` | 悬停叠加色 |
+| `--pressed-overlay` | 按下叠加色 |
+| `--selection` | 选中色 |
+
+变量引用支持两种前缀：`var(--name)` 和 `$name`，两者等价。
+
+### 颜色值语法
+
+| 语法 | 说明 | 示例 |
+| :--- | :--- | :--- |
+| `#RGB` | 3 位十六进制 | `#F00` |
+| `#RGBA` | 4 位十六进制 | `#F00F` |
+| `#RRGGBB` | 6 位十六进制 | `#FF0000` |
+| `#RRGGBBAA` | 8 位十六进制 | `#FF0000FF` |
+| `rgb(r, g, b)` | RGB 函数 | `rgb(255, 0, 0)` |
+| `rgba(r, g, b, a)` | RGBA 函数 | `rgba(255, 0, 0, 0.5)` |
+| 命名颜色 | 预定义颜色名 | `red`, `blue`, `transparent` |
+| `var(--name)` | 主题变量引用 | `var(--primary)` |
+
+### 内联 style 属性
+
+除 `<style>` 块外，元素还支持 Tailwind 风格的内联 `style` 属性：
+
+```vue
+<template>
+  <VBox style="bg-white p-4 rounded shadow">
+    <Text style="text-2xl font-bold">标题</Text>
+    <Button style="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+      按钮
+    </Button>
+  </VBox>
+</template>
+```
+
+内联 `style` 属性的优先级高于 `<style>` 块中的规则。动态绑定使用 `:style` 语法：
+
+```vue
+<template>
+  <VBox :style="isActive ? 'bg-blue-500 text-white' : 'bg-gray-200'">
+    内容
+  </VBox>
+</template>
+```
+
+## 数据绑定规范
+
+GGWidget 数据绑定系统提供声明式的响应式数据流，基于 `Observable`/`Computed`/`DataBinding` 运行时基础设施。
+
+### 响应式状态
+
+#### `ref` — 可变响应式引用
+
+在 `<script setup>` 中使用 `ref` 创建响应式状态：
+
+```vue
+<script setup>
+let count: f64 = 0
+let name: string = "Alice"
+let items: Array<string> = []
+let isVisible: bool = true
+</script>
+```
+
+> GGWidget 中 `<script setup>` 块的顶层变量声明自动成为响应式状态（等价于 Vue 的 `ref`），变量变更时自动触发 UI 更新。
+
+#### `computed` — 派生计算属性
+
+计算属性根据依赖自动更新：
+
+```vue
+<script setup>
+let firstName: string = "Alice"
+let lastName: string = "Smith"
+
+let fullName: string = $"{firstName} {lastName}"
+let itemCount: i32 = items.length
+</script>
+```
+
+> 计算属性通过表达式依赖追踪实现，当 `firstName` 或 `lastName` 变更时，`fullName` 自动重新计算。
+
+### 绑定模式
+
+GGWidget 支持三种绑定模式：
+
+| 模式 | 语法 | 说明 |
+| :--- | :--- | :--- |
+| 单向绑定 | `:prop="expr"` | 源 → 目标，源变更时更新目标 |
+| 双向绑定 | `::prop="expr"` | 源 ↔ 目标，任一变更同步另一 |
+| 一次性绑定 | `:prop="expr"` (once) | 仅初始化时绑定一次 |
+
+### 模板插值
+
+使用 `{{ expression }}` 在文本中进行插值：
+
+```vue
+<template>
+  <Text>当前计数：{{ count }}</Text>
+  <Text>全名：{{ fullName }}</Text>
+</template>
+```
+
+### 属性绑定
+
+使用 `:attr` 前缀将表达式绑定到元素属性：
+
+```vue
+<template>
+  <!-- 单向绑定 -->
+  <Text :foreground="isActive ? green : gray">状态文本</Text>
+  <Image :src="imageUrl" />
+  <VBox :visibility="isVisible ? visible : collapsed">内容</VBox>
+
+  <!-- 动态样式绑定 -->
+  <Button :style="isActive ? 'bg-blue-500 text-white' : 'bg-gray-200'">
+    按钮
+  </Button>
+</template>
+```
+
+### 双向绑定
+
+使用 `::attr` 前缀实现双向绑定，常用于表单控件：
+
+```vue
+<script setup>
+let username: string = ""
+let volume: f64 = 50.0
+let isEnabled: bool = true
+</script>
+
+<template>
+  <!-- 文本输入双向绑定 -->
+  <TextBox ::text="username" placeholder="请输入用户名" />
+
+  <!-- 滑块双向绑定 -->
+  <Slider ::value="volume" minimum="0" maximum="100" />
+
+  <!-- 复选框双向绑定 -->
+  <CheckBox ::is-checked="isEnabled" label="启用" />
+
+  <!-- 显示绑定值 -->
+  <Text>用户名：{{ username }}</Text>
+  <Text>音量：{{ volume }}</Text>
+</template>
+```
+
+双向绑定的语义：
+- **源 → 目标**：当脚本变量变更时，更新控件属性
+- **目标 → 源**：当控件属性变更时（用户输入），更新脚本变量
+
+### 命令绑定
+
+命令绑定将用户交互映射到脚本函数，使用 `@event` 前缀：
+
+```vue
+<script setup>
+let count: f64 = 0
+
+fn increment() {
+  count = count + 1
+}
+
+fn decrement() {
+  count = count - 1
+}
+
+fn reset() {
+  count = 0
+}
+</script>
+
+<template>
+  <HBox spacing="8">
+    <Button @click="decrement">-</Button>
+    <Text>{{ count }}</Text>
+    <Button @click="increment">+</Button>
+    <Button @click="reset">重置</Button>
+  </HBox>
+</template>
+```
+
+命令绑定支持传递参数：
+
+```vue
+<script setup>
+fn selectTab(index: i32) {
+  currentTab = index
+}
+</script>
+
+<template>
+  <HBox>
+    <Button @click="selectTab(0)">首页</Button>
+    <Button @click="selectTab(1)">设置</Button>
+    <Button @click="selectTab(2)">关于</Button>
+  </HBox>
+</template>
+```
+
+### ViewModel 模式
+
+对于复杂组件，可使用 ViewModel 封装状态和逻辑：
+
+```vue
+<script setup>
+let viewModel = ViewModel {
+  count: Observable(0),
+  step: Observable(1),
+  computedCount: Computed(() => viewModel.count * 2)
+}
+
+fn increment() {
+  viewModel.count = viewModel.count + viewModel.step
+}
+</script>
+
+<template>
+  <VBox>
+    <Text>计数：{{ viewModel.count }}</Text>
+    <Text>双倍：{{ viewModel.computedCount }}</Text>
+    <Button @click="increment">+{{ viewModel.step }}</Button>
+  </VBox>
+</template>
+```
+
+## 事件系统规范
+
+GGWidget 事件系统提供类型安全的事件处理，支持冒泡路由和直接路由两种策略。
+
+### 事件绑定
+
+使用 `@event` 前缀在模板中绑定事件处理器：
+
+```vue
+<template>
+  <Button @click="handleClick">点击</Button>
+  <TextBox @input="handleInput" @keydown="handleKey" />
+  <ScrollView @wheel="handleWheel" />
+</template>
+```
+
+### 事件类型
+
+GGWidget 定义以下事件类型，对应运行时 `WidgetEventArgs` 体系：
+
+| 事件名 | 事件参数类型 | 说明 |
+| :--- | :--- | :--- |
+| `@click` | `MouseEventArgs` | 鼠标点击 |
+| `@mousedown` | `MouseEventArgs` | 鼠标按下 |
+| `@mouseup` | `MouseEventArgs` | 鼠标释放 |
+| `@mousemove` | `MouseEventArgs` | 鼠标移动 |
+| `@mouseenter` | `MouseEventArgs` | 鼠标进入元素 |
+| `@mouseleave` | `MouseEventArgs` | 鼠标离开元素 |
+| `@wheel` | `WheelEventArgs` | 滚轮滚动 |
+| `@keydown` | `KeyEventArgs` | 键盘按下 |
+| `@keyup` | `KeyEventArgs` | 键盘释放 |
+| `@input` | `TextInputEventArgs` | 文本输入 |
+| `@focus` | `FocusEventArgs` | 获得焦点 |
+| `@blur` | `FocusEventArgs` | 失去焦点 |
+
+### 事件参数
+
+#### MouseEventArgs
+
+| 属性 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `x` | `f64` | 鼠标 X 坐标（相对元素） |
+| `y` | `f64` | 鼠标 Y 坐标（相对元素） |
+| `button` | `none` \| `left` \| `middle` \| `right` | 鼠标按键 |
+| `click_count` | `i32` | 点击次数（双击=2） |
+| `delta_x` | `f64` | X 方向移动量 |
+| `delta_y` | `f64` | Y 方向移动量 |
+
+#### KeyEventArgs
+
+| 属性 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `key` | `Key` 枚举 | 按键标识 |
+| `modifiers` | `none` \| `shift` \| `ctrl` \| `alt` | 修饰键 |
+| `is_repeat` | `bool` | 是否重复按键 |
+
+#### TextInputEventArgs
+
+| 属性 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `text` | `string` | 输入的文本 |
+
+#### WheelEventArgs
+
+| 属性 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `x` | `f64` | 鼠标 X 坐标 |
+| `y` | `f64` | 鼠标 Y 坐标 |
+| `delta` | `f64` | 滚轮滚动量 |
+
+#### FocusEventArgs
+
+| 属性 | 类型 | 说明 |
+| :--- | :--- | :--- |
+| `old_focus` | `WidgetElement?` | 原焦点元素 |
+| `new_focus` | `WidgetElement?` | 新焦点元素 |
+
+### 事件路由
+
+GGWidget 支持两种事件路由策略：
+
+| 路由策略 | 说明 | 使用场景 |
+| :--- | :--- | :--- |
+| **冒泡路由** (Bubble) | 从目标元素向父元素逐级派发 | 大多数交互事件（click、mousedown 等） |
+| **直接路由** (Direct) | 仅派发给目标元素 | 焦点事件、特定控件事件 |
+
+冒泡路由可通过设置 `event.handled = true` 中断传播：
+
+```vue
+<script setup>
+fn handleInnerClick(event: MouseEventArgs) {
+  event.handled = true
+}
+
+fn handleOuterClick(event: MouseEventArgs) {
+}
+</script>
+
+<template>
+  <VBox @click="handleOuterClick">
+    <Button @click="handleInnerClick">内部按钮</Button>
+  </VBox>
+</template>
+```
+
+### 焦点管理
+
+GGWidget 提供内置的焦点管理系统：
+
+```vue
+<script setup>
+fn handleTab(event: KeyEventArgs) {
+  if (event.key == Key.Tab) {
+    event.handled = true
+  }
+}
+</script>
+
+<template>
+  <VBox>
+    <TextBox :is-focusable="true" @keydown="handleTab" />
+    <TextBox :is-focusable="true" />
+    <Button :is-focusable="true">提交</Button>
+  </VBox>
+</template>
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `is-focusable` | `bool` | `false` | 是否可接收焦点 |
+| `is-focused` | `bool` | `false` | 当前是否聚焦（只读） |
+| `is-enabled` | `bool` | `true` | 是否启用（禁用时跳过焦点和事件） |
+
+Tab 键导航按 DOM 顺序在可聚焦元素间移动焦点。
+
+### 拖拽事件
+
+GGWidget 通过鼠标事件组合实现拖拽交互：
+
+```vue
+<script setup>
+let isDragging: bool = false
+let dragOffsetX: f64 = 0
+let dragOffsetY: f64 = 0
+let posX: f64 = 100
+let posY: f64 = 100
+
+fn onDragStart(event: MouseEventArgs) {
+  isDragging = true
+  dragOffsetX = event.x
+  dragOffsetY = event.y
+}
+
+fn onDragMove(event: MouseEventArgs) {
+  if isDragging {
+    posX = posX + event.delta_x
+    posY = posY + event.delta_y
+  }
+}
+
+fn onDragEnd(event: MouseEventArgs) {
+  isDragging = false
+}
+</script>
+
+<template>
+  <Stack>
+    <VBox
+      :left="posX" :top="posY"
+      @mousedown="onDragStart"
+      @mousemove="onDragMove"
+      @mouseup="onDragEnd"
+    >
+      <Text>可拖拽面板</Text>
+    </VBox>
+  </Stack>
+</template>
+```
+
 ## 下一步
 
 - 阅读 [编辑器架构](../development/editor.md) 了解 Widget 在编辑器中的使用
