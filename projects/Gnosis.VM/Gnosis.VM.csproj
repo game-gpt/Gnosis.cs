@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RootNamespace>Gnosis.VM</RootNamespace>
+        <PackageId>Gnosis.VM</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Gnosis Team</Authors>
+        <Description>Gnosis game VM prototype based on Game dialect</Description>
+        <PackageTags>gnosis vm game ecs</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\NyarVM.cs\projects\Nyar.Core\Nyar.Core.csproj"/>
+        <ProjectReference Include="..\..\..\NyarVM.cs\projects\Nyar.Dialect.Core\Nyar.Dialect.Core.csproj"/>
+        <ProjectReference Include="..\..\..\NyarVM.cs\projects\Nyar.Dialect.Game\Nyar.Dialect.Game.csproj"/>
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj"/>
+    </ItemGroup>
+
+</Project>

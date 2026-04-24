@@ -63,9 +63,10 @@ public sealed class HistoryBatchWriter
             {
                 var key = GnosisDatabaseCore.DatabaseKey.FromString($"{_keyPrefix}{entry.Sequence:D20}");
                 var value = GnosisDatabaseCore.DatabaseValue.FromObject(entry);
-                await _database.PutAsync(key, value, ct);
+                await tx.PutAsync(key, value, ct);
             }
 
+            await tx.CommitAsync(ct);
             _pendingEntries.Clear();
         }
         finally

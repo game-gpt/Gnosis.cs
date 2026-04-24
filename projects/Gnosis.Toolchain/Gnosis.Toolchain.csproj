@@ -16,7 +16,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="ShaderCompiler\ShaderCompiler.cs" />
         <Compile Remove="ShaderCompiler\ShaderGenerator\**" />
     </ItemGroup>
 
@@ -28,6 +27,7 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
+        <ProjectReference Include="..\Gnosis.Graphic\Gnosis.Graphic.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak\Oak.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Valkyrie\Oak.Valkyrie.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Von\Oak.Von.csproj" />

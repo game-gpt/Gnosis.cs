@@ -43,32 +43,33 @@ internal sealed unsafe class OpenGLDescriptorSet : IRhiDescriptorSet
             return;
         }
 
-        if (size == sizeof(float))
+        int loc = (int)binding;
+        if (size == (ulong)sizeof(float))
         {
-            GlNative.Uniform1f!((int)binding, *(float*)data);
+            GlNative.Uniform1f!(loc, *(float*)data);
         }
-        else if (size == sizeof(Vector2))
+        else if (size == (ulong)sizeof(Vector2))
         {
             var v = (Vector2*)data;
-            GlNative.Uniform2f!((int)binding, v->X, v->Y);
+            GlNative.Uniform2f!(loc, v->X, v->Y);
         }
-        else if (size == sizeof(Vector3))
+        else if (size == (ulong)sizeof(Vector3))
         {
             var v = (Vector3*)data;
-            GlNative.Uniform3f!((int)binding, v->X, v->Y, v->Z);
+            GlNative.Uniform3f!(loc, v->X, v->Y, v->Z);
         }
-        else if (size == sizeof(Vector4))
+        else if (size == (ulong)sizeof(Vector4))
         {
             var v = (Vector4*)data;
-            GlNative.Uniform4f!((int)binding, v->X, v->Y, v->Z, v->W);
+            GlNative.Uniform4f!(loc, v->X, v->Y, v->Z, v->W);
         }
-        else if (size == sizeof(Matrix4x4))
+        else if (size == (ulong)sizeof(Matrix4x4))
         {
-            GlNative.UniformMatrix4fv!((int)binding, 1, false, (float*)data);
+            GlNative.UniformMatrix4fv!(loc, 1, false, (float*)data);
         }
-        else if (size == sizeof(int))
+        else if (size == (ulong)sizeof(int))
         {
-            GlNative.Uniform1i!((int)binding, *(int*)data);
+            GlNative.Uniform1i!(loc, *(int*)data);
         }
     }
 

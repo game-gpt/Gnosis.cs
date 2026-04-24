@@ -1,8 +1,5 @@
 namespace Gnosis.IR.Shader;
 
-/// <summary>
-/// 局部变量指令定义
-/// </summary>
 public sealed class LocalVariableInstruction
 {
     #region Properties
@@ -10,6 +7,10 @@ public sealed class LocalVariableInstruction
     public string Name { get; set; } = string.Empty;
 
     public ShaderIrType Type { get; set; } = ShaderIrType.Void;
+
+    public ShaderIrType ResultType { get; set; } = ShaderIrType.Void;
+
+    public uint ResultId { get; set; }
 
     public int StackOffset { get; set; }
 

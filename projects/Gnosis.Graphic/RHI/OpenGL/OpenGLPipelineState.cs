@@ -41,7 +41,7 @@ internal sealed class OpenGLPipelineState : IPipelineState
             var shaderRes = _desc.ShaderResources[0] as OpenGLResource;
             if (shaderRes?.GlProgram != 0)
             {
-                GlNative.UseProgram!(shaderRes.GlProgram);
+                GlNative.UseProgram!(shaderRes!.GlProgram);
             }
         }
 
@@ -108,7 +108,7 @@ internal sealed class OpenGLPipelineState : IPipelineState
     {
         switch (mode)
         {
-            case BlendMode.AlphaBlend:
+            case BlendMode.Alpha:
                 GlNative.BlendFunc!(GlConstants.GL_SRC_ALPHA, GlConstants.GL_ONE_MINUS_SRC_ALPHA);
                 break;
             case BlendMode.Additive:
@@ -117,8 +117,8 @@ internal sealed class OpenGLPipelineState : IPipelineState
             case BlendMode.Multiply:
                 GlNative.BlendFunc!(GlConstants.GL_DST_COLOR, GlConstants.GL_ZERO);
                 break;
-            case BlendMode.Premultiplied:
-                GlNative.BlendFunc!(GlConstants.GL_ONE, GlConstants.GL_ONE_MINUS_SRC_ALPHA);
+            case BlendMode.Screen:
+                GlNative.BlendFunc!(GlConstants.GL_ONE, GlConstants.GL_ONE_MINUS_SRC_COLOR);
                 break;
             default:
                 GlNative.BlendFunc!(GlConstants.GL_SRC_ALPHA, GlConstants.GL_ONE_MINUS_SRC_ALPHA);

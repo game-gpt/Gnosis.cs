@@ -3,7 +3,7 @@ namespace Gnosis.IR.Shader;
 /// <summary>
 /// Shader IR 指令定义
 /// </summary>
-public sealed class ShaderIrInstruction
+public class ShaderIrInstruction
 {
     #region Properties
 

@@ -58,9 +58,9 @@ public class ShaderCompiler : IShaderCompiler
         var evaluator = new MetaLanguageEvaluator(macroTable);
         ast = evaluator.Evaluate(ast, new ChannelMacros());
 
-        var semanticAnalyzer = new ShaderSemanticAnalyzer(_diagnostics);
         if (ast is CompilationUnit unit)
         {
+            var semanticAnalyzer = new ShaderSemanticAnalyzer(_diagnostics);
             ast = semanticAnalyzer.Analyze(unit);
         }
 

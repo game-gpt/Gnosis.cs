@@ -56,10 +56,7 @@ public sealed class CascadedShadowMap : IDisposable
     {
         var cascadeSplits = ComputeCascadeSplits(nearPlane, farPlane);
 
-        var lightDir = new Vector3(
-            light.Direction[0],
-            light.Direction[1],
-            light.Direction[2]);
+        var lightDir = light.Direction;
 
         if (lightDir.LengthSquared() > 0.0001f)
         {

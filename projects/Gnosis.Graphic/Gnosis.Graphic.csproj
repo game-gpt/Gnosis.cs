@@ -35,7 +35,6 @@
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
         <Compile Remove="RHI\Software\SoftwareDevice.cs" />
-        <Compile Remove="RHI\DeviceFactory.cs" />
         <Compile Remove="Shader\ShaderIrOpCode.cs" />
         <Compile Remove="Shader\Spirv\**" />
         <Compile Remove="StoryCommands\EffectCommands.cs" />

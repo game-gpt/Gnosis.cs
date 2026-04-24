@@ -1,3 +1,4 @@
+using System.Numerics;
 using Gnosis.Graphic.RHI;
 
 namespace Gnosis.Graphic.Light;
@@ -12,7 +13,7 @@ public sealed class LightSystem
     private readonly List<ISpotLight> _spotLights;
     private readonly List<IAreaLight> _areaLights;
     private readonly Dictionary<string, ILight> _lightsByName;
-    private float[] _ambientColor;
+    private Vector3 _ambientColor;
     private float _ambientIntensity;
 
     #endregion
@@ -25,7 +26,7 @@ public sealed class LightSystem
     public IReadOnlyList<ISpotLight> SpotLights => _spotLights;
     public IReadOnlyList<IAreaLight> AreaLights => _areaLights;
     public int LightCount => _lights.Count;
-    public float[] AmbientColor
+    public Vector3 AmbientColor
     {
         get => _ambientColor;
         set => _ambientColor = value;
@@ -48,7 +49,7 @@ public sealed class LightSystem
         _spotLights = [];
         _areaLights = [];
         _lightsByName = [];
-        _ambientColor = [0.1f, 0.1f, 0.1f];
+        _ambientColor = new Vector3(0.1f, 0.1f, 0.1f);
         _ambientIntensity = 1.0f;
     }
 
@@ -195,7 +196,7 @@ public sealed class LightSystem
     {
         var data = new LightData
         {
-            Color = light.Color,
+            Color = new Vector3(light.Color.X, light.Color.Y, light.Color.Z),
             Intensity = light.Intensity,
             Type = (int)light.Type,
             CastShadows = light.CastShadows ? 1 : 0,
@@ -242,7 +243,7 @@ public sealed class LightSystem
 
 public struct LightData
 {
-    public float[] Color;
+    public Vector3 Color;
     public float Intensity;
     public int Type;
     public int CastShadows;
@@ -250,8 +251,8 @@ public struct LightData
     public float ShadowBias;
     public float ShadowNormalBias;
     public int ShadowResolution;
-    public float[] Position;
-    public float[] Direction;
+    public Vector3 Position;
+    public Vector3 Direction;
     public float Range;
     public float Attenuation;
     public int CascadeCount;

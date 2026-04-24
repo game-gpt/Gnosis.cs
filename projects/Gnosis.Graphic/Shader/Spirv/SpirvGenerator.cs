@@ -3,13 +3,6 @@ using Gnosis.IR.Shader;
 
 namespace Gnosis.Graphic.Shader.Spirv;
 
-/// <summary>
-///     SPIR-V 生成器，将着色器 IR 编译为 SPIR-V 二进制数据。
-/// </summary>
-/// <remarks>
-///     本生成器使用 Acorn.Spirv 的 <see cref="SpirvConstants" /> 和 <see cref="SpirvOpCode" /> 常量，
-///     遵循架构规则：二进制编解码常量由 Acorn 独占。
-/// </remarks>
 public sealed class SpirvGenerator
 {
     #region Fields
@@ -82,7 +75,7 @@ public sealed class SpirvGenerator
             for (var i = 0; i < structIr.Fields.Count; i++)
             {
                 _builder.AddMemberName(structId, (uint)i, structIr.Fields[i].Name);
-                _builder.AddMemberDecorate(structId, (uint)i, SpirvConstants.Decoration.Offset, structIr.Fields[i].Offset);
+                _builder.AddMemberDecorate(structId, (uint)i, SpirvConstants.Decoration.Offset, [structIr.Fields[i].Offset]);
             }
         }
     }
@@ -96,8 +89,9 @@ public sealed class SpirvGenerator
         foreach (var global in globals)
         {
             var typeId = MapType(global.Type);
-            var ptrTypeId = _typeCache.GetPointerType(typeId, MapStorageClass(global.Storage));
-            var varId = _builder.AddVariable(ptrTypeId, MapStorageClass(global.Storage));
+            var storageClass = MapStorageClass(global.Storage);
+            var ptrTypeId = _typeCache.GetPointerType(storageClass, typeId);
+            var varId = _builder.AddVariable(ptrTypeId, storageClass);
             _builder.AddName(varId, global.Name);
             _variableIds[global.ResultId] = varId;
         }
@@ -139,7 +133,7 @@ public sealed class SpirvGenerator
         foreach (var local in function.LocalVariables)
         {
             var localTypeId = MapType(local.ResultType);
-            var ptrTypeId = _typeCache.GetPointerType(localTypeId, SpirvConstants.StorageClass.Function);
+            var ptrTypeId = _typeCache.GetPointerType(SpirvConstants.StorageClass.Function, localTypeId);
             var localVarId = _builder.AddVariable(ptrTypeId, SpirvConstants.StorageClass.Function);
             _builder.AddName(localVarId, local.Name);
             _variableIds[local.ResultId] = localVarId;
@@ -167,11 +161,7 @@ public sealed class SpirvGenerator
             }
 
             var execModel = MapExecutionModel(entry.ExecutionModel);
-            var interfaceIds = entry.InterfaceVariables
-                .Where(v => _variableIds.Values.Contains(_variableIds.Values.FirstOrDefault()))
-                .Select(v => _variableIds.Values.FirstOrDefault())
-                .Where(id => id != 0)
-                .ToArray();
+            var interfaceIds = _variableIds.Values.ToArray();
 
             _builder.AddEntryPoint(execModel, funcId, entry.FunctionName, interfaceIds);
 
@@ -201,19 +191,19 @@ public sealed class SpirvGenerator
 
             if (global.Location.HasValue)
             {
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.Location, global.Location.Value);
+                _builder.AddDecorate(varId, SpirvConstants.Decoration.Location, [global.Location.Value]);
             }
 
             if (global.Builtin != null)
             {
                 var builtinValue = MapBuiltin(global.Builtin);
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.BuiltIn, builtinValue);
+                _builder.AddDecorate(varId, SpirvConstants.Decoration.BuiltIn, [builtinValue]);
             }
 
             if (global.Resource != null)
             {
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.DescriptorSet, global.Resource.DescriptorSet);
-                _builder.AddDecorate(varId, SpirvConstants.Decoration.Binding, global.Resource.Binding);
+                _builder.AddDecorate(varId, SpirvConstants.Decoration.DescriptorSet, [global.Resource.DescriptorSet]);
+                _builder.AddDecorate(varId, SpirvConstants.Decoration.Binding, [global.Resource.Binding]);
 
                 if (global.Resource.Kind == ShaderResourceKind.UniformBuffer)
                 {
@@ -588,10 +578,10 @@ public sealed class SpirvGenerator
         ShaderIrType.VectorType v => _typeCache.GetVectorType(MapType(v.ElementType), (uint)v.ComponentCount),
         ShaderIrType.MatrixType m => _typeCache.GetMatrixType(_typeCache.GetVectorType(MapType(m.ElementType), (uint)m.RowCount), (uint)m.ColumnCount),
         ShaderIrType.StructType s => _typeCache.GetStructType(s.Fields.Select(f => MapType(f.Type)).ToArray(), s.Name),
-        ShaderIrType.ImageType img => _typeCache.GetImageType(MapType(img.SampledType), (uint)img.Dim),
+        ShaderIrType.ImageType img => _typeCache.GetImageType(MapType(img.SampledType), (uint)img.Dim, img.Depth, img.Arrayed, img.Ms, img.Sampled, img.ImageFormat),
         ShaderIrType.SamplerType => _typeCache.GetSamplerType(),
         ShaderIrType.SampledImageType si => _typeCache.GetSampledImageType(MapType(si.Image)),
-        ShaderIrType.PointerType p => _typeCache.GetPointerType(MapType(p.PointeeType), MapStorageClass(p.Storage)),
+        ShaderIrType.PointerType p => _typeCache.GetPointerType(MapStorageClass(p.Storage), MapType(p.PointeeType)),
         ShaderIrType.FunctionType fn => _typeCache.GetFunctionType(MapType(fn.ReturnType), fn.ParameterTypes.Select(MapType).ToArray()),
         ShaderIrType.AccelerationStructureType => _typeCache.GetAccelerationStructureType(),
         null => _typeCache.GetVoidType(),
