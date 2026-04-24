@@ -36,6 +36,16 @@ public sealed class VerseStoryRuntime
     public event Action<string, IReadOnlyList<string>>? OnMenuPresented;
 
     /// <summary>
+    /// 暂停事件
+    /// </summary>
+    public event Action<double>? OnPaused;
+
+    /// <summary>
+    /// 等待事件
+    /// </summary>
+    public event Action<double>? OnWaited;
+
+    /// <summary>
     /// 变量变更事件
     /// </summary>
     public event Action<string, object?>? OnVariableChanged;
@@ -196,6 +206,7 @@ public sealed class VerseStoryRuntime
     /// </summary>
     public void Pause(double duration)
     {
+        OnPaused?.Invoke(duration);
     }
 
     /// <summary>
@@ -203,6 +214,7 @@ public sealed class VerseStoryRuntime
     /// </summary>
     public void Wait(double duration)
     {
+        OnWaited?.Invoke(duration);
     }
 
     #endregion

@@ -258,6 +258,8 @@ public sealed class AssetBuildPipeline : IDisposable
                 => FormatType.Config,
             ".gnosis-asset"
                 => FormatType.Asset,
+            ".svg" or ".svgz" or ".gnosis-svg"
+                => FormatType.VectorGraphic,
             _ => FormatType.Unknown
         };
     }
