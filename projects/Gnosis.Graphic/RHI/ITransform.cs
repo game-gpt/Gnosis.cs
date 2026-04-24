@@ -1,3 +1,4 @@
+using System.Numerics;
 using Gnosis.Core.Event;
 using Gnosis.Core.Math;
 

@@ -19,7 +19,6 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.Asset\Gnosis.Asset.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
-        <ProjectReference Include="..\Gnosis.Toolchain\Gnosis.Toolchain.csproj" />
         <ProjectReference Include="..\Gnosis.Toolchain.AssetPipeline\Gnosis.Toolchain.AssetPipeline.csproj" />
     </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Gnosis.Graphic.Light;
 
 public sealed class PointLight : IPointLight
@@ -6,7 +8,7 @@ public sealed class PointLight : IPointLight
 
     public string Name { get; }
     public LightType Type => LightType.Point;
-    public float[] Color { get; set; }
+    public Vector3 Color { get; set; }
     public float Intensity { get; set; }
     public bool IsEnabled { get; set; }
     public bool CastShadows { get; set; }
@@ -15,7 +17,7 @@ public sealed class PointLight : IPointLight
     public float ShadowNormalBias { get; set; }
     public float ShadowNearPlane { get; set; }
     public int ShadowResolution { get; set; }
-    public float[] Position { get; set; }
+    public Vector3 Position { get; set; }
     public float Range { get; set; }
     public float Attenuation { get; set; }
 
@@ -26,7 +28,7 @@ public sealed class PointLight : IPointLight
     public PointLight(string name)
     {
         Name = name;
-        Color = [1.0f, 1.0f, 1.0f];
+        Color = new Vector3(1.0f, 1.0f, 1.0f);
         Intensity = 1.0f;
         IsEnabled = true;
         CastShadows = false;
@@ -35,7 +37,7 @@ public sealed class PointLight : IPointLight
         ShadowNormalBias = 0.01f;
         ShadowNearPlane = 0.1f;
         ShadowResolution = 1024;
-        Position = [0.0f, 0.0f, 0.0f];
+        Position = Vector3.Zero;
         Range = 10.0f;
         Attenuation = 1.0f;
     }

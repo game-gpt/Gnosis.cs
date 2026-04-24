@@ -6,7 +6,7 @@ public readonly record struct DatabaseEntry(DatabaseKey Key, DatabaseValue Value
 
     public bool IsEmpty => Key.IsEmpty && Value.IsEmpty;
 
-    public SolidDB.Core.SolidEntry ToSolidEntry() => new(Key, Value);
+    public LightDB.Core.LightEntry ToLightEntry() => new(Key, Value);
 
-    public static DatabaseEntry FromSolidEntry(SolidDB.Core.SolidEntry entry) => new(entry.Key, entry.Value);
+    public static DatabaseEntry FromLightEntry(LightDB.Core.LightEntry entry) => new(entry.Key, entry.Value);
 }

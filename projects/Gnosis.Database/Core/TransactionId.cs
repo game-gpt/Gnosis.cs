@@ -8,7 +8,7 @@ public readonly record struct TransactionId(ulong Value)
 
     private static ulong _counter;
 
-    public static implicit operator SolidDB.Core.TransactionId(TransactionId id) => new(id.Value);
+    public static implicit operator LightDB.Core.TransactionId(TransactionId id) => new(id.Value);
 
-    public static implicit operator TransactionId(SolidDB.Core.TransactionId id) => new(id.Value);
+    public static implicit operator TransactionId(LightDB.Core.TransactionId id) => new(id.Value);
 }

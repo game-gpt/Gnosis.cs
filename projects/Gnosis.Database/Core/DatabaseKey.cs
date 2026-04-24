@@ -1,17 +1,17 @@
-using SolidKeyInner = SolidDB.Core.SolidKey;
+using LightKeyInner = LightDB.Core.LightKey;
 
 namespace Gnosis.Database.Core;
 
 public readonly record struct DatabaseKey
 {
-    private readonly SolidKeyInner _inner;
+    private readonly LightKeyInner _inner;
 
     public DatabaseKey(ReadOnlyMemory<byte> bytes)
     {
-        _inner = new SolidKeyInner(bytes.ToArray());
+        _inner = new LightKeyInner(bytes.ToArray());
     }
 
-    public DatabaseKey(SolidKeyInner key)
+    public DatabaseKey(LightKeyInner key)
     {
         _inner = key;
     }
@@ -22,13 +22,13 @@ public readonly record struct DatabaseKey
 
     public bool IsEmpty => _inner.IsEmpty;
 
-    public static DatabaseKey Empty => new(SolidKeyInner.Empty);
+    public static DatabaseKey Empty => new(LightKeyInner.Empty);
 
-    public static DatabaseKey FromString(string value) => new(SolidKeyInner.FromString(value));
+    public static DatabaseKey FromString(string value) => new(LightKeyInner.FromString(value));
 
-    public static DatabaseKey FromUInt64(ulong value) => new(SolidKeyInner.FromUInt64(value));
+    public static DatabaseKey FromUInt64(ulong value) => new(LightKeyInner.FromUInt64(value));
 
-    public static DatabaseKey FromGuid(Guid value) => new(SolidKeyInner.FromGuid(value));
+    public static DatabaseKey FromGuid(Guid value) => new(LightKeyInner.FromGuid(value));
 
     public bool StartsWith(DatabaseKey prefix)
     {
@@ -40,9 +40,9 @@ public readonly record struct DatabaseKey
         return _inner.CompareTo(other._inner);
     }
 
-    public static implicit operator SolidKeyInner(DatabaseKey key) => key._inner;
+    public static implicit operator LightKeyInner(DatabaseKey key) => key._inner;
 
-    public static implicit operator DatabaseKey(SolidKeyInner key) => new(key);
+    public static implicit operator DatabaseKey(LightKeyInner key) => new(key);
 
     public override string ToString() => _inner.ToString();
 }

@@ -1,17 +1,17 @@
-using SolidValueInner = SolidDB.Core.SolidValue;
+using LightValueInner = LightDB.Core.LightValue;
 
 namespace Gnosis.Database.Core;
 
 public readonly record struct DatabaseValue
 {
-    private readonly SolidValueInner _inner;
+    private readonly LightValueInner _inner;
 
     public DatabaseValue(ReadOnlyMemory<byte> bytes)
     {
-        _inner = new SolidValueInner(bytes.ToArray());
+        _inner = new LightValueInner(bytes.ToArray());
     }
 
-    public DatabaseValue(SolidValueInner value)
+    public DatabaseValue(LightValueInner value)
     {
         _inner = value;
     }
@@ -22,17 +22,17 @@ public readonly record struct DatabaseValue
 
     public bool IsEmpty => _inner.IsEmpty;
 
-    public static DatabaseValue Empty => new(SolidValueInner.Empty);
+    public static DatabaseValue Empty => new(LightValueInner.Empty);
 
-    public static DatabaseValue FromString(string value) => new(SolidValueInner.FromString(value));
+    public static DatabaseValue FromString(string value) => new(LightValueInner.FromString(value));
 
-    public static DatabaseValue FromInt32(int value) => new(SolidValueInner.FromInt32(value));
+    public static DatabaseValue FromInt32(int value) => new(LightValueInner.FromInt32(value));
 
-    public static DatabaseValue FromInt64(long value) => new(SolidValueInner.FromInt64(value));
+    public static DatabaseValue FromInt64(long value) => new(LightValueInner.FromInt64(value));
 
-    public static DatabaseValue FromDouble(double value) => new(SolidValueInner.FromDouble(value));
+    public static DatabaseValue FromDouble(double value) => new(LightValueInner.FromDouble(value));
 
-    public static DatabaseValue FromObject<T>(T value) => new(SolidValueInner.FromObject(value));
+    public static DatabaseValue FromObject<T>(T value) => new(LightValueInner.FromObject(value));
 
     public T? ToObject<T>() => _inner.ToObject<T>();
 
@@ -54,9 +54,9 @@ public readonly record struct DatabaseValue
         return thisSpan.Length.CompareTo(otherSpan.Length);
     }
 
-    public static implicit operator SolidValueInner(DatabaseValue value) => value._inner;
+    public static implicit operator LightValueInner(DatabaseValue value) => value._inner;
 
-    public static implicit operator DatabaseValue(SolidValueInner value) => new(value);
+    public static implicit operator DatabaseValue(LightValueInner value) => new(value);
 
     public override string ToString() => _inner.ToString();
 }

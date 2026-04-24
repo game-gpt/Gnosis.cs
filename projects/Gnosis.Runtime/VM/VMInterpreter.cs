@@ -3,6 +3,7 @@ using Gnosis.Core;
 using Gnosis.ECS;
 using Gnosis.ECS.Entity;
 using Gnosis.ECS.Query;
+using Gnosis.ECS.System;
 using Gnosis.ECS.World;
 using Gnosis.IR.Instruction;
 
@@ -18,9 +19,11 @@ public class VMInterpreter
     private readonly VMState _state;
     private readonly NativeFunctionRegistry _nativeRegistry;
     private readonly ComponentTypeRegistry _componentRegistry;
+    private readonly ScriptSystemScheduler _scriptSystemScheduler;
     private IWorld? _world;
     private bool _running;
     private byte[]? _instructions;
+    private int _nextSystemIndex;
 
     #endregion
 
@@ -34,9 +37,11 @@ public class VMInterpreter
         _state = state;
         _nativeRegistry = nativeRegistry;
         _componentRegistry = new ComponentTypeRegistry();
+        _scriptSystemScheduler = new ScriptSystemScheduler();
         _world = null;
         _running = false;
         _instructions = null;
+        _nextSystemIndex = 0;
     }
 
     /// <summary>
@@ -47,9 +52,11 @@ public class VMInterpreter
         _state = state;
         _nativeRegistry = nativeRegistry;
         _componentRegistry = new ComponentTypeRegistry();
+        _scriptSystemScheduler = new ScriptSystemScheduler();
         _world = world;
         _running = false;
         _instructions = null;
+        _nextSystemIndex = 0;
     }
 
     /// <summary>
@@ -61,9 +68,11 @@ public class VMInterpreter
         _state = state;
         _nativeRegistry = nativeRegistry;
         _componentRegistry = componentRegistry;
+        _scriptSystemScheduler = new ScriptSystemScheduler();
         _world = world;
         _running = false;
         _instructions = null;
+        _nextSystemIndex = 0;
     }
 
     #endregion
@@ -84,6 +93,11 @@ public class VMInterpreter
     /// 组件类型注册表
     /// </summary>
     public ComponentTypeRegistry ComponentRegistry => _componentRegistry;
+
+    /// <summary>
+    /// 脚本系统调度器
+    /// </summary>
+    public ScriptSystemScheduler ScriptSystemScheduler => _scriptSystemScheduler;
 
     #endregion
 
@@ -1081,18 +1095,50 @@ public class VMInterpreter
             return;
         }
 
-        var query = _world.CreateQuery();
+        var scriptIndices = typeIndices.Where(idx => _componentRegistry.IsScriptComponent(idx)).ToArray();
+        var nativeIndices = typeIndices.Where(idx => !_componentRegistry.IsScriptComponent(idx)).ToArray();
 
-        foreach (var typeIdx in typeIndices)
+        List<EntityId> results;
+
+        if (scriptIndices.Length > 0 && nativeIndices.Length > 0)
         {
-            var clrType = _componentRegistry.GetClrType(typeIdx);
-            if (clrType is not null && query is EntityQuery eq)
+            var scriptResults = _componentRegistry.ScriptStorage.QueryAll(scriptIndices);
+            var query = _world.CreateQuery();
+            foreach (var typeIdx in nativeIndices)
             {
-                eq.All(clrType);
+                var clrType = _componentRegistry.GetClrType(typeIdx);
+                if (clrType is not null && query is EntityQuery eq)
+                {
+                    eq.All(clrType);
+                }
             }
+
+            var nativeResults = new HashSet<EntityId>(query.Build());
+            results = scriptResults.Where(id => nativeResults.Contains(id)).ToList();
+        }
+        else if (scriptIndices.Length > 0)
+        {
+            results = _componentRegistry.ScriptStorage.QueryAll(scriptIndices);
+        }
+        else if (nativeIndices.Length > 0)
+        {
+            var query = _world.CreateQuery();
+            foreach (var typeIdx in nativeIndices)
+            {
+                var clrType = _componentRegistry.GetClrType(typeIdx);
+                if (clrType is not null && query is EntityQuery eq)
+                {
+                    eq.All(clrType);
+                }
+            }
+
+            results = query.Build().ToList();
+        }
+        else
+        {
+            results = new List<EntityId>();
         }
 
-        var results = query.Build().ToList();
         var arr = new GGArray(results.Count);
 
         for (var i = 0; i < results.Count; i++)
@@ -1120,18 +1166,38 @@ public class VMInterpreter
             return;
         }
 
-        var query = _world.CreateQuery();
+        var scriptIndices = typeIndices.Where(idx => _componentRegistry.IsScriptComponent(idx)).ToArray();
+        var nativeIndices = typeIndices.Where(idx => !_componentRegistry.IsScriptComponent(idx)).ToArray();
 
-        foreach (var typeIdx in typeIndices)
+        var resultSet = new HashSet<EntityId>();
+
+        if (scriptIndices.Length > 0)
         {
-            var clrType = _componentRegistry.GetClrType(typeIdx);
-            if (clrType is not null && query is EntityQuery eq)
+            foreach (var id in _componentRegistry.ScriptStorage.QueryAny(scriptIndices))
             {
-                eq.Any(clrType);
+                resultSet.Add(id);
             }
         }
 
-        var results = query.Build().ToList();
+        if (nativeIndices.Length > 0)
+        {
+            var query = _world.CreateQuery();
+            foreach (var typeIdx in nativeIndices)
+            {
+                var clrType = _componentRegistry.GetClrType(typeIdx);
+                if (clrType is not null && query is EntityQuery eq)
+                {
+                    eq.Any(clrType);
+                }
+            }
+
+            foreach (var id in query.Build())
+            {
+                resultSet.Add(id);
+            }
+        }
+
+        var results = resultSet.ToList();
         var arr = new GGArray(results.Count);
 
         for (var i = 0; i < results.Count; i++)
@@ -1153,20 +1219,30 @@ public class VMInterpreter
             return;
         }
 
-        var clrType = _componentRegistry.GetClrType(typeIdx);
-        if (clrType is null)
+        List<EntityId> results;
+
+        if (_componentRegistry.IsScriptComponent(typeIdx))
         {
-            _state.Push(GGValue.Null);
-            return;
+            results = _componentRegistry.ScriptStorage.QueryWith(typeIdx);
+        }
+        else
+        {
+            var clrType = _componentRegistry.GetClrType(typeIdx);
+            if (clrType is null)
+            {
+                _state.Push(GGValue.Null);
+                return;
+            }
+
+            var query = _world.CreateQuery();
+            if (query is EntityQuery eq)
+            {
+                eq.All(clrType);
+            }
+
+            results = query.Build().ToList();
         }
 
-        var query = _world.CreateQuery();
-        if (query is EntityQuery eq)
-        {
-            eq.All(clrType);
-        }
-
-        var results = query.Build().ToList();
         var arr = new GGArray(results.Count);
 
         for (var i = 0; i < results.Count; i++)
@@ -1188,20 +1264,47 @@ public class VMInterpreter
             return;
         }
 
-        var clrType = _componentRegistry.GetClrType(typeIdx);
-        if (clrType is null)
+        List<EntityId> results;
+
+        if (_componentRegistry.IsScriptComponent(typeIdx))
         {
-            _state.Push(GGValue.Null);
-            return;
+            if (_world is World concreteWorld)
+            {
+                var allEntities = new List<EntityId>();
+                for (uint i = 1; i < concreteWorld.Entities.Capacity; i++)
+                {
+                    var id = new EntityId(i, 0);
+                    if (concreteWorld.Entities.IsAlive(id))
+                    {
+                        allEntities.Add(id);
+                    }
+                }
+
+                results = _componentRegistry.ScriptStorage.QueryWithout(typeIdx, allEntities);
+            }
+            else
+            {
+                results = new List<EntityId>();
+            }
+        }
+        else
+        {
+            var clrType = _componentRegistry.GetClrType(typeIdx);
+            if (clrType is null)
+            {
+                _state.Push(GGValue.Null);
+                return;
+            }
+
+            var query = _world.CreateQuery();
+            if (query is EntityQuery eq)
+            {
+                eq.None(clrType);
+            }
+
+            results = query.Build().ToList();
         }
 
-        var query = _world.CreateQuery();
-        if (query is EntityQuery eq)
-        {
-            eq.None(clrType);
-        }
-
-        var results = query.Build().ToList();
         var arr = new GGArray(results.Count);
 
         for (var i = 0; i < results.Count; i++)
@@ -1226,26 +1329,35 @@ public class VMInterpreter
             fieldNames[i] = ReadConstant()?.ToString() ?? $"field_{i}";
         }
 
-        var typeIdx = _componentRegistry.GetIndex(name);
-        if (typeIdx < 0)
+        var existingIdx = _componentRegistry.GetIndex(name);
+        if (existingIdx >= 0)
         {
-            var ggStruct = new GGStruct(name, fieldNames);
-            _state.MemoryManager.Allocate(ggStruct);
-            _state.Push(GGValue.FromStruct(ggStruct));
+            _state.Push(GGValue.FromInt(existingIdx));
+            return;
         }
-        else
-        {
-            _state.Push(GGValue.FromInt(typeIdx));
-        }
+
+        var scriptType = new ScriptComponentType(name, fieldNames);
+        var typeIdx = _componentRegistry.RegisterScriptComponent(scriptType);
+
+        var ggStruct = new GGStruct(name, fieldNames);
+        _state.MemoryManager.Allocate(ggStruct);
+        _state.Push(GGValue.FromInt(typeIdx));
     }
 
     private void ExecuteDefineSystem()
     {
         var nameIdx = ReadInt32();
         var phaseValue = ReadInt32();
+        var funcAddr = ReadInt32();
 
         var name = ReadConstant()?.ToString() ?? $"system_{nameIdx}";
-        _state.Push(GGValue.FromInt(_state.GlobalCount));
+        var phase = (SystemPhase)phaseValue;
+
+        var systemInfo = new ScriptSystemInfo(name, phase, funcAddr, _nextSystemIndex);
+        _scriptSystemScheduler.RegisterSystem(systemInfo);
+
+        _state.Push(GGValue.FromInt(_nextSystemIndex));
+        _nextSystemIndex++;
     }
 
     private void ExecuteSystemSchedule()
@@ -1255,7 +1367,8 @@ public class VMInterpreter
 
         for (var i = 0; i < dependencyCount; i++)
         {
-            ReadInt32();
+            var dependsOnIdx = ReadInt32();
+            _scriptSystemScheduler.AddDependency(systemIdx, dependsOnIdx);
         }
 
         _state.Push(GGValue.Null);
@@ -1265,12 +1378,70 @@ public class VMInterpreter
     {
         var deltaRaw = ReadFloat32();
 
-        if (_world is not null && _world is World concreteWorld)
+        if (_world is World concreteWorld)
         {
             concreteWorld.Update(deltaRaw);
         }
 
+        var scriptSystems = _scriptSystemScheduler.GetExecutionOrder();
+        foreach (var system in scriptSystems)
+        {
+            ExecuteScriptSystem(system, deltaRaw);
+        }
+
         _state.Push(GGValue.Null);
+    }
+
+    /// <summary>
+    /// 执行单个脚本系统：保存当前执行状态，跳转到系统函数地址执行，完成后恢复。
+    /// 脚本系统函数签约为：function(delta: float)
+    /// </summary>
+    private void ExecuteScriptSystem(ScriptSystemInfo system, float delta)
+    {
+        if (system.FunctionAddress < 0 || _instructions is null || system.FunctionAddress >= _instructions.Length)
+        {
+            return;
+        }
+
+        var savedIP = _state.IP;
+        var savedInstructions = _instructions;
+
+        _state.Push(GGValue.FromFloat(delta));
+
+        _state.StackInternal.PushFrame(_state.IP, _state.StackInternal.SP, 1);
+
+        var frame = _state.StackInternal.CurrentFrame;
+        if (frame.HasValue)
+        {
+            frame.Value.Locals[0] = GGValue.FromFloat(delta);
+        }
+
+        _state.IP = system.FunctionAddress;
+
+        while (_running)
+        {
+            if (_state.IP < 0 || _state.IP >= _instructions.Length)
+            {
+                break;
+            }
+
+            var opCode = (OpCode)_instructions[_state.IP];
+            if (opCode == OpCode.Return)
+            {
+                _state.IP++;
+                var returnFrame = _state.StackInternal.PopFrame();
+                _state.IP = returnFrame.ReturnAddress;
+                break;
+            }
+
+            if (!Step())
+            {
+                break;
+            }
+        }
+
+        _state.IP = savedIP;
+        _instructions = savedInstructions;
     }
 
     private EntityId ResolveEntityId(GGValue value)

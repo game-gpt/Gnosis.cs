@@ -13,7 +13,7 @@ public enum BuildNodeStatus
     UpToDate
 }
 
-public sealed class BuildNode
+public sealed record BuildNode
 {
     public string AssetPath { get; init; } = string.Empty;
     public FormatType FormatType { get; init; }

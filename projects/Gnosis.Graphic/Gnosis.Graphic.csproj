@@ -20,7 +20,6 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.Runtime\Gnosis.Runtime.csproj" />
-        <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Spirv\Acorn.Spirv.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,9 +34,15 @@
         <Compile Remove="Shader\ShaderFormatHandler.cs" />
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
-        <Compile Remove="RHI\Vulkan\**" />
         <Compile Remove="RHI\Software\SoftwareDevice.cs" />
         <Compile Remove="RHI\DeviceFactory.cs" />
         <Compile Remove="Shader\ShaderIrOpCode.cs" />
+        <Compile Remove="Shader\Spirv\**" />
+        <Compile Remove="StoryCommands\EffectCommands.cs" />
+        <Compile Remove="Compute\ComputeDispatcher.cs" />
+        <Compile Remove="Pipeline\ClusteredRenderer.cs" />
+        <Compile Remove="PostProcess\ToneMappingEffect.cs" />
+        <Compile Remove="Light\LightSystem.cs" />
+        <Compile Remove="Shadow\ShadowSystem.cs" />
     </ItemGroup>
 </Project>

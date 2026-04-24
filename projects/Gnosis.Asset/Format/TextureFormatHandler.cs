@@ -168,8 +168,8 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
             Depth = result.Depth,
             MipLevels = result.MipLevels,
             ArrayLayers = result.ArrayLayers,
-            Format = result.Format,
-            Dimension = result.Dimension,
+            Format = MapKtxFormat(result.Format),
+            Dimension = MapKtxDimension(result.Dimension),
             RawData = result.RawData,
             MipData = result.MipData
         };
@@ -513,6 +513,51 @@ public class TextureFormatHandler : FormatHandlerBase, ITextureFormat
         {
             EngineExtension, ".png", ".jpg", ".jpeg", ".tga", ".bmp",
             ".hdr", ".exr", ".dds", ".ktx", ".ktx2", ".scirpttexture"
+        };
+    }
+
+    private static TextureFormat MapKtxFormat(Oak.Ktx.TextureFormat format)
+    {
+        return format switch
+        {
+            Oak.Ktx.TextureFormat.R8G8B8A8UNorm => TextureFormat.R8G8B8A8_UNorm,
+            Oak.Ktx.TextureFormat.R8G8B8A8Srgb => TextureFormat.R8G8B8A8_SRGB,
+            Oak.Ktx.TextureFormat.B8G8R8A8UNorm => TextureFormat.B8G8R8A8_UNorm,
+            Oak.Ktx.TextureFormat.B8G8R8A8Srgb => TextureFormat.B8G8R8A8_SRGB,
+            Oak.Ktx.TextureFormat.R16G16B16A16Float => TextureFormat.R16G16B16A16_Float,
+            Oak.Ktx.TextureFormat.R32G32B32A32Float => TextureFormat.R32G32B32A32_Float,
+            Oak.Ktx.TextureFormat.R8UNorm => TextureFormat.R8_UNorm,
+            Oak.Ktx.TextureFormat.R16Float => TextureFormat.R16_Float,
+            Oak.Ktx.TextureFormat.R32Float => TextureFormat.R32_Float,
+            Oak.Ktx.TextureFormat.Bc1RgbUNorm => TextureFormat.BC1_RGB_UNorm,
+            Oak.Ktx.TextureFormat.Bc1RgbaUNorm => TextureFormat.BC1_RGBA_UNorm,
+            Oak.Ktx.TextureFormat.Bc2UNorm => TextureFormat.BC2_UNorm,
+            Oak.Ktx.TextureFormat.Bc3UNorm => TextureFormat.BC3_UNorm,
+            Oak.Ktx.TextureFormat.Bc4UNorm => TextureFormat.BC4_UNorm,
+            Oak.Ktx.TextureFormat.Bc5UNorm => TextureFormat.BC5_UNorm,
+            Oak.Ktx.TextureFormat.Bc6HUFloat => TextureFormat.BC6H_UFloat,
+            Oak.Ktx.TextureFormat.Bc7UNorm => TextureFormat.BC7_UNorm,
+            Oak.Ktx.TextureFormat.Etc2Rgb => TextureFormat.ETC2_RGB,
+            Oak.Ktx.TextureFormat.Etc2Rgba => TextureFormat.ETC2_RGBA,
+            Oak.Ktx.TextureFormat.Astc4X4 => TextureFormat.ASTC_4x4,
+            Oak.Ktx.TextureFormat.Astc6X6 => TextureFormat.ASTC_6x6,
+            Oak.Ktx.TextureFormat.Astc8X8 => TextureFormat.ASTC_8x8,
+            Oak.Ktx.TextureFormat.PvrtcRgb4Bpp => TextureFormat.PVRTC_RGB_4BPP,
+            Oak.Ktx.TextureFormat.PvrtcRgba4Bpp => TextureFormat.PVRTC_RGBA_4BPP,
+            _ => TextureFormat.Unknown
+        };
+    }
+
+    private static TextureDimension MapKtxDimension(Oak.Ktx.TextureDimension dimension)
+    {
+        return dimension switch
+        {
+            Oak.Ktx.TextureDimension.Texture2D => TextureDimension.Texture2D,
+            Oak.Ktx.TextureDimension.Texture3D => TextureDimension.Texture3D,
+            Oak.Ktx.TextureDimension.TextureCube => TextureDimension.TextureCube,
+            Oak.Ktx.TextureDimension.Texture2DArray => TextureDimension.Texture2DArray,
+            Oak.Ktx.TextureDimension.TextureCubeArray => TextureDimension.TextureCubeArray,
+            _ => TextureDimension.Unknown
         };
     }
 

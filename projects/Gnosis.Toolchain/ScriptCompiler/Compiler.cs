@@ -2,7 +2,10 @@ using Oak.Diagnostics;
 using Oak.Valkyrie.AST;
 using Oak.Valkyrie.Lexer;
 using Oak.Valkyrie.Parser;
+using Gnosis.Core.Diagnostic;
+using Gnosis.IR.Debug;
 using Gnosis.IR.Graph;
+using Gnosis.IR.Instruction;
 using Gnosis.IR.Transform;
 using Gnosis.Toolchain.Compiler;
 using Gnosis.Toolchain.ScriptCompiler.Backend;
@@ -121,13 +124,17 @@ public class Compiler : ICompiler
         var options = new GnosisCompileOptions
         {
             OptimizationLevel = optimizationLevel,
-            GenerateDebugInfo = false
+            GenerateDebugInfo = true
         };
 
         var bytecodeUnit = backend.Compile(irModule, options);
 
-        var bytecodeGen2 = new BytecodeGenerator(_diagnostics);
-        return bytecodeGen2.GenerateFull(ast, arch, isEditorBuild);
+        var bytecodeGen = new BytecodeGenerator(_diagnostics);
+        var result = bytecodeGen.GenerateFull(ast, arch, isEditorBuild);
+
+        var debugInfo = GenerateDebugInfo(bytecodeUnit, unit);
+
+        return new CompilationResult(result.Bytecode, result.VmSourceCode, debugInfo);
     }
 
     public CompilationResult CompileOptimized(
@@ -178,13 +185,17 @@ public class Compiler : ICompiler
         var options = new GnosisCompileOptions
         {
             OptimizationLevel = optimizationLevel,
-            GenerateDebugInfo = false
+            GenerateDebugInfo = true
         };
 
-        backend.Compile(irModule, options);
+        var bytecodeUnit = backend.Compile(irModule, options);
 
         var bytecodeGen = new BytecodeGenerator(_diagnostics);
-        return bytecodeGen.GenerateFull(compilationUnit, arch, isEditorBuild);
+        var result = bytecodeGen.GenerateFull(compilationUnit, arch, isEditorBuild);
+
+        var debugInfo = GenerateDebugInfo(bytecodeUnit, compilationUnit);
+
+        return new CompilationResult(result.Bytecode, result.VmSourceCode, debugInfo);
     }
 
     #endregion
@@ -203,6 +214,15 @@ public class Compiler : ICompiler
 
         var parser = new ValkyrieParser();
         return parser.Parse(tokens);
+    }
+
+    private static byte[]? GenerateDebugInfo(BytecodeUnit bytecodeUnit, CompilationUnit ast)
+    {
+        var debugGen = new DebugInfoGenerator();
+        var debugUnit = debugGen.Generate(bytecodeUnit.ModuleName, bytecodeUnit.SourceMap, ast);
+
+        var serializer = new DebugInfoSerializer();
+        return serializer.Serialize(debugUnit);
     }
 
     #endregion

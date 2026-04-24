@@ -1,5 +1,3 @@
-using SolidDB.Core;
-
 namespace Gnosis.Storage.Provider;
 
 [Obsolete("请使用 DatabaseStorageProvider，通过 Gnosis.Database 统一访问存储层")]
@@ -7,7 +5,7 @@ public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
 {
     #region 字段
 
-    private readonly SolidDB.SolidDatabase _db;
+    private readonly LightDB.LightDatabase _db;
     private bool _disposed;
 
     #endregion
@@ -16,7 +14,7 @@ public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
 
     public LocalStorageProvider(string path = ".gnosis/storage")
     {
-        _db = new SolidDB.SolidDatabase(new SolidOptions
+        _db = new LightDB.LightDatabase(new LightDB.Core.LightOptions
         {
             Path = path
         });
@@ -26,7 +24,7 @@ public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
 
     #region 属性
 
-    public string Name => "SolidDB";
+    public string Name => "LightDB";
 
     #endregion
 
@@ -36,9 +34,9 @@ public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var solidKey = SolidKey.FromString(key);
-        var solidValue = new SolidValue(data);
-        await _db.PutAsync(solidKey, solidValue);
+        var lightKey = LightDB.Core.LightKey.FromString(key);
+        var lightValue = new LightDB.Core.LightValue(data);
+        await _db.PutAsync(lightKey, lightValue);
         return true;
     }
 
@@ -46,8 +44,8 @@ public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var solidKey = SolidKey.FromString(key);
-        var result = await _db.GetAsync<SolidValue>(solidKey);
+        var lightKey = LightDB.Core.LightKey.FromString(key);
+        var result = await _db.GetAsync<LightDB.Core.LightValue>(lightKey);
         if (result.IsEmpty)
         {
             return null;
@@ -60,24 +58,24 @@ public sealed class LocalStorageProvider : IStorageProvider, IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var solidKey = SolidKey.FromString(key);
-        return await _db.DeleteAsync(solidKey);
+        var lightKey = LightDB.Core.LightKey.FromString(key);
+        return await _db.DeleteAsync(lightKey);
     }
 
     public async Task<bool> ExistsAsync(string key)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var solidKey = SolidKey.FromString(key);
-        return await _db.ExistsAsync(solidKey);
+        var lightKey = LightDB.Core.LightKey.FromString(key);
+        return await _db.ExistsAsync(lightKey);
     }
 
     public Task<string[]> ListKeysAsync(string prefix)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var solidPrefix = SolidKey.FromString(prefix);
-        var cursor = _db.Seek(solidPrefix);
+        var lightPrefix = LightDB.Core.LightKey.FromString(prefix);
+        var cursor = _db.Seek(lightPrefix);
         var keys = new List<string>();
 
         while (cursor.MoveNextAsync().GetAwaiter().GetResult())

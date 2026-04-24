@@ -50,10 +50,7 @@ internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
     /// </summary>
     public RHI.PrimitiveTopology Topology => _desc.Topology;
 
-    /// <summary>
-    /// 着色器句柄
-    /// </summary>
-    public ulong ShaderHandle => _desc.ShaderHandle;
+    public RHI.IShaderProgram Shader => _desc.Shader;
 
     #endregion
 
@@ -148,7 +145,7 @@ internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
     /// </summary>
     private void CreateGraphicsPipeline(VkDevice vkDevice)
     {
-        var shaderResource = _device.GetResource(_desc.ShaderHandle) as VulkanResource;
+        var shaderResource = _device.GetResource(_desc.Shader.Name) as VulkanResource;
         if (shaderResource == null || shaderResource.ShaderModuleHandle.IsNull)
         {
             throw new InvalidOperationException($"未找到着色器资源：{_desc.ShaderHandle}");

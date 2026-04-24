@@ -27,7 +27,7 @@ public class SceneFormatHandler : FormatHandlerBase, ISceneFormat
     public async Task<IEnumerable<EntityId>> GetRootEntitiesAsync(string path, CancellationToken cancellationToken = default)
     {
         var scene = await LoadSceneAsync(path, cancellationToken);
-        return scene.Entities.Where(e => e.Id != EntityId.Empty).Select(e => e.Id);
+        return scene.Entities.Where(e => !e.Id.IsNull).Select(e => e.Id);
     }
     
     protected override IReadOnlyList<string> GetSupportedExtensions()

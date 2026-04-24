@@ -10,14 +10,6 @@ internal sealed unsafe class VulkanRenderPass : RHI.IRhiRenderPass
     /// </summary>
     public VkRenderPass Handle { get; }
 
-    /// <summary>
-    /// 原生句柄
-    /// </summary>
-    nint RHI.IRhiRenderPass.Handle => (nint)Handle;
-
-    /// <summary>
-    /// 附件数量
-    /// </summary>
     public uint AttachmentCount { get; }
 
     /// <summary>

@@ -25,7 +25,7 @@ public sealed class DatabaseStatistics
 
     public static readonly DatabaseStatistics Zero = new();
 
-    public static DatabaseStatistics FromSolidStatistics(SolidDB.Core.SolidStatistics stats) => new()
+    public static DatabaseStatistics FromLightStatistics(LightDB.Core.LightStatistics stats) => new()
     {
         TotalKeys = stats.TotalEntries,
         TotalReads = stats.ReadCount,

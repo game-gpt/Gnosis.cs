@@ -16,5 +16,8 @@
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\LightDB\projects\LightDB\LightDB.csproj" />
+    </ItemGroup>
 
 </Project>

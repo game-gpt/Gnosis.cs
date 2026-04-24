@@ -18,7 +18,7 @@ public sealed class DatabaseOptions
 
     public static DatabaseOptions Default => new();
 
-    public SolidDB.Core.SolidOptions ToSolidOptions() => new()
+    public LightDB.Core.LightOptions ToLightOptions() => new()
     {
         Path = Path,
         BTreeOrder = BTreeOrder,

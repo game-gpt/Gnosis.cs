@@ -9,6 +9,7 @@ public sealed class MaterialInstance : IMaterial
     private readonly Dictionary<string, IResource> _textureBindings = [];
     private readonly Dictionary<string, IResource> _bufferBindings = [];
 
+    private IShaderProgram? _shader;
     private ulong _shaderHandle;
     private BlendMode _blendMode = BlendMode.None;
     private CullMode _cullMode = CullMode.Back;
@@ -18,6 +19,7 @@ public sealed class MaterialInstance : IMaterial
 
     public MaterialTemplate Template => _template;
     public string Name { get; set; }
+    public IShaderProgram Shader => _shader!;
     public ulong ShaderHandle => _shaderHandle;
     public BlendMode BlendMode => _blendMode;
     public CullMode CullMode => _cullMode;
@@ -78,6 +80,12 @@ public sealed class MaterialInstance : IMaterial
     public IResource? GetBuffer(string name)
     {
         return _bufferBindings.GetValueOrDefault(name);
+    }
+
+    public MaterialInstance SetShader(IShaderProgram shader)
+    {
+        _shader = shader;
+        return this;
     }
 
     public MaterialInstance SetShader(ulong shaderHandle)

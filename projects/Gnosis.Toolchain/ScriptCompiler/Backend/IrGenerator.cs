@@ -1,6 +1,7 @@
 using Oak.Diagnostics;
 using Oak.Valkyrie.AST;
 using Gnosis.IR.Instruction;
+using GnosisSourceSpan = Gnosis.Core.Diagnostic.SourceSpan;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;
 
@@ -13,7 +14,7 @@ public sealed class IrGenerator
     private readonly List<BytecodeFunction> _functions = [];
     private readonly List<string> _imports = [];
     private readonly List<string> _exports = [];
-    private readonly List<(int Offset, SourceSpan? Span)> _sourceMap = [];
+    private readonly List<(int Offset, GnosisSourceSpan? Span)> _sourceMap = [];
     private readonly List<BytecodeInstruction> _currentInstructions = [];
     private readonly Dictionary<string, int> _currentLocals = [];
     private readonly Dictionary<string, int> _globalVariables = [];
@@ -24,6 +25,7 @@ public sealed class IrGenerator
     private int _currentLocalCount;
     private string _currentFilePath = "unknown";
     private int _labelCounter;
+    private GnosisSourceSpan? _currentSpan;
 
     #endregion
 
@@ -47,6 +49,7 @@ public sealed class IrGenerator
         _sourceMap.Clear();
         _globalVariables.Clear();
         _structTypes.Clear();
+        _currentSpan = null;
         _currentFilePath = ast.FilePath ?? "unknown";
 
         foreach (var decl in ast.Declarations)
@@ -129,6 +132,7 @@ public sealed class IrGenerator
 
     private int VisitFunctionDecl(FunctionDecl node)
     {
+        SetCurrentSpan(node);
         _currentInstructions.Clear();
         _currentLocals.Clear();
         _unresolvedJumps.Clear();
@@ -162,6 +166,7 @@ public sealed class IrGenerator
 
     private int VisitVariableDecl(VariableDecl node)
     {
+        SetCurrentSpan(node);
         _currentLocals[node.Name] = _currentLocalCount++;
 
         if (node.Initializer != null)
@@ -278,6 +283,7 @@ public sealed class IrGenerator
 
     private int VisitLoopStmt(LoopStmt node)
     {
+        SetCurrentSpan(node);
         var loopStartLabel = NewLabel();
         var loopExitLabel = NewLabel();
 
@@ -311,6 +317,7 @@ public sealed class IrGenerator
 
     private int VisitWhileStmt(WhileStmt node)
     {
+        SetCurrentSpan(node);
         var loopStartLabel = NewLabel();
         var loopExitLabel = NewLabel();
 
@@ -329,6 +336,7 @@ public sealed class IrGenerator
 
     private int VisitForStmt(ForStmt node)
     {
+        SetCurrentSpan(node);
         var loopStartLabel = NewLabel();
         var loopExitLabel = NewLabel();
 
@@ -360,6 +368,7 @@ public sealed class IrGenerator
 
     private int VisitIfStmt(IfStatement node)
     {
+        SetCurrentSpan(node);
         var elseLabel = NewLabel();
         var endLabel = NewLabel();
 
@@ -383,6 +392,7 @@ public sealed class IrGenerator
 
     private int VisitReturnStmt(ReturnStatement node)
     {
+        SetCurrentSpan(node);
         if (node.Value != null)
         {
             Visit(node.Value);
@@ -427,6 +437,7 @@ public sealed class IrGenerator
 
     private int VisitBinaryExpr(BinaryExpr node)
     {
+        SetCurrentSpan(node);
         Visit(node.Left);
         Visit(node.Right);
 
@@ -438,6 +449,7 @@ public sealed class IrGenerator
 
     private int VisitUnaryExpr(TermUnaryExpression node)
     {
+        SetCurrentSpan(node);
         Visit(node.Operand);
 
         if (node.Operator == "-")
@@ -454,6 +466,7 @@ public sealed class IrGenerator
 
     private int VisitLiteralExpr(LiteralExpr node)
     {
+        SetCurrentSpan(node);
         switch (node.LiteralKind)
         {
             case LiteralType.Number:
@@ -500,6 +513,7 @@ public sealed class IrGenerator
 
     private int VisitIdentifierExpr(IdentifierNode node)
     {
+        SetCurrentSpan(node);
         if (_currentLocals.TryGetValue(node.Name, out var localIndex))
         {
             Emit(OpCode.LoadLocal, localIndex);
@@ -519,6 +533,7 @@ public sealed class IrGenerator
 
     private int VisitCallExpr(TermCallExpression node)
     {
+        SetCurrentSpan(node);
         foreach (var arg in node.Arguments)
         {
             Visit(arg);
@@ -541,6 +556,7 @@ public sealed class IrGenerator
 
     private int VisitAssignmentExpr(AssignmentExpr node)
     {
+        SetCurrentSpan(node);
         Visit(node.Value);
 
         if (node.Target is IdentifierNode ident)
@@ -647,7 +663,13 @@ public sealed class IrGenerator
 
     private void Emit(OpCode opCode, long operand = 0)
     {
+        var offset = _currentInstructions.Count;
         _currentInstructions.Add(new BytecodeInstruction(opCode, operand));
+
+        if (_currentSpan is not null)
+        {
+            _sourceMap.Add((offset, _currentSpan));
+        }
     }
 
     private void EmitJump(OpCode jumpOpCode, string targetLabel)
@@ -757,6 +779,26 @@ public sealed class IrGenerator
             'w' or 'a' => 3,
             _ => 0
         }).ToArray();
+    }
+
+    private void SetCurrentSpan(AstNode node)
+    {
+        _currentSpan = ConvertSpan(node.Span);
+    }
+
+    private static GnosisSourceSpan? ConvertSpan(Oak.Diagnostics.SourceSpan? oakSpan)
+    {
+        if (oakSpan is null)
+        {
+            return null;
+        }
+
+        return new GnosisSourceSpan(
+            oakSpan.Value.FilePath ?? "",
+            oakSpan.Value.StartLine,
+            oakSpan.Value.StartColumn,
+            oakSpan.Value.EndLine,
+            oakSpan.Value.EndColumn);
     }
 
     #endregion

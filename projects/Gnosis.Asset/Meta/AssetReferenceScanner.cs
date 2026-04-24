@@ -240,7 +240,7 @@ public sealed class AssetReferenceScanner
 
         try
         {
-            var files = _vfs.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories);
+            var files = _vfs.GetFiles(rootPath, "*");
             assets.AddRange(files);
         }
         catch (DirectoryNotFoundException)

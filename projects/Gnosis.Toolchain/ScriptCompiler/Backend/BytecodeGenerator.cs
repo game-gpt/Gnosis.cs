@@ -1,8 +1,8 @@
 using System.Text;
 using Oak.Diagnostics;
 using Oak.Valkyrie.AST;
-using Gnosis.Core.Diagnostic;
 using Gnosis.IR.Instruction;
+using GnosisSourceSpan = Gnosis.Core.Diagnostic.SourceSpan;
 
 namespace Gnosis.Toolchain.ScriptCompiler.Backend;
 
@@ -23,9 +23,9 @@ public class BytecodeGenerator : IBytecodeGenerator
     private readonly List<string> _dependencies;
     private readonly Dictionary<string, int> _localVariables;
     private readonly Dictionary<string, int> _nativeBindings;
-    private readonly List<(int Offset, SourceSpan? Span)> _sourceMap;
+    private readonly List<(int Offset, GnosisSourceSpan? Span)> _sourceMap;
     private readonly List<(int Offset, Oak.Diagnostics.SourceSpan? Span)> _rawSourceMap;
-    private SourceSpan? _currentSpan;
+    private GnosisSourceSpan? _currentSpan;
     private int _localCount;
 
     #endregion
@@ -70,14 +70,30 @@ public class BytecodeGenerator : IBytecodeGenerator
         return new BytecodeModule(moduleName, instructions, _dependencies);
     }
 
-    public CompilationResult GenerateFull(AstNode ast, ArchTarget arch, bool isEditorBuild)
+    public IReadOnlyList<(int Offset, GnosisSourceSpan? Span)> GetSourceMap()
+    {
+        return _sourceMap.ToList();
+    }
+
+    public CompilationResult GenerateFull(AstNode ast, ArchTarget arch, bool isEditorBuild, bool generateDebugInfo = true)
     {
         var module = Generate(ast, arch, isEditorBuild);
 
         var bytecode = SerializeModule(module);
         var vmSource = GenerateVmSource(module);
 
-        return new CompilationResult(bytecode, vmSource);
+        byte[]? debugInfo = null;
+
+        if (generateDebugInfo && ast is CompilationUnit unit)
+        {
+            var debugGen = new DebugInfoGenerator();
+            var debugUnit = debugGen.Generate(module.ModuleName, _sourceMap, unit);
+
+            var serializer = new Gnosis.IR.Debug.DebugInfoSerializer();
+            debugInfo = serializer.Serialize(debugUnit);
+        }
+
+        return new CompilationResult(bytecode, vmSource, debugInfo);
     }
 
     #endregion
@@ -162,6 +178,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateComponentDecl(ComponentDecl decl)
     {
+        SetCurrentSpan(decl);
         var nameIdx = AddConstant(decl.Name);
         _exportedSymbols[decl.Name] = nameIdx;
 
@@ -177,6 +194,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateSystemDecl(SystemDecl decl, ArchTarget arch, bool isEditorBuild)
     {
+        SetCurrentSpan(decl);
         var nameIdx = AddConstant(decl.Name);
         _exportedSymbols[decl.Name] = nameIdx;
 
@@ -220,6 +238,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateFunctionDecl(FunctionDecl decl)
     {
+        SetCurrentSpan(decl);
         var nameIdx = AddConstant(decl.Name);
         _exportedSymbols[decl.Name] = nameIdx;
 
@@ -245,6 +264,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateVariableDecl(VariableDecl decl)
     {
+        SetCurrentSpan(decl);
         if (decl.Initializer is not null)
         {
             GenerateExpression(decl.Initializer);
@@ -370,6 +390,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateReturnStmt(ReturnStatement statement)
     {
+        SetCurrentSpan(statement);
         if (statement.Value is not null)
         {
             GenerateExpression(statement.Value);
@@ -380,6 +401,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateIfStmt(IfStatement statement)
     {
+        SetCurrentSpan(statement);
         GenerateExpression(statement.Condition);
         Emit(OpCode.JumpIfFalse);
         var elseJump = _instructions.Count;
@@ -403,6 +425,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateLoopStmt(LoopStmt stmt)
     {
+        SetCurrentSpan(stmt);
         var loopStart = _instructions.Count;
 
         if (stmt.Iterable is not null && stmt.IteratorName is not null)
@@ -438,6 +461,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateWhileStmt(WhileStmt stmt)
     {
+        SetCurrentSpan(stmt);
         var loopStart = _instructions.Count;
 
         GenerateExpression(stmt.Condition);
@@ -455,6 +479,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateForStmt(ForStmt stmt)
     {
+        SetCurrentSpan(stmt);
         if (stmt.Initializer is not null)
         {
             GenerateStatement(stmt.Initializer);
@@ -544,6 +569,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateLiteralExpr(LiteralExpr expr)
     {
+        SetCurrentSpan(expr);
         switch (expr.LiteralKind)
         {
             case LiteralType.Number:
@@ -600,6 +626,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateIdentifierExpr(IdentifierNode node)
     {
+        SetCurrentSpan(node);
         if (node.Name == "create_entity")
         {
             Emit(OpCode.SpawnEntity);
@@ -619,6 +646,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateBinaryExpr(BinaryExpr expr)
     {
+        SetCurrentSpan(expr);
         GenerateExpression(expr.Left);
         GenerateExpression(expr.Right);
 
@@ -642,6 +670,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateUnaryExpr(TermUnaryExpression expression)
     {
+        SetCurrentSpan(expression);
         GenerateExpression(expression.Operand);
 
         if (expression.Operator == "-")
@@ -658,6 +687,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateCallExpr(TermCallExpression expression)
     {
+        SetCurrentSpan(expression);
         if (expression.Callee is IdentifierNode idExpr)
         {
             switch (idExpr.Name)
@@ -764,6 +794,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateAssignmentExpr(AssignmentExpr expr)
     {
+        SetCurrentSpan(expr);
         if (expr.Operator == "=")
         {
             GenerateExpression(expr.Value);
@@ -814,6 +845,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 
     private void GenerateQueryExpr(QueryExpr expr)
     {
+        SetCurrentSpan(expr);
         switch (expr.Kind)
         {
             case QueryKind.All:
@@ -911,6 +943,26 @@ public class BytecodeGenerator : IBytecodeGenerator
     private static bool NeedsPop(AstNode expr)
     {
         return expr.Type != NodeType.AssignmentExpr;
+    }
+
+    private void SetCurrentSpan(AstNode node)
+    {
+        _currentSpan = ConvertSpan(node.Span);
+    }
+
+    private static GnosisSourceSpan? ConvertSpan(Oak.Diagnostics.SourceSpan? oakSpan)
+    {
+        if (oakSpan is null)
+        {
+            return null;
+        }
+
+        return new GnosisSourceSpan(
+            oakSpan.Value.FilePath ?? "",
+            oakSpan.Value.StartLine,
+            oakSpan.Value.StartColumn,
+            oakSpan.Value.EndLine,
+            oakSpan.Value.EndColumn);
     }
 
     #endregion

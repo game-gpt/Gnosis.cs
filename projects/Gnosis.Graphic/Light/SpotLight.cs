@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Gnosis.Graphic.Light;
 
 public sealed class SpotLight : ISpotLight
@@ -6,7 +8,7 @@ public sealed class SpotLight : ISpotLight
 
     public string Name { get; }
     public LightType Type => LightType.Spot;
-    public float[] Color { get; set; }
+    public Vector3 Color { get; set; }
     public float Intensity { get; set; }
     public bool IsEnabled { get; set; }
     public bool CastShadows { get; set; }
@@ -15,8 +17,8 @@ public sealed class SpotLight : ISpotLight
     public float ShadowNormalBias { get; set; }
     public float ShadowNearPlane { get; set; }
     public int ShadowResolution { get; set; }
-    public float[] Position { get; set; }
-    public float[] Direction { get; set; }
+    public Vector3 Position { get; set; }
+    public Vector3 Direction { get; set; }
     public float Range { get; set; }
     public float InnerConeAngle { get; set; }
     public float OuterConeAngle { get; set; }
@@ -28,7 +30,7 @@ public sealed class SpotLight : ISpotLight
     public SpotLight(string name)
     {
         Name = name;
-        Color = [1.0f, 1.0f, 1.0f];
+        Color = new Vector3(1.0f, 1.0f, 1.0f);
         Intensity = 1.0f;
         IsEnabled = true;
         CastShadows = false;
@@ -37,8 +39,8 @@ public sealed class SpotLight : ISpotLight
         ShadowNormalBias = 0.01f;
         ShadowNearPlane = 0.1f;
         ShadowResolution = 1024;
-        Position = [0.0f, 0.0f, 0.0f];
-        Direction = [0.0f, -1.0f, 0.0f];
+        Position = Vector3.Zero;
+        Direction = new Vector3(0.0f, -1.0f, 0.0f);
         Range = 10.0f;
         InnerConeAngle = 25.0f;
         OuterConeAngle = 35.0f;

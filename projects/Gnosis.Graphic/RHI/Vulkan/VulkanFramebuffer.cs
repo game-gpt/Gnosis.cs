@@ -10,14 +10,6 @@ internal sealed unsafe class VulkanFramebuffer : RHI.IRhiFramebuffer
     /// </summary>
     public VkFramebuffer Handle { get; }
 
-    /// <summary>
-    /// 原生句柄
-    /// </summary>
-    nint RHI.IRhiFramebuffer.Handle => (nint)Handle;
-
-    /// <summary>
-    /// 帧缓冲宽度
-    /// </summary>
     public uint Width { get; }
 
     /// <summary>

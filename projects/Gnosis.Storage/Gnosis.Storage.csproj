@@ -9,8 +9,8 @@
         <RootNamespace>Gnosis.Storage</RootNamespace>
         <Version>0.0.1</Version>
         <Authors>Gnosis Engine Team</Authors>
-        <Description>Gnosis Storage - 基于 SolidDB 的数据持久化抽象</Description>
-        <PackageTags>gnosis;game-engine;storage;persistence;solid-db</PackageTags>
+        <Description>Gnosis Storage - 基于 LightDB 的数据持久化抽象</Description>
+        <PackageTags>gnosis;game-engine;storage;persistence;light-db</PackageTags>
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>
@@ -22,6 +22,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\SolidDB\projects\SolidDB\SolidDB.csproj" />
+        <ProjectReference Include="..\..\..\LightDB\projects\LightDB\LightDB.csproj" />
     </ItemGroup>
 </Project>
