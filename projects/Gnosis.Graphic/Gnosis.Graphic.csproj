@@ -21,10 +21,16 @@
         <ProjectReference Include="..\Gnosis.IR\Gnosis.IR.csproj" />
         <ProjectReference Include="..\Gnosis.Runtime\Gnosis.Runtime.csproj" />
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
+        <ProjectReference Include="..\Gnosis.Input\Gnosis.Input.csproj" />
         <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.SpirV\SpirV.csproj" />
         <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Dxil\Acorn.Dxil.csproj" />
         <ProjectReference Include="..\..\..\Acorn.cs\projects\Acorn.Llvm\LLVM.csproj" />
         <ProjectReference Include="..\..\..\Oak.cs\projects\Oak.Valkyrie\Oak.Valkyrie.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
+        <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
     </ItemGroup>
 
     <ItemGroup>

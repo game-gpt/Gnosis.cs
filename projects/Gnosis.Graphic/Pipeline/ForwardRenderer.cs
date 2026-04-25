@@ -4,9 +4,12 @@ namespace Gnosis.Graphic.Pipeline;
 
 public sealed class ForwardRenderer
 {
+    #region 字段
+
     private readonly IDevice _device;
     private readonly RenderPipeline _pipeline;
     private IRhiSwapchain? _swapchain;
+    private IResource? _colorTexture;
     private IResource? _depthTexture;
     private IRhiRenderPass? _renderPass;
     private IRhiFramebuffer? _framebuffer;
@@ -15,10 +18,20 @@ public sealed class ForwardRenderer
     private IRhiFence? _inFlightFence;
     private uint _currentImageIndex;
     private nint _windowHandle;
+    private uint _width;
+    private uint _height;
+
+    #endregion
+
+    #region 属性
 
     public IDevice Device => _device;
     public RenderPipeline Pipeline => _pipeline;
     public IRhiSwapchain? Swapchain => _swapchain;
+
+    #endregion
+
+    #region 构造函数
 
     public ForwardRenderer(IDevice device)
     {
@@ -26,10 +39,17 @@ public sealed class ForwardRenderer
         _pipeline = new RenderPipeline("ForwardRenderer");
     }
 
+    #endregion
+
+    #region 初始化
+
     public void Initialize(nint windowHandle, uint width, uint height)
     {
         _windowHandle = windowHandle;
+        _width = width;
+        _height = height;
         CreateSwapchain(width, height);
+        CreateColorTexture(width, height);
         CreateDepthTexture(width, height);
         CreateRenderPass();
         CreateSyncObjects();
@@ -39,15 +59,24 @@ public sealed class ForwardRenderer
     {
         _device.WaitIdle();
 
+        _width = width;
+        _height = height;
+
         _framebuffer?.Dispose();
+        _colorTexture?.Dispose();
         _depthTexture?.Dispose();
         _renderPass?.Dispose();
         _swapchain?.Dispose();
 
         CreateSwapchain(width, height);
+        CreateColorTexture(width, height);
         CreateDepthTexture(width, height);
         CreateRenderPass();
     }
+
+    #endregion
+
+    #region 渲染
 
     public void Render(RenderContext context)
     {
@@ -66,14 +95,23 @@ public sealed class ForwardRenderer
         var commandTable = _device.CreateCommandTable();
         commandTable.Begin();
 
-        commandTable.BeginRenderPass(_renderPass!, _framebuffer!);
+        var clearColors = new List<(float r, float g, float b, float a)>
+        {
+            (0.53f, 0.81f, 0.92f, 1.0f),
+            (1.0f, 0.0f, 0.0f, 0.0f)
+        };
+
+        commandTable.BeginRenderPass(_renderPass!, _framebuffer!, clearColors, 1.0f, 0);
 
         commandTable.SetViewport(0, 0, _swapchain.Width, _swapchain.Height);
         commandTable.SetScissor(0, 0, _swapchain.Width, _swapchain.Height);
 
-        var renderContext = context with
+        var renderContext = new RenderContext
         {
+            View = context.View,
             Device = _device,
+            DeltaTime = context.DeltaTime,
+            FrameIndex = context.FrameIndex,
             Width = _swapchain.Width,
             Height = _swapchain.Height
         };
@@ -97,11 +135,30 @@ public sealed class ForwardRenderer
         _swapchain.Present([_renderFinishedSemaphore]);
     }
 
+    #endregion
+
+    #region Pass 管理
+
+    public void AddRenderPass(IRenderPass pass)
+    {
+        _pipeline.AddPass(pass);
+    }
+
+    public bool RemoveRenderPass(string passName)
+    {
+        return _pipeline.RemovePass(passName);
+    }
+
+    #endregion
+
+    #region 关闭
+
     public void Shutdown()
     {
         _device.WaitIdle();
 
         _framebuffer?.Dispose();
+        _colorTexture?.Dispose();
         _depthTexture?.Dispose();
         _renderPass?.Dispose();
         _swapchain?.Dispose();
@@ -109,6 +166,10 @@ public sealed class ForwardRenderer
         _renderFinishedSemaphore?.Dispose();
         _inFlightFence?.Dispose();
     }
+
+    #endregion
+
+    #region 私有方法
 
     private void CreateSwapchain(uint width, uint height)
     {
@@ -126,8 +187,30 @@ public sealed class ForwardRenderer
         _swapchain = _device.CreateSwapchain(desc);
     }
 
+    private void CreateColorTexture(uint width, uint height)
+    {
+        _colorTexture?.Dispose();
+
+        var desc = new TextureDesc
+        {
+            Dimension = TextureDimension.Texture2D,
+            Width = width,
+            Height = height,
+            Depth = 1,
+            Format = ResourceFormat.B8G8R8A8Unorm,
+            Usage = TextureUsage.RenderTarget,
+            MipLevels = 1,
+            ArrayLayers = 1,
+            SampleCount = 1
+        };
+
+        _colorTexture = _device.CreateTexture(desc);
+    }
+
     private void CreateDepthTexture(uint width, uint height)
     {
+        _depthTexture?.Dispose();
+
         var desc = new TextureDesc
         {
             Dimension = TextureDimension.Texture2D,
@@ -146,6 +229,8 @@ public sealed class ForwardRenderer
 
     private void CreateRenderPass()
     {
+        _renderPass?.Dispose();
+
         var attachments = new[]
         {
             new AttachmentDesc
@@ -209,24 +294,12 @@ public sealed class ForwardRenderer
     {
         _framebuffer?.Dispose();
 
-        if (_swapchain is null || _depthTexture is null || _renderPass is null)
+        if (_colorTexture is null || _depthTexture is null || _renderPass is null || _swapchain is null)
         {
             return;
         }
 
-        var swapchainImage = _device.CreateTexture(new TextureDesc
-        {
-            Dimension = TextureDimension.Texture2D,
-            Width = _swapchain.Width,
-            Height = _swapchain.Height,
-            Format = _swapchain.Format,
-            Usage = TextureUsage.RenderTarget,
-            MipLevels = 1,
-            ArrayLayers = 1,
-            SampleCount = 1
-        });
-
-        var attachments = new[] { swapchainImage, _depthTexture };
+        var attachments = new[] { _colorTexture, _depthTexture };
 
         var desc = new FramebufferDesc
         {
@@ -246,4 +319,6 @@ public sealed class ForwardRenderer
         _renderFinishedSemaphore = _device.CreateSemaphore();
         _inFlightFence = _device.CreateFence(signaled: true);
     }
+
+    #endregion
 }

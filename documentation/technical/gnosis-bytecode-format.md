@@ -374,18 +374,13 @@ Gnosis VM 使用 NaN-Boxing 混合值类型，利用 IEEE 754 双精度浮点数
 | `.gnosis.asm` | 文本格式 | Gnosis VM 反汇编文本 |
 | `.gnosis-debug` | `0x47474449` ("GGDI") | Gnosis VM 调试信息 |
 
-### 关于模块打包
+### 关于模块分发
 
-`.gnosis` 已经是一个完整的、自包含的游戏模块——包含常量池、符号表、依赖声明和全部指令。单个 `.gnosis` 文件可以被 Gnosis Runtime 直接加载执行，无需任何额外的打包格式。
+`.gnosis` 已经是一个完整的、自包含的游戏模块——包含常量池、符号表、依赖声明和全部指令。单个 `.gnosis` 文件可以被 Gnosis Runtime 直接加载执行，无需任何额外的格式。
 
-实际项目中，一个游戏由多个 `.gnosis` 模块组成（如 `player.gnosis`、`enemy.gnosis`、`ui.gnosis`），它们通过 `CallModule` 指令和导入/导出符号表互相引用。分发时，`ModulePackager` 将多个 `.gnosis` 文件打包为 `.gnosis-bundle`（魔数 `0x47474D42` "GGMB"），这是一个**分发格式**而非执行格式：
+实际项目中，一个游戏由多个 `.gnosis` 模块组成（如 `player.gnosis`、`enemy.gnosis`、`ui.gnosis`），它们通过 `CallModule` 指令和导入/导出符号表互相引用。
 
-- 打包支持压缩（LZ4）和加密（AES-256-CBC）
-- 包含模块清单（`module_manifest.gon`），声明模块间依赖
-- 运行时通过 VFS 挂载点按需加载，无需解压到磁盘
-- 打包是可选的——开发期直接加载散落的 `.gnosis` 文件，发布期打包为 `.gnosis-bundle`
-
-`.gnosis-bundle` 的详细格式由 `Gnosis.Asset` 包的 `AssetBundler` 定义，不属于本规范范围。
+分发时，`ModulePackager` 将 `.gnosis` 文件作为普通资源打包进 AssetBundle（与纹理、音频等其他游戏资源使用相同的打包机制）。`.gnosis` 在此阶段被视为纯数据，与任何其他资源文件没有区别。AssetBundle 的格式由 `Gnosis.Asset` 包的 `AssetBundler` 定义，支持压缩和加密，运行时通过 VFS 挂载点按需加载。打包是可选的——开发期直接加载散落的 `.gnosis` 文件，发布期打包进 AssetBundle 分发。
 
 ## 与 Nyar VM 的关系
 
@@ -408,7 +403,7 @@ Gnosis VM 和 Nyar VM 是 Nyar 元编译器框架产出的两个平级虚拟机�
 |:---|:---|:---|
 | v1.0 | 2026-04-25 | 初始规范。统一 GGBC 和 GNOS 为单一 GNOS 格式，消除双魔数问题 |
 | v1.1 | 2026-04-25 | 修正字符串编码为 LEB128（兼容 BinaryWriter.Write），修正浮点常量为 f32 |
-| v2.0 | 2026-04-25 | 新增 Game 方言特化设计说明、指令 vs 函数设计决策、ECS 指令详解、热重载/热更新机制、GGValue NaN-Boxing 说明、模块打包定位澄清 |
+| v2.0 | 2026-04-25 | 新增 Game 方言特化设计说明、指令 vs 函数设计决策、ECS 指令详解、热重载/热更新机制、GGValue NaN-Boxing 说明、模块分发机制澄清 |
 
 ## ⛔ 已废弃
 
