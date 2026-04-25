@@ -12,11 +12,30 @@ public sealed class SpatialAudioCalculator
 
     #endregion
 
+    #region 字段
+
+    private readonly HrtfProcessor _hrtfProcessor;
+
+    #endregion
+
     #region 属性
 
     public float GlobalRolloffFactor { get; set; } = 1.0f;
 
     public float DopplerFactor { get; set; } = 1.0f;
+
+    public bool EnableHrtf { get; set; } = true;
+
+    public HrtfProcessor Hrtf => _hrtfProcessor;
+
+    #endregion
+
+    #region 构造函数
+
+    public SpatialAudioCalculator()
+    {
+        _hrtfProcessor = new HrtfProcessor();
+    }
 
     #endregion
 
@@ -43,12 +62,29 @@ public sealed class SpatialAudioCalculator
 
         var attenuation = CalculateAttenuation(distanceRatio, rolloffMode, minDistance, maxDistance);
 
-        var panning = CalculatePanning(toSource, distance, listenerForward, listenerUp);
-
         var dopplerPitch = CalculateDopplerPitch(
             sourcePosition, sourceVelocity,
             listenerPosition, listenerVelocity,
             dopplerLevel);
+
+        float pan;
+        float leftGain;
+        float rightGain;
+
+        if (EnableHrtf)
+        {
+            var hrtfResult = _hrtfProcessor.Process(sourcePosition, listenerPosition, listenerForward, listenerUp);
+
+            leftGain = hrtfResult.LeftGain;
+            rightGain = hrtfResult.RightGain;
+            pan = (rightGain - leftGain) / (leftGain + rightGain + 0.0001f);
+        }
+        else
+        {
+            pan = CalculatePanning(toSource, distance, listenerForward, listenerUp);
+            leftGain = 1f - MathF.Max(0f, pan);
+            rightGain = 1f + MathF.Min(0f, pan);
+        }
 
         var spatialVolume = attenuation * spatialBlend + (1f - spatialBlend);
 
@@ -57,12 +93,65 @@ public sealed class SpatialAudioCalculator
         return new SpatialAudioResult
         {
             Volume = Math.Clamp(spatialVolume, 0f, 1f),
-            Pan = Math.Clamp(panning, -1f, 1f),
+            Pan = Math.Clamp(pan, -1f, 1f),
             Pitch = Math.Clamp(dopplerPitch, 0.1f, 3f),
             Attenuation = attenuation,
             Distance = distance,
             Occlusion = occlusion,
-            SpatialBlend = spatialBlend
+            SpatialBlend = spatialBlend,
+            LeftGain = leftGain,
+            RightGain = rightGain
+        };
+    }
+
+    public SpatialAudioResult CalculateHrtf(
+        Vector3 sourcePosition,
+        Vector3 sourceVelocity,
+        Vector3 listenerPosition,
+        Vector3 listenerForward,
+        Vector3 listenerUp,
+        Vector3 listenerVelocity,
+        float minDistance,
+        float maxDistance,
+        AudioRolloffMode rolloffMode,
+        float spatialBlend,
+        float dopplerLevel,
+        float spread)
+    {
+        var toSource = sourcePosition - listenerPosition;
+        var distance = toSource.Length();
+
+        var distanceRatio = minDistance > 0f ? distance / minDistance : 1f;
+
+        var attenuation = CalculateAttenuation(distanceRatio, rolloffMode, minDistance, maxDistance);
+
+        var dopplerPitch = CalculateDopplerPitch(
+            sourcePosition, sourceVelocity,
+            listenerPosition, listenerVelocity,
+            dopplerLevel);
+
+        var hrtfResult = _hrtfProcessor.Process(sourcePosition, listenerPosition, listenerForward, listenerUp);
+
+        var leftGain = hrtfResult.LeftGain * attenuation;
+        var rightGain = hrtfResult.RightGain * attenuation;
+
+        var spatialBlendFactor = spatialBlend;
+        leftGain = leftGain * spatialBlendFactor + (1f - spatialBlendFactor) * attenuation;
+        rightGain = rightGain * spatialBlendFactor + (1f - spatialBlendFactor) * attenuation;
+
+        var pan = (rightGain - leftGain) / (leftGain + rightGain + 0.0001f);
+
+        return new SpatialAudioResult
+        {
+            Volume = Math.Clamp((leftGain + rightGain) * 0.5f, 0f, 1f),
+            Pan = Math.Clamp(pan, -1f, 1f),
+            Pitch = Math.Clamp(dopplerPitch, 0.1f, 3f),
+            Attenuation = attenuation,
+            Distance = distance,
+            Occlusion = 0f,
+            SpatialBlend = spatialBlend,
+            LeftGain = Math.Clamp(leftGain, 0f, 1f),
+            RightGain = Math.Clamp(rightGain, 0f, 1f)
         };
     }
 
@@ -155,4 +244,6 @@ public struct SpatialAudioResult
     public float Distance;
     public float Occlusion;
     public float SpatialBlend;
+    public float LeftGain;
+    public float RightGain;
 }

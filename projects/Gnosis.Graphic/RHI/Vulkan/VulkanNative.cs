@@ -481,6 +481,18 @@ public static unsafe partial class VulkanNative
     [DllImport(LibraryName, CallingConvention = CallingConvention.StdCall)]
     public static extern void vkCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint regionCount, void* pRegions);
 
+    /// <summary>
+    /// 复制图像到缓冲区
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.StdCall)]
+    public static extern void vkCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint regionCount, void* pRegions);
+
+    /// <summary>
+    /// 复制图像到图像
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.StdCall)]
+    public static extern void vkCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint regionCount, void* pRegions);
+
     #endregion
 
     #region 物理设备查询

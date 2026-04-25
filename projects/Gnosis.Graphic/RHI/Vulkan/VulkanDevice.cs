@@ -989,6 +989,7 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
     private VkDescriptorPool _descriptorPool;
     private readonly Dictionary<ulong, VulkanResource> _resources = new();
     private bool _isDisposed;
+    private VkRenderPass _compatibleColorRenderPass;
 
     private static readonly string[] ValidationLayers = ["VK_LAYER_KHRONOS_validation"];
     private static readonly string[] InstanceExtensions = ["VK_KHR_surface", "VK_KHR_win32_surface"];
@@ -1013,6 +1014,7 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
         CreateLogicalDevice();
         CreateCommandPool();
         CreateDescriptorPool();
+        CreateCompatibleRenderPass();
     }
 
     #endregion
@@ -1239,7 +1241,7 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
         {
             var createInfo = new VkDescriptorPoolCreateInfo
             {
-                SType = (VkStructureType)51,
+                SType = VkStructureType.DescriptorPoolCreateInfo,
                 PNext = null,
                 Flags = 1,
                 MaxSets = 1024,
@@ -1251,6 +1253,75 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
                 VulkanDescriptorNative.vkCreateDescriptorPool(LogicalDevice, &createInfo, null, out _descriptorPool),
                 "创建描述符池");
         }
+    }
+
+    #endregion
+
+    #region 兼容渲染通道
+
+    /// <summary>
+    /// 创建兼容渲染通道，用于管线创建时关联
+    /// </summary>
+    private void CreateCompatibleRenderPass()
+    {
+        var colorAttachment = new VkAttachmentDescription
+        {
+            Flags = 0,
+            Format = VkFormat.B8G8R8A8Unorm,
+            Samples = VkSampleCountFlagBits._1,
+            LoadOp = VkAttachmentLoadOp.Clear,
+            StoreOp = VkAttachmentStoreOp.Store,
+            StencilLoadOp = VkAttachmentLoadOp.DontCare,
+            StencilStoreOp = VkAttachmentStoreOp.DontCare,
+            InitialLayout = VkImageLayout.Undefined,
+            FinalLayout = VkImageLayout.PresentSrcKHR
+        };
+
+        var colorRef = new VkAttachmentReference
+        {
+            Attachment = 0,
+            Layout = VkImageLayout.ColorAttachmentOptimal
+        };
+
+        var subpass = new VkSubpassDescription
+        {
+            Flags = 0,
+            PipelineBindPoint = VkPipelineBindPoint.Graphics,
+            InputAttachmentCount = 0,
+            PInputAttachments = null,
+            ColorAttachmentCount = 1,
+            PColorAttachments = &colorRef,
+            PResolveAttachments = null,
+            PDepthStencilAttachment = null,
+            PreserveAttachmentCount = 0,
+            PPreserveAttachments = null
+        };
+
+        var createInfo = new VkRenderPassCreateInfo
+        {
+            SType = VkStructureType.RenderPassCreateInfo,
+            PNext = null,
+            Flags = 0,
+            AttachmentCount = 1,
+            PAttachments = &colorAttachment,
+            SubpassCount = 1,
+            PSubpasses = &subpass,
+            DependencyCount = 0,
+            PDependencies = null
+        };
+
+        VulkanNative.CheckResult(
+            VulkanNative.vkCreateRenderPass(LogicalDevice, &createInfo, null, out _compatibleColorRenderPass),
+            "创建兼容渲染通道");
+    }
+
+    /// <summary>
+    /// 获取兼容渲染通道，用于管线创建
+    /// </summary>
+    /// <returns>兼容渲染通道句柄</returns>
+    internal VkRenderPass GetCompatibleRenderPass()
+    {
+        return _compatibleColorRenderPass;
     }
 
     #endregion
@@ -1443,7 +1514,7 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
     {
         var createInfo = new VkSamplerCreateInfo
         {
-            SType = (VkStructureType)40,
+            SType = VkStructureType.SamplerCreateInfo,
             PNext = null,
             Flags = 0,
             MagFilter = VulkanConversions.ToVkFilter(desc.MagFilter),
@@ -1844,7 +1915,7 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
 
             var allocInfo = new VkDescriptorSetAllocateInfo
             {
-                SType = (VkStructureType)52,
+                SType = VkStructureType.DescriptorSetAllocateInfo,
                 PNext = null,
                 DescriptorPool = _descriptorPool,
                 DescriptorSetCount = 1,
@@ -1938,6 +2009,11 @@ public sealed unsafe class VulkanDevice : RHI.IDevice
         if (!_descriptorPool.IsNull)
         {
             VulkanDescriptorNative.vkDestroyDescriptorPool(LogicalDevice, _descriptorPool, null);
+        }
+
+        if (!_compatibleColorRenderPass.IsNull)
+        {
+            VulkanNative.vkDestroyRenderPass(LogicalDevice, _compatibleColorRenderPass, null);
         }
 
         if (!CommandPool.IsNull)

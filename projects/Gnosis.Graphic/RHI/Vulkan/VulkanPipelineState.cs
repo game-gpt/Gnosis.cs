@@ -175,6 +175,19 @@ internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
         var shaderStages = BuildShaderStages();
         var entryPointHandles = new List<nint>();
 
+        var dynamicStates = stackalloc VkDynamicState[2];
+        dynamicStates[0] = VkDynamicState.Viewport;
+        dynamicStates[1] = VkDynamicState.Scissor;
+
+        var dynamicState = new VkPipelineDynamicStateCreateInfo
+        {
+            SType = VkStructureType.PipelineDynamicStateCreateInfo,
+            PNext = null,
+            Flags = 0,
+            DynamicStateCount = 2,
+            PDynamicStates = dynamicStates
+        };
+
         fixed (VkPipelineShaderStageCreateInfo* pStages = shaderStages)
         {
             var vertexInputState = new VkPipelineVertexInputStateCreateInfo
@@ -197,31 +210,15 @@ internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
                 PrimitiveRestartEnable = 0
             };
 
-            var viewport = new VkViewport
-            {
-                X = 0.0f,
-                Y = 0.0f,
-                Width = 1.0f,
-                Height = 1.0f,
-                MinDepth = 0.0f,
-                MaxDepth = 1.0f
-            };
-
-            var scissor = new VkRect2D
-            {
-                Offset = new VkOffset2D { X = 0, Y = 0 },
-                Extent = new VkExtent2D { Width = 1, Height = 1 }
-            };
-
             var viewportState = new VkPipelineViewportStateCreateInfo
             {
                 SType = VkStructureType.PipelineViewportStateCreateInfo,
                 PNext = null,
                 Flags = 0,
                 ViewportCount = 1,
-                PViewports = &viewport,
+                PViewports = null,
                 ScissorCount = 1,
-                PScissors = &scissor
+                PScissors = null
             };
 
             var rasterizationState = new VkPipelineRasterizationStateCreateInfo
@@ -301,9 +298,9 @@ internal sealed unsafe class VulkanPipelineState : RHI.IPipelineState
                 PMultisampleState = &multisampleState,
                 PDepthStencilState = &depthStencilState,
                 PColorBlendState = &colorBlendState,
-                PDynamicState = null,
+                PDynamicState = &dynamicState,
                 Layout = _pipelineLayout,
-                RenderPass = VkRenderPass.Null,
+                RenderPass = _device.GetCompatibleRenderPass(),
                 Subpass = 0,
                 BasePipelineHandle = VkPipeline.Null,
                 BasePipelineIndex = -1

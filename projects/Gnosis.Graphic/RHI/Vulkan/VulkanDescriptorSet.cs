@@ -2,47 +2,22 @@ using System.Runtime.InteropServices;
 
 namespace Gnosis.Graphic.RHI.Vulkan;
 
-/// <summary>
-/// Vulkan 描述符池句柄
-/// </summary>
 public readonly struct VkDescriptorPool : IEquatable<VkDescriptorPool>
 {
     private readonly nint _handle;
 
-    /// <summary>
-    /// 空句柄
-    /// </summary>
     public static VkDescriptorPool Null => new(nint.Zero);
 
-    /// <summary>
-    /// 构造 Vulkan 描述符池句柄
-    /// </summary>
-    /// <param name="handle">原生句柄值</param>
     public VkDescriptorPool(nint handle) => _handle = handle;
 
-    /// <summary>
-    /// 是否为空句柄
-    /// </summary>
     public bool IsNull => _handle == nint.Zero;
 
-    /// <summary>
-    /// 显式转换为原生句柄
-    /// </summary>
     public static explicit operator nint(VkDescriptorPool h) => h._handle;
 
-    /// <summary>
-    /// 判断是否相等
-    /// </summary>
     public bool Equals(VkDescriptorPool other) => _handle == other._handle;
 
-    /// <summary>
-    /// 判断是否相等
-    /// </summary>
     public override bool Equals(object? obj) => obj is VkDescriptorPool h && Equals(h);
 
-    /// <summary>
-    /// 获取哈希值
-    /// </summary>
     public override int GetHashCode() => _handle.GetHashCode();
 
     public static bool operator ==(VkDescriptorPool left, VkDescriptorPool right) => left.Equals(right);
@@ -50,50 +25,6 @@ public readonly struct VkDescriptorPool : IEquatable<VkDescriptorPool>
     public static bool operator !=(VkDescriptorPool left, VkDescriptorPool right) => !left.Equals(right);
 }
 
-#region 描述符辅助结构
-
-/// <summary>
-/// 描述符池大小
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-internal struct VkDescriptorPoolSize
-{
-    public VkDescriptorType Type;
-    public uint DescriptorCount;
-}
-
-/// <summary>
-/// 描述符池创建信息
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-internal unsafe struct VkDescriptorPoolCreateInfo
-{
-    public VkStructureType SType;
-    public void* PNext;
-    public uint Flags;
-    public uint MaxSets;
-    public uint PoolSizeCount;
-    public VkDescriptorPoolSize* PPoolSizes;
-}
-
-/// <summary>
-/// 描述符集分配信息
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-internal unsafe struct VkDescriptorSetAllocateInfo
-{
-    public VkStructureType SType;
-    public void* PNext;
-    public VkDescriptorPool DescriptorPool;
-    public uint DescriptorSetCount;
-    public VkDescriptorSetLayout* PSetLayouts;
-}
-
-#endregion
-
-/// <summary>
-/// Vulkan 描述符集实现
-/// </summary>
 internal sealed unsafe class VulkanDescriptorSet : RHI.IRhiDescriptorSet
 {
     #region 句柄属性

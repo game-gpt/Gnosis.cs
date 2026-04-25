@@ -17,7 +17,6 @@ namespace Gnosis.VM;
 public sealed class GnosisGameVM
 {
     private readonly NyarVM _inner;
-    private readonly BytecodeEncoder _encoder;
     private readonly IGameWorld _world;
 
     /// <summary>
@@ -27,15 +26,17 @@ public sealed class GnosisGameVM
     private readonly Dictionary<long, Func<Value[], Value>> _builtinDispatchTable;
 
     /// <summary>
-    ///     初始化 GnosisGameVM
+    ///     查询规格注册表：specHash → (all, any, none)
+    ///     由于降级规则只传递 specHash，需要在编译期注册查询规格
     /// </summary>
-    /// <param name="world">游戏世界实例</param>
+    private readonly Dictionary<int, QuerySpecRecord> _querySpecRegistry;
+
     public GnosisGameVM(IGameWorld world)
     {
         _inner = new NyarVM();
-        _encoder = new BytecodeEncoder();
         _world = world;
         _builtinDispatchTable = BuildBuiltinDispatchTable();
+        _querySpecRegistry = new Dictionary<int, QuerySpecRecord>();
 
         foreach (var (builtinId, handler) in _builtinDispatchTable)
         {
@@ -46,14 +47,13 @@ public sealed class GnosisGameVM
     /// <summary>
     ///     加载模块
     /// </summary>
-    /// <param name="module">要加载的模块</param>
     public void LoadModule(NyarModule module)
     {
         ArgumentNullException.ThrowIfNull(module);
 
         if (module.RawBytecode is null)
         {
-            var encoded = _encoder.Encode(module);
+            var encoded = NyarModuleConverter.Encode(module);
             module.RawBytecode = encoded;
         }
 
@@ -63,7 +63,6 @@ public sealed class GnosisGameVM
     /// <summary>
     ///     加载字节码
     /// </summary>
-    /// <param name="bytecode">字节码数据</param>
     public void LoadBytecode(byte[] bytecode)
     {
         _inner.Load(bytecode);
@@ -72,10 +71,6 @@ public sealed class GnosisGameVM
     /// <summary>
     ///     执行函数
     /// </summary>
-    /// <param name="moduleName">模块名称</param>
-    /// <param name="functionName">函数名称</param>
-    /// <param name="args">函数参数</param>
-    /// <returns>函数返回值</returns>
     public Value Run(string moduleName, string functionName, params Value[] args)
     {
         return _inner.Run(moduleName, functionName, args);
@@ -84,7 +79,6 @@ public sealed class GnosisGameVM
     /// <summary>
     ///     执行一帧的世界更新
     /// </summary>
-    /// <param name="deltaTime">帧间隔时间（毫秒）</param>
     public void Tick(double deltaTime)
     {
         _world.Update(deltaTime);
@@ -96,12 +90,21 @@ public sealed class GnosisGameVM
     public IGameWorld World => _world;
 
     /// <summary>
-    ///     根据 GameBuiltin ID 分派到 IGameWorld 对应方法
-    ///     这是编译期降级（EcsLoweringRules）与运行时执行的桥接点
+    ///     注册查询规格，供 DispatchEcsQuery 在运行时查找
+    ///     应在编译期/加载期调用，将降级规则生成的 specHash 与实际查询参数关联
     /// </summary>
-    /// <param name="builtinId">GameBuiltin 内置函数 ID</param>
-    /// <param name="args">运行时参数</param>
-    /// <returns>执行结果</returns>
+    /// <param name="specHash">查询规格哈希值</param>
+    /// <param name="all">必须拥有的组件类型名列表</param>
+    /// <param name="any">至少拥有一个的组件类型名列表</param>
+    /// <param name="none">不能拥有的组件类型名列表</param>
+    public void RegisterQuerySpec(int specHash, string[] all, string[] any, string[] none)
+    {
+        _querySpecRegistry[specHash] = new QuerySpecRecord(all, any, none);
+    }
+
+    /// <summary>
+    ///     根据 GameBuiltin ID 分派到 IGameWorld 对应方法
+    /// </summary>
     public Value DispatchBuiltin(long builtinId, Value[] args)
     {
         if (_builtinDispatchTable.TryGetValue(builtinId, out var handler))
@@ -114,10 +117,6 @@ public sealed class GnosisGameVM
 
     #region Builtin 分派表构建
 
-    /// <summary>
-    ///     构建 GameBuiltin ID → IGameWorld 方法的运行时分派表
-    ///     每个分派器将 Nyar Value 参数转换为 IGameWorld 接口所需的类型
-    /// </summary>
     private Dictionary<long, Func<Value[], Value>> BuildBuiltinDispatchTable()
     {
         return new Dictionary<long, Func<Value[], Value>>
@@ -170,16 +169,7 @@ public sealed class GnosisGameVM
         var fieldName = ExtractString(args[2]);
 
         var value = _world.GetComponent(entityId, componentType, fieldName);
-        return value switch
-        {
-            int i => Value.FromDouble(i),
-            long l => Value.FromDouble(l),
-            float f => Value.FromDouble(f),
-            double d => Value.FromDouble(d),
-            bool b => Value.FromDouble(b ? 1 : 0),
-            string s => Value.FromDouble(s.GetHashCode()),
-            _ => Value.Null
-        };
+        return ConvertToValue(value);
     }
 
     private Value DispatchEcsSetComponent(Value[] args)
@@ -223,7 +213,24 @@ public sealed class GnosisGameVM
 
     private Value DispatchEcsQuery(Value[] args)
     {
-        return Value.Null;
+        if (args.Length < 1) return Value.FromObject(new List<Value>());
+
+        var specHash = (int)args[0].Double;
+
+        if (!_querySpecRegistry.TryGetValue(specHash, out var spec))
+        {
+            return Value.FromObject(new List<Value>());
+        }
+
+        var entityIds = _world.QueryEntities(spec.All, spec.Any, spec.None);
+
+        var resultValues = new List<Value>(entityIds.Count);
+        foreach (var id in entityIds)
+        {
+            resultValues.Add(Value.FromDouble(id));
+        }
+
+        return Value.FromObject(resultValues);
     }
 
     private Value DispatchEcsWorldUpdate(Value[] args)
@@ -242,6 +249,44 @@ public sealed class GnosisGameVM
         if (value.Type == NyarValueType.Int) return value.Int.ToString();
         if (value.Type == NyarValueType.Double) return value.Double.ToString();
         return value.ToString() ?? "";
+    }
+
+    /// <summary>
+    ///     将 C# 对象转换为 Nyar Value
+    /// </summary>
+    private static Value ConvertToValue(object? value)
+    {
+        return value switch
+        {
+            int i => Value.FromDouble(i),
+            long l => Value.FromDouble(l),
+            float f => Value.FromDouble(f),
+            double d => Value.FromDouble(d),
+            bool b => Value.FromDouble(b ? 1 : 0),
+            string s => Value.FromObject(s),
+            _ => Value.Null
+        };
+    }
+
+    #endregion
+
+    #region 查询规格记录
+
+    /// <summary>
+    ///     查询规格记录，存储 all/any/none 组件类型名列表
+    /// </summary>
+    private sealed record QuerySpecRecord
+    {
+        public string[] All { get; }
+        public string[] Any { get; }
+        public string[] None { get; }
+
+        public QuerySpecRecord(string[] all, string[] any, string[] none)
+        {
+            All = all;
+            Any = any;
+            None = none;
+        }
     }
 
     #endregion

@@ -19,4 +19,14 @@
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="BroadPhase\SpatialHashGrid.cs" />
+        <Compile Remove="BroadPhase\SpatialProxy.cs" />
+        <Compile Remove="NarrowPhase\CollisionDetector.cs" />
+        <Compile Remove="Solver\ImpulseSolver.cs" />
+        <Compile Remove="Dynamics\PhysicsSystem.cs" />
+        <Compile Remove="Dynamics\PhysicsWorld.cs" />
+        <Compile Remove="ECS\PhysicsEcsSystem.cs" />
+    </ItemGroup>
 </Project>

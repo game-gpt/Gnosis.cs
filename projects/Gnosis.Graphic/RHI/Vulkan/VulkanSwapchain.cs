@@ -150,6 +150,7 @@ internal sealed unsafe class VulkanSwapchain : RHI.IRhiSwapchain
     private readonly List<VkImageView> _imageViews = new();
     private bool _isDisposed;
     private uint _currentImageIndex;
+    private nint _windowHandle;
 
     #endregion
 
@@ -169,6 +170,7 @@ internal sealed unsafe class VulkanSwapchain : RHI.IRhiSwapchain
         _device = device;
         _queue = queue;
         _queueFamilyIndex = queueFamilyIndex;
+        _windowHandle = desc.WindowHandle;
         Width = desc.Width;
         Height = desc.Height;
         Format = desc.Format;
@@ -186,7 +188,7 @@ internal sealed unsafe class VulkanSwapchain : RHI.IRhiSwapchain
     {
         var createInfo = new VkWin32SurfaceCreateInfoKHR
         {
-            SType = (VkStructureType)1000009000,
+            SType = VkStructureType.Win32SurfaceCreateInfoKHR,
             PNext = null,
             Flags = 0,
             Hinstance = Marshal.GetHINSTANCE(typeof(VulkanSwapchain).Module),
@@ -480,7 +482,7 @@ internal sealed unsafe class VulkanSwapchain : RHI.IRhiSwapchain
 
         var desc = new RHI.SwapchainDesc
         {
-            WindowHandle = nint.Zero,
+            WindowHandle = _windowHandle,
             Width = width,
             Height = height,
             Format = Format

@@ -1,7 +1,9 @@
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Gnosis.Graphic.RHI;
 using GnosisInputDevice = Gnosis.Input.Device;
 using SilkInput = Silk.NET.Input;
+using SilkGL = Silk.NET.OpenGL;
 using SilkWindowing = Silk.NET.Windowing;
 
 using SilkInputWindowExtensions = Silk.NET.Input.InputWindowExtensions;
@@ -54,6 +56,8 @@ public sealed class SilkNetWindow : IWindow
         set => _window.Title = value;
     }
 
+    public object? GlContext { get; private set; }
+
     #endregion
 
     #region 事件
@@ -82,24 +86,43 @@ public sealed class SilkNetWindow : IWindow
         {
             _window.Initialize();
             InitializeInput();
+            InitializeGL();
             _isInitialized = true;
         }
 
         _window.DoEvents();
     }
 
-    public void DoUpdate()
-    {
-        _window.DoUpdate();
-    }
-
-    public void DoRender()
-    {
-        _window.DoRender();
-    }
-
     public void MakeCurrent()
     {
+        if (OperatingSystem.IsWindows())
+        {
+            var hglrc = wglGetCurrentContext();
+            if (hglrc == 0)
+            {
+                return;
+            }
+
+            var hdc = wglGetCurrentDC();
+            if (hdc == 0)
+            {
+                return;
+            }
+
+            wglMakeCurrent(hdc, hglrc);
+        }
+    }
+
+    public void SwapBuffers()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var hdc = wglGetCurrentDC();
+            if (hdc != 0)
+            {
+                SwapBuffersNative(hdc);
+            }
+        }
     }
 
     public static IWindow Create(WindowOptions options)
@@ -114,6 +137,43 @@ public sealed class SilkNetWindow : IWindow
         var silkWindow = SilkWindowing.Window.Create(windowOptions);
 
         return new SilkNetWindow(silkWindow);
+    }
+
+    #endregion
+
+    #region 原生方法
+
+    [DllImport("user32.dll")]
+    private static extern nint GetDC(nint hWnd);
+
+    [DllImport("opengl32.dll")]
+    private static extern nint wglGetCurrentContext();
+
+    [DllImport("opengl32.dll")]
+    private static extern nint wglGetCurrentDC();
+
+    [DllImport("opengl32.dll")]
+    private static extern bool wglMakeCurrent(nint hdc, nint hglrc);
+
+    [DllImport("gdi32.dll", EntryPoint = "SwapBuffers")]
+    private static extern bool SwapBuffersNative(nint hdc);
+
+    #endregion
+
+    #region GL 初始化
+
+    private void InitializeGL()
+    {
+        try
+        {
+            var gl = SilkGL.GL.GetApi(_window);
+            GlContext = gl;
+            Console.WriteLine("[SilkNetWindow] OpenGL 上下文创建成功");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SilkNetWindow] OpenGL 上下文创建失败: {ex.Message}");
+        }
     }
 
     #endregion
@@ -255,6 +315,11 @@ public sealed class SilkNetWindow : IWindow
         if (_isDisposed)
         {
             return;
+        }
+
+        if (GlContext is SilkGL.GL gl)
+        {
+            gl.Dispose();
         }
 
         _inputContext?.Dispose();

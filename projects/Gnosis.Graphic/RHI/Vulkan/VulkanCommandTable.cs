@@ -297,6 +297,52 @@ internal sealed unsafe class VulkanCommandTable : RHI.ICommandTable
 
             VulkanNative.vkCmdCopyBuffer(CommandBuffer, vkSrc.BufferHandle, vkDst.BufferHandle, 1, &copyRegion);
         }
+        else if (vkSrc.ResourceType == RHI.ResourceType.Buffer && vkDst.ResourceType is RHI.ResourceType.Texture2D or RHI.ResourceType.Texture1D or RHI.ResourceType.Texture3D)
+        {
+            var copyRegion = new VkBufferImageCopy
+            {
+                BufferOffset = 0,
+                BufferRowLength = 0,
+                BufferImageHeight = 0,
+                ImageSubresource = new VkImageSubresourceLayers
+                {
+                    AspectMask = VkImageAspectFlagBits.Color,
+                    MipLevel = 0,
+                    BaseArrayLayer = 0,
+                    LayerCount = 1
+                },
+                ImageOffset = new VkOffset3D { X = 0, Y = 0, Z = 0 },
+                ImageExtent = new VkExtent3D { Width = 1, Height = 1, Depth = 1 }
+            };
+
+            VulkanNative.vkCmdCopyBufferToImage(CommandBuffer, vkSrc.BufferHandle, vkDst.ImageHandle, VkImageLayout.TransferDstOptimal, 1, &copyRegion);
+        }
+        else if (vkSrc.ResourceType is RHI.ResourceType.Texture2D or RHI.ResourceType.Texture1D or RHI.ResourceType.Texture3D
+                 && vkDst.ResourceType is RHI.ResourceType.Texture2D or RHI.ResourceType.Texture1D or RHI.ResourceType.Texture3D)
+        {
+            var copyRegion = new VkImageCopy
+            {
+                SrcSubresource = new VkImageSubresourceLayers
+                {
+                    AspectMask = VkImageAspectFlagBits.Color,
+                    MipLevel = 0,
+                    BaseArrayLayer = 0,
+                    LayerCount = 1
+                },
+                SrcOffset = new VkOffset3D { X = 0, Y = 0, Z = 0 },
+                DstSubresource = new VkImageSubresourceLayers
+                {
+                    AspectMask = VkImageAspectFlagBits.Color,
+                    MipLevel = 0,
+                    BaseArrayLayer = 0,
+                    LayerCount = 1
+                },
+                DstOffset = new VkOffset3D { X = 0, Y = 0, Z = 0 },
+                Extent = new VkExtent3D { Width = 1, Height = 1, Depth = 1 }
+            };
+
+            VulkanNative.vkCmdCopyImage(CommandBuffer, vkSrc.ImageHandle, VkImageLayout.TransferSrcOptimal, vkDst.ImageHandle, VkImageLayout.TransferDstOptimal, 1, &copyRegion);
+        }
     }
 
     #endregion

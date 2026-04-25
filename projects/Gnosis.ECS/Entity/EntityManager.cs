@@ -122,6 +122,41 @@ public sealed class EntityManager
         return _generations[index];
     }
 
+    /// <summary>
+    /// 获取所有存活实体的 ID 列表。
+    /// 仅遍历已使用的索引范围，跳过已销毁的槽位。
+    /// </summary>
+    public List<EntityId> GetAllAliveEntities()
+    {
+        var result = new List<EntityId>(_aliveCount);
+
+        for (uint i = 1; i < _nextIndex; i++)
+        {
+            if (_alive[i])
+            {
+                result.Add(new EntityId(i, _generations[i]));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 获取所有存活实体的 ID 列表，使用调用者提供的列表以避免分配。
+    /// </summary>
+    public void GetAllAliveEntities(List<EntityId> result)
+    {
+        result.Clear();
+
+        for (uint i = 1; i < _nextIndex; i++)
+        {
+            if (_alive[i])
+            {
+                result.Add(new EntityId(i, _generations[i]));
+            }
+        }
+    }
+
     private void GrowArrays(int newCapacity)
     {
         var newGenerations = new uint[newCapacity];

@@ -271,7 +271,9 @@ public enum VkStructureType
     DescriptorSetLayoutCreateInfo = 41,
     DescriptorPoolCreateInfo = 42,
     WriteDescriptorSet = 35,
-    SamplerCreateInfo = 57
+    SamplerCreateInfo = 57,
+    DescriptorSetAllocateInfo = 52,
+    Win32SurfaceCreateInfoKHR = 1000009000
 }
 
 /// <summary>

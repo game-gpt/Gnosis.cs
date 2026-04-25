@@ -1391,16 +1391,7 @@ public class VMInterpreter
         {
             if (_world is World concreteWorld)
             {
-                var allEntities = new List<EntityId>();
-                for (uint i = 1; i < concreteWorld.Entities.Capacity; i++)
-                {
-                    var id = new EntityId(i, 0);
-                    if (concreteWorld.Entities.IsAlive(id))
-                    {
-                        allEntities.Add(id);
-                    }
-                }
-
+                var allEntities = concreteWorld.Entities.GetAllAliveEntities();
                 results = _componentRegistry.ScriptStorage.QueryWithout(typeIdx, allEntities);
             }
             else

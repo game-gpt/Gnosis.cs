@@ -59,6 +59,122 @@ public struct VkViewport
     public float MaxDepth;
 }
 
+/// <summary>
+/// 描述符池大小
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct VkDescriptorPoolSize
+{
+    public VkDescriptorType Type;
+    public uint DescriptorCount;
+}
+
+/// <summary>
+/// 描述符池创建信息
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkDescriptorPoolCreateInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public uint Flags;
+    public uint MaxSets;
+    public uint PoolSizeCount;
+    public VkDescriptorPoolSize* PPoolSizes;
+}
+
+/// <summary>
+/// 描述符集分配信息
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkDescriptorSetAllocateInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public VkDescriptorPool DescriptorPool;
+    public uint DescriptorSetCount;
+    public VkDescriptorSetLayout* PSetLayouts;
+}
+
+/// <summary>
+/// 管线动态状态创建信息
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct VkPipelineDynamicStateCreateInfo
+{
+    public VkStructureType SType;
+    public void* PNext;
+    public uint Flags;
+    public uint DynamicStateCount;
+    public VkDynamicState* PDynamicStates;
+}
+
+/// <summary>
+/// 动态状态枚举
+/// </summary>
+public enum VkDynamicState
+{
+    Viewport = 0,
+    Scissor = 1,
+    LineWidth = 2,
+    DepthBias = 3,
+    BlendConstants = 4,
+    DepthBounds = 5,
+    StencilCompareMask = 6,
+    StencilWriteMask = 7,
+    StencilReference = 8
+}
+
+/// <summary>
+/// 缓冲区到图像复制区域
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct VkBufferImageCopy
+{
+    public ulong BufferOffset;
+    public uint BufferRowLength;
+    public uint BufferImageHeight;
+    public VkImageSubresourceLayers ImageSubresource;
+    public VkOffset3D ImageOffset;
+    public VkExtent3D ImageExtent;
+}
+
+/// <summary>
+/// 图像到图像复制区域
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct VkImageCopy
+{
+    public VkImageSubresourceLayers SrcSubresource;
+    public VkOffset3D SrcOffset;
+    public VkImageSubresourceLayers DstSubresource;
+    public VkOffset3D DstOffset;
+    public VkExtent3D Extent;
+}
+
+/// <summary>
+/// 图像子资源层
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct VkImageSubresourceLayers
+{
+    public VkImageAspectFlagBits AspectMask;
+    public uint MipLevel;
+    public uint BaseArrayLayer;
+    public uint LayerCount;
+}
+
+/// <summary>
+/// 三维偏移
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct VkOffset3D
+{
+    public int X;
+    public int Y;
+    public int Z;
+}
+
 #endregion
 
 #region 清除值

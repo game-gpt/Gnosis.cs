@@ -9,12 +9,14 @@ public interface IWindow : IDisposable
     bool IsMinimized { get; }
     string Title { get; set; }
 
+    object? GlContext { get; }
+
     event Action<EventArgs>? OnResize;
     event Action<EventArgs>? OnClosing;
 
     void PollEvents();
-    void DoUpdate();
-    void DoRender();
+    void MakeCurrent();
+    void SwapBuffers();
 
     static abstract IWindow Create(WindowOptions options);
 }

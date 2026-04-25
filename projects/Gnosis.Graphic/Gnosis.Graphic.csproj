@@ -31,6 +31,7 @@
     <ItemGroup>
         <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
         <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
+        <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -50,6 +51,7 @@
         <Compile Remove="RHI\D3D12\**" />
         <Compile Remove="RHI\Metal\**" />
         <Compile Remove="RHI\Software\SoftwareDevice.cs" />
+        <Compile Remove="Text\TextRenderer.cs" />
         <Compile Remove="StoryCommands\EffectCommands.cs" />
         <Compile Remove="Pipeline\ClusteredRenderer.cs" />
     </ItemGroup>
