@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using Gnosis.Input.Device;
 
 namespace Gnosis.Input.Gesture;
@@ -8,7 +9,7 @@ public sealed class TapGestureRecognizer : IGestureRecognizer
     #region 字段
 
     private bool _isTracking;
-    private float[] _startPosition = [0f, 0f];
+    private Vector2 _startPosition = Vector2.Zero;
     private long _startTimestamp;
     private readonly Stopwatch _stopwatch = new();
 
@@ -52,7 +53,7 @@ public sealed class TapGestureRecognizer : IGestureRecognizer
         {
             case TouchPhase.Began:
                 _isTracking = true;
-                _startPosition = touch.Position;
+                _startPosition = new Vector2(touch.Position[0], touch.Position[1]);
                 _startTimestamp = _stopwatch.ElapsedMilliseconds;
                 break;
 
@@ -80,7 +81,7 @@ public sealed class TapGestureRecognizer : IGestureRecognizer
         }
     }
 
-    public void ProcessMouse(float[] position, bool isPressed)
+    public void ProcessMouse(Vector2 position, bool isPressed)
     {
         if (!IsEnabled)
         {
@@ -99,13 +100,13 @@ public sealed class TapGestureRecognizer : IGestureRecognizer
 
             if (elapsed <= MaxDuration)
             {
-                var dx = position[0] - _startPosition[0];
-                var dy = position[1] - _startPosition[1];
+                var dx = position.X - _startPosition.X;
+                var dy = position.Y - _startPosition.Y;
                 var distance = MathF.Sqrt(dx * dx + dy * dy);
 
                 if (distance <= MaxDistance)
                 {
-                    OnTap?.Invoke(position, elapsed);
+                    OnTap?.Invoke([position.X, position.Y], elapsed);
                 }
             }
 

@@ -1,4 +1,4 @@
-using Gnosis.Core.Math;
+using System.Numerics;
 using Gnosis.Input.Device;
 
 namespace Gnosis.Input.Gesture;

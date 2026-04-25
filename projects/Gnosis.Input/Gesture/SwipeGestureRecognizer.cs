@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using Gnosis.Input.Device;
 
 namespace Gnosis.Input.Gesture;
@@ -8,7 +9,7 @@ public sealed class SwipeGestureRecognizer : IGestureRecognizer
     #region 字段
 
     private bool _isTracking;
-    private float[] _startPosition = [0f, 0f];
+    private Vector2 _startPosition = Vector2.Zero;
     private long _startTimestamp;
     private readonly Stopwatch _stopwatch = new();
 
@@ -51,11 +52,11 @@ public sealed class SwipeGestureRecognizer : IGestureRecognizer
         switch (touch.Phase)
         {
             case TouchPhase.Began:
-                StartTracking(touch.Position);
+                StartTracking(new Vector2(touch.Position[0], touch.Position[1]));
                 break;
 
             case TouchPhase.Ended when _isTracking:
-                EndTracking(touch.Position);
+                EndTracking(new Vector2(touch.Position[0], touch.Position[1]));
                 break;
 
             case TouchPhase.Canceled:
@@ -64,7 +65,7 @@ public sealed class SwipeGestureRecognizer : IGestureRecognizer
         }
     }
 
-    public void ProcessMouse(float[] position, bool isPressed)
+    public void ProcessMouse(Vector2 position, bool isPressed)
     {
         if (!IsEnabled)
         {
@@ -90,14 +91,14 @@ public sealed class SwipeGestureRecognizer : IGestureRecognizer
 
     #region 私有方法
 
-    private void StartTracking(float[] position)
+    private void StartTracking(Vector2 position)
     {
         _isTracking = true;
         _startPosition = position;
         _startTimestamp = _stopwatch.ElapsedMilliseconds;
     }
 
-    private void EndTracking(float[] endPosition)
+    private void EndTracking(Vector2 endPosition)
     {
         var elapsed = (_stopwatch.ElapsedMilliseconds - _startTimestamp) / 1000f;
 
@@ -107,8 +108,8 @@ public sealed class SwipeGestureRecognizer : IGestureRecognizer
             return;
         }
 
-        var dx = endPosition[0] - _startPosition[0];
-        var dy = endPosition[1] - _startPosition[1];
+        var dx = endPosition.X - _startPosition.X;
+        var dy = endPosition.Y - _startPosition.Y;
         var distance = MathF.Sqrt(dx * dx + dy * dy);
 
         if (distance < MinDistance)
@@ -122,7 +123,7 @@ public sealed class SwipeGestureRecognizer : IGestureRecognizer
             ? (dx > 0 ? SwipeDirection.Right : SwipeDirection.Left)
             : (dy > 0 ? SwipeDirection.Down : SwipeDirection.Up);
 
-        OnSwipe?.Invoke(direction, endPosition, velocity);
+        OnSwipe?.Invoke(direction, [endPosition.X, endPosition.Y], velocity);
         _isTracking = false;
     }
 

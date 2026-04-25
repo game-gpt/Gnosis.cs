@@ -18,4 +18,8 @@
     <ItemGroup>
         <Compile Remove="Simulate\InputComponent.cs" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+    </ItemGroup>
 </Project>

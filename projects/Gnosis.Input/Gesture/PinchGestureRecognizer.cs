@@ -1,3 +1,4 @@
+using System.Numerics;
 using Gnosis.Input.Device;
 
 namespace Gnosis.Input.Gesture;
@@ -35,7 +36,7 @@ public sealed class PinchGestureRecognizer : IGestureRecognizer
         }
     }
 
-    public void ProcessMouse(float[] position, bool isPressed)
+    public void ProcessMouse(Vector2 position, bool isPressed)
     {
     }
 

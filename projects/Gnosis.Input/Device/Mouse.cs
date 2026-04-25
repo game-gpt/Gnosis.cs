@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Gnosis.Input.Device;
@@ -14,9 +15,9 @@ public sealed class Mouse : IMouse
 
     private readonly bool[] _currentButtons = new bool[ButtonCount];
     private readonly bool[] _previousButtons = new bool[ButtonCount];
-    private float[] _position = [0f, 0f];
-    private float[] _previousPosition = [0f, 0f];
-    private float[] _delta = [0f, 0f];
+    private Vector2 _position = Vector2.Zero;
+    private Vector2 _previousPosition = Vector2.Zero;
+    private Vector2 _delta = Vector2.Zero;
     private float _scrollDelta;
     private float _previousScroll;
 
@@ -30,9 +31,9 @@ public sealed class Mouse : IMouse
 
     public bool IsConnected { get; set; } = true;
 
-    public float[] Position => _position;
+    public Vector2 Position => _position;
 
-    public float[] Delta => _delta;
+    public Vector2 Delta => _delta;
 
     public float ScrollDelta => _scrollDelta;
 
@@ -81,7 +82,7 @@ public sealed class Mouse : IMouse
     public void SetPosition(float x, float y)
     {
         _previousPosition = _position;
-        _position = [x, y];
+        _position = new Vector2(x, y);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -113,7 +114,7 @@ public sealed class Mouse : IMouse
             _previousButtons[i] = _currentButtons[i];
         }
 
-        _delta = [_position[0] - _previousPosition[0], _position[1] - _previousPosition[1]];
+        _delta = _position - _previousPosition;
         _scrollDelta -= _previousScroll;
     }
 
@@ -121,9 +122,9 @@ public sealed class Mouse : IMouse
     {
         Array.Clear(_currentButtons);
         Array.Clear(_previousButtons);
-        _position = [0f, 0f];
-        _previousPosition = [0f, 0f];
-        _delta = [0f, 0f];
+        _position = Vector2.Zero;
+        _previousPosition = Vector2.Zero;
+        _delta = Vector2.Zero;
         _scrollDelta = 0f;
         _previousScroll = 0f;
     }
