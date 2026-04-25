@@ -20,7 +20,9 @@ public sealed class Chunk
 
     #region 字段
 
-    private readonly Dictionary<Type, Array> _componentArrays;
+    private readonly Array[] _componentArrays;
+    private readonly Type[] _slotTypes;
+    private readonly Dictionary<Type, int> _typeToSlot;
     private readonly HashSet<Type> _componentTypesSet;
     private readonly EntityId[] _entities;
     private readonly int _capacity;
@@ -50,6 +52,11 @@ public sealed class Chunk
     /// </summary>
     public IReadOnlySet<Type> ComponentTypes => _componentTypesSet;
 
+    /// <summary>
+    /// 组件槽数量
+    /// </summary>
+    public int SlotCount => _slotTypes.Length;
+
     #endregion
 
     #region 构造函数
@@ -58,12 +65,19 @@ public sealed class Chunk
     {
         _capacity = capacity;
         _entities = new EntityId[capacity];
-        _componentArrays = new Dictionary<Type, Array>();
-        _componentTypesSet = new HashSet<Type>(componentTypes);
 
-        foreach (var type in _componentTypesSet)
+        var types = componentTypes as IList<Type> ?? componentTypes.ToList();
+        _slotTypes = new Type[types.Count];
+        _componentArrays = new Array[types.Count];
+        _typeToSlot = new Dictionary<Type, int>(types.Count);
+        _componentTypesSet = new HashSet<Type>(types.Count);
+
+        for (var i = 0; i < types.Count; i++)
         {
-            _componentArrays[type] = Array.CreateInstance(type, capacity);
+            _slotTypes[i] = types[i];
+            _componentArrays[i] = Array.CreateInstance(types[i], capacity);
+            _typeToSlot[types[i]] = i;
+            _componentTypesSet.Add(types[i]);
         }
 
         _count = 0;
@@ -106,9 +120,9 @@ public sealed class Chunk
         {
             _entities[index] = _entities[lastIndex];
 
-            foreach (var kvp in _componentArrays)
+            for (var slot = 0; slot < _componentArrays.Length; slot++)
             {
-                Array.Copy(kvp.Value, lastIndex, kvp.Value, index, 1);
+                Array.Copy(_componentArrays[slot], lastIndex, _componentArrays[slot], index, 1);
             }
         }
 
@@ -138,6 +152,14 @@ public sealed class Chunk
     }
 
     /// <summary>
+    /// 获取实体数组的引用（零分配访问）
+    /// </summary>
+    public EntityId[] GetEntityArray()
+    {
+        return _entities;
+    }
+
+    /// <summary>
     /// 查找指定实体在 Chunk 中的索引，未找到返回 -1
     /// </summary>
     public int IndexOf(EntityId entityId)
@@ -160,9 +182,9 @@ public sealed class Chunk
     {
         Array.Clear(_entities, 0, _count);
 
-        foreach (var kvp in _componentArrays)
+        for (var slot = 0; slot < _componentArrays.Length; slot++)
         {
-            Array.Clear(kvp.Value, 0, _count);
+            Array.Clear(_componentArrays[slot], 0, _count);
         }
 
         _count = 0;
@@ -170,19 +192,73 @@ public sealed class Chunk
 
     #endregion
 
-    #region 组件访问
+    #region 组件访问 - 槽位快速路径
+
+    /// <summary>
+    /// 获取指定组件类型的槽位索引，未找到返回 -1
+    /// </summary>
+    public int GetComponentSlot<T>() where T : struct
+    {
+        return _typeToSlot.TryGetValue(typeof(T), out var slot) ? slot : -1;
+    }
+
+    /// <summary>
+    /// 通过槽位索引获取组件数组（零字典查找，热路径优化）
+    /// </summary>
+    public T[] GetComponentArrayBySlot<T>(int slot) where T : struct
+    {
+        return (T[])_componentArrays[slot];
+    }
+
+    /// <summary>
+    /// 通过槽位索引获取组件引用（零字典查找，热路径优化）
+    /// </summary>
+    public ref T GetComponentBySlot<T>(int slot, int index) where T : struct
+    {
+        return ref ((T[])_componentArrays[slot])[index];
+    }
+
+    /// <summary>
+    /// 通过槽位索引设置组件（零字典查找，热路径优化）
+    /// </summary>
+    public void SetComponentBySlot<T>(int slot, int index, T component) where T : struct
+    {
+        ((T[])_componentArrays[slot])[index] = component;
+    }
+
+    /// <summary>
+    /// 获取指定槽位的组件数组（非泛型）
+    /// </summary>
+    public Array GetComponentArrayBySlot(int slot)
+    {
+        return _componentArrays[slot];
+    }
+
+    /// <summary>
+    /// 获取指定槽位的组件类型
+    /// </summary>
+    public Type GetSlotType(int slot)
+    {
+        return _slotTypes[slot];
+    }
+
+    #endregion
+
+    #region 组件访问 - Type 索引（兼容接口）
 
     /// <summary>
     /// 获取指定索引实体的组件引用
     /// </summary>
     public ref T GetComponent<T>(int index) where T : struct
     {
-        if (!_componentArrays.TryGetValue(typeof(T), out var array))
+        var slot = GetComponentSlot<T>();
+
+        if (slot < 0)
         {
             throw new KeyNotFoundException($"组件类型 {typeof(T).Name} 不在此 Chunk 中");
         }
 
-        return ref ((T[])array)[index];
+        return ref ((T[])_componentArrays[slot])[index];
     }
 
     /// <summary>
@@ -190,12 +266,14 @@ public sealed class Chunk
     /// </summary>
     public void SetComponent<T>(int index, T component) where T : struct
     {
-        if (!_componentArrays.TryGetValue(typeof(T), out var array))
+        var slot = GetComponentSlot<T>();
+
+        if (slot < 0)
         {
             throw new KeyNotFoundException($"组件类型 {typeof(T).Name} 不在此 Chunk 中");
         }
 
-        ((T[])array)[index] = component;
+        ((T[])_componentArrays[slot])[index] = component;
     }
 
     /// <summary>
@@ -203,7 +281,7 @@ public sealed class Chunk
     /// </summary>
     public bool HasComponent<T>() where T : struct
     {
-        return _componentTypesSet.Contains(typeof(T));
+        return _typeToSlot.ContainsKey(typeof(T));
     }
 
     /// <summary>
@@ -211,15 +289,18 @@ public sealed class Chunk
     /// </summary>
     public void CopyEntityTo(int sourceIndex, Chunk targetChunk, int targetIndex)
     {
-        foreach (var type in _componentTypesSet)
+        for (var srcSlot = 0; srcSlot < _slotTypes.Length; srcSlot++)
         {
-            if (!targetChunk._componentArrays.TryGetValue(type, out var targetArray))
+            var type = _slotTypes[srcSlot];
+            var targetSlot = targetChunk.GetComponentSlot(type);
+
+            if (targetSlot < 0)
             {
                 continue;
             }
 
-            var sourceArray = _componentArrays[type];
-            Array.Copy(sourceArray, sourceIndex, targetArray, targetIndex, 1);
+            Array.Copy(_componentArrays[srcSlot], sourceIndex,
+                targetChunk._componentArrays[targetSlot], targetIndex, 1);
         }
     }
 
@@ -228,12 +309,23 @@ public sealed class Chunk
     /// </summary>
     public T[] GetComponentArray<T>() where T : struct
     {
-        if (!_componentArrays.TryGetValue(typeof(T), out var array))
+        var slot = GetComponentSlot<T>();
+
+        if (slot < 0)
         {
             throw new KeyNotFoundException($"组件类型 {typeof(T).Name} 不在此 Chunk 中");
         }
 
-        return (T[])array;
+        return (T[])_componentArrays[slot];
+    }
+
+    #endregion
+
+    #region 内部方法
+
+    private int GetComponentSlot(Type type)
+    {
+        return _typeToSlot.TryGetValue(type, out var slot) ? slot : -1;
     }
 
     #endregion

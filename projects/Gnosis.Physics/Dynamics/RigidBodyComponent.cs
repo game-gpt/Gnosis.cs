@@ -1,4 +1,6 @@
-using Gnosis.Core;
+using Gnosis.ECS.Component;
+using Gnosis.Physics.Dynamics;
+using Gnosis.Physics.Shape;
 
 namespace Gnosis.Physics;
 

@@ -1,0 +1,46 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/projects/">
+    <Project Path="projects/Gnosis.VM/Gnosis.VM.csproj" />
+  </Folder>
+  <Project Path="../Acorn.cs/projects/Acorn/Acorn.csproj" />
+  <Project Path="../Acorn.cs/projects/Generator.Acorn/Generator.Acorn.csproj" />
+  <Project Path="../LightDB/projects/LightDB/LightDB.csproj" />
+  <Project Path="../NyarVM.cs/projects/Nyar.Core/Nyar.Core.csproj" />
+  <Project Path="../NyarVM.cs/projects/Nyar.Dialect.Core/Nyar.Dialect.Core.csproj" />
+  <Project Path="../NyarVM.cs/projects/Nyar.Dialect.Game/Nyar.Dialect.Game.csproj" />
+  <Project Path="projects/Gnosis.AI/Gnosis.AI.csproj" />
+  <Project Path="projects/Gnosis.Animation/Gnosis.Animation.csproj" />
+  <Project Path="projects/Gnosis.Asset/Gnosis.Asset.csproj" />
+  <Project Path="projects/Gnosis.Audio/Gnosis.Audio.csproj" />
+  <Project Path="projects/Gnosis.Core/Gnosis.Core.csproj" />
+  <Project Path="projects/Gnosis.Database/Gnosis.Database.csproj" />
+  <Project Path="projects/Gnosis.ECS/Gnosis.ECS.csproj" />
+  <Project Path="projects/Gnosis.GameUI/Gnosis.GameUI.csproj" />
+  <Project Path="projects/Gnosis.Geometry/Gnosis.Geometry.csproj" />
+  <Project Path="projects/Gnosis.Graphic/Gnosis.Graphic.csproj" />
+  <Project Path="projects/Gnosis.Input/Gnosis.Input.csproj" />
+  <Project Path="projects/Gnosis.IR/Gnosis.IR.csproj" />
+  <Project Path="projects/Gnosis.Navigation/Gnosis.Navigation.csproj" />
+  <Project Path="projects/Gnosis.Network/Gnosis.Network.csproj" />
+  <Project Path="projects/Gnosis.Neural/Gnosis.Neural.csproj" />
+  <Project Path="projects/Gnosis.Physics/Gnosis.Physics.csproj" />
+  <Project Path="projects/Gnosis.Plugin/Gnosis.Plugin.csproj" />
+  <Project Path="projects/Gnosis.Profiler/Gnosis.Profiler.csproj" />
+  <Project Path="projects/Gnosis.Runtime/Gnosis.Runtime.csproj" />
+  <Project Path="projects/Gnosis.Scene/Gnosis.Scene.csproj" />
+  <Project Path="projects/Gnosis.Security/Gnosis.Security.csproj" />
+  <Project Path="projects/Gnosis.Storage/Gnosis.Storage.csproj" />
+  <Project Path="projects/Gnosis.Testing/Gnosis.Testing.csproj" />
+  <Project Path="vendors/Gnosis.Tests/Gnosis.Tests.csproj" />
+  <Project Path="projects/Gnosis.Toolchain/Gnosis.Toolchain.csproj" />
+  <Project Path="projects/Gnosis.Widget.SDL/Gnosis.Widget.SDL.csproj" />
+  <Project Path="projects/Gnosis.Widget.WPF/Gnosis.Widget.WPF.csproj" />
+  <Project Path="projects/Gnosis.Widget/Gnosis.Widget.csproj" />
+  <Project Path="projects/Gnosis.XR/Gnosis.XR.csproj" />
+  <Project Path="vendors/Gnosis.Benchmarks/Gnosis.Benchmarks.csproj" />
+</Solution>

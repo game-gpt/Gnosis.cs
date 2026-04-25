@@ -446,6 +446,12 @@ public static unsafe partial class VulkanNative
     public static extern void vkCmdDrawIndexed(VkCommandBuffer commandBuffer, uint indexCount, uint instanceCount, uint firstIndex, int vertexOffset, uint firstInstance);
 
     /// <summary>
+    /// 计算调度命令
+    /// </summary>
+    [DllImport(LibraryName, CallingConvention = CallingConvention.StdCall)]
+    public static extern void vkCmdDispatch(VkCommandBuffer commandBuffer, uint groupCountX, uint groupCountY, uint groupCountZ);
+
+    /// <summary>
     /// 设置视口
     /// </summary>
     [DllImport(LibraryName, CallingConvention = CallingConvention.StdCall)]

@@ -1,4 +1,5 @@
-using Gnosis.Core;
+using Gnosis.Audio.Listener;
+using Gnosis.ECS.Component;
 
 namespace Gnosis.Audio;
 

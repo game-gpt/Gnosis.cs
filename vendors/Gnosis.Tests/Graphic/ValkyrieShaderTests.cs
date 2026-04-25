@@ -5,9 +5,14 @@ using Acorn.Spirv.Decode;
 using Gnosis.Graphic.Shader;
 using Gnosis.Graphic.Shader.Spirv;
 using Gnosis.IR.Shader;
+using Gnosis.Toolchain.ShaderCompiler;
+using Gnosis.Toolchain.ShaderCompiler.Backend;
 using NUnit.Framework;
+using Oak.Diagnostics;
 using Oak.Valkyrie;
+using Oak.Valkyrie.AST;
 using Oak.Valkyrie.Lexer;
+using Oak.Valkyrie.Parser;
 
 namespace Gnosis.Tests.Graphic;
 
@@ -16,12 +21,12 @@ namespace Gnosis.Tests.Graphic;
 [TestFixture]
 public class ValkyrieShaderPipelineTests
 {
-    private ValkyrieShaderCompiler _compiler = null!;
+    private ShaderCompiler _compiler = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _compiler = new ValkyrieShaderCompiler();
+        _compiler = new ShaderCompiler();
     }
 
     [Test]
@@ -239,13 +244,13 @@ shader ConsistencyTest {
 [TestFixture]
 public class SpirvBinaryValidationTests
 {
-    private ValkyrieShaderCompiler _compiler = null!;
+    private ShaderCompiler _compiler = null!;
     private SpirvValidator _validator = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _compiler = new ValkyrieShaderCompiler();
+        _compiler = new ShaderCompiler();
         _validator = new SpirvValidator();
     }
 
@@ -487,12 +492,12 @@ shader OptSizeTest {
 [TestFixture]
 public class SpirvBackendCompatibilityTests
 {
-    private ValkyrieShaderCompiler _compiler = null!;
+    private ShaderCompiler _compiler = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _compiler = new ValkyrieShaderCompiler();
+        _compiler = new ShaderCompiler();
     }
 
     [Test]
@@ -662,7 +667,7 @@ shader GLCompatTest {
     public void BackendCompatibility_ShaderFormatHandler_CompilesValkyrieToSpirv()
     {
         var handler = new ShaderFormatHandler();
-        handler.SetCompiler(new ValkyrieShaderCompiler());
+        handler.SetCompiler(new ShaderCompiler());
 
         var shaderData = new ShaderData
         {
@@ -713,28 +718,24 @@ shader MultiEntryTest {
 [TestFixture]
 public class ValkyrieResourceBindingTests
 {
-    private ValkyrieShaderCompiler _compiler = null!;
+    private ShaderCompiler _compiler = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _compiler = new ValkyrieShaderCompiler();
+        _compiler = new ShaderCompiler();
     }
 
     [Test]
     public void ResourceBinding_UniformDecl_CreatesCorrectResource()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader UBTest {
     uniform mvp: mat4;
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "UBTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(1));
         Assert.That(module.Resources[0].Name, Is.EqualTo("mvp"));
@@ -745,9 +746,7 @@ shader UBTest {
     [Test]
     public void ResourceBinding_MultipleUniforms_IncrementBinding()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader MultiUBTest {
     uniform mvp: mat4;
     uniform tint: vec4;
@@ -755,9 +754,7 @@ shader MultiUBTest {
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "MultiUBTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(3));
         Assert.That(module.Resources[0].Binding, Is.Not.EqualTo(module.Resources[1].Binding));
@@ -767,17 +764,13 @@ shader MultiUBTest {
     [Test]
     public void ResourceBinding_TextureDecl_CreatesSampledImageResource()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader TexResTest {
     texture albedo: sampler2D;
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "TexResTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(1));
         Assert.That(module.Resources[0].Name, Is.EqualTo("albedo"));
@@ -787,17 +780,13 @@ shader TexResTest {
     [Test]
     public void ResourceBinding_SamplerDecl_CreatesSamplerResource()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader SampResTest {
     sampler pointSampler;
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "SampResTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(1));
         Assert.That(module.Resources[0].Name, Is.EqualTo("pointSampler"));
@@ -807,9 +796,7 @@ shader SampResTest {
     [Test]
     public void ResourceBinding_CBufferDecl_CreatesStructAndResource()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader CBResTest {
     cbuffer SceneData {
         viewProj: mat4;
@@ -819,9 +806,7 @@ shader CBResTest {
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "CBResTest");
+");
 
         var ubResources = module.Resources.Where(r => r.Kind == ShaderResourceKind.UniformBuffer).ToList();
         Assert.That(ubResources.Count, Is.GreaterThanOrEqualTo(1));
@@ -837,17 +822,13 @@ shader CBResTest {
     [Test]
     public void ResourceBinding_VaryingDecl_CreatesInputAttachmentResource()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader VaryingResTest {
     varying color: vec4;
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "VaryingResTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(1));
         Assert.That(module.Resources[0].Name, Is.EqualTo("color"));
@@ -857,9 +838,7 @@ shader VaryingResTest {
     [Test]
     public void ResourceBinding_MixedResources_AllCreated()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader MixedResTest {
     uniform mvp: mat4;
     cbuffer SceneData {
@@ -873,9 +852,7 @@ shader MixedResTest {
     fragment fs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "MixedResTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(5));
         Assert.That(module.Resources.Count(r => r.Kind == ShaderResourceKind.UniformBuffer), Is.EqualTo(2));
@@ -887,9 +864,7 @@ shader MixedResTest {
     [Test]
     public void ResourceBinding_CBufferFieldTypes_CorrectlyResolved()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader FieldTypeTest {
     cbuffer TypeTest {
         a: f32;
@@ -901,9 +876,7 @@ shader FieldTypeTest {
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "FieldTypeTest");
+");
 
         var typeTestStruct = module.Structs.FirstOrDefault(s => s.Name == "TypeTest");
         Assert.That(typeTestStruct, Is.Not.Null);
@@ -914,6 +887,24 @@ shader FieldTypeTest {
         Assert.That(typeTestStruct.Fields[3].Name, Is.EqualTo("d"));
         Assert.That(typeTestStruct.Fields[4].Name, Is.EqualTo("e"));
     }
+
+    private static ShaderModuleIr LowerSource(string source)
+    {
+        var diagnostics = new DiagnosticSink();
+        var lexer = new ValkyrieLexer(diagnostics);
+        var tokens = lexer.Tokenize(source);
+
+        var parser = new ValkyrieParser(ValkyrieLanguage.Shader, diagnostics);
+        var ast = parser.Parse(tokens);
+
+        if (ast is CompilationUnit unit)
+        {
+            var lowering = new ShaderAstLowering(diagnostics);
+            return lowering.Lower(unit);
+        }
+
+        throw new InvalidOperationException($"AST 解析失败：{string.Join(", ", diagnostics.Errors.Select(e => e.Message))}");
+    }
 }
 
 #endregion
@@ -923,12 +914,12 @@ shader FieldTypeTest {
 [TestFixture]
 public class ValkyrieErrorHandlingTests
 {
-    private ValkyrieShaderCompiler _compiler = null!;
+    private ShaderCompiler _compiler = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _compiler = new ValkyrieShaderCompiler();
+        _compiler = new ShaderCompiler();
     }
 
     [Test]
@@ -1124,9 +1115,7 @@ shader EmptyStructShader {
     [Test]
     public void ErrorHandling_Lowering_VariousTypeNames_Resolved()
     {
-        var lowering = new ValkyrieShaderLowering(new ShaderCompileOptions());
-        var lexer = new ValkyrieLexer(ValkyrieLanguage.Shader);
-        var source = @"
+        var module = LowerSource(@"
 shader TypeResolveTest {
     uniform a: f32;
     uniform b: i32;
@@ -1135,11 +1124,27 @@ shader TypeResolveTest {
     vertex vs {
     }
 };
-";
-        var tokens = lexer.Tokenize(source);
-        var module = lowering.LowerFromTokens(tokens, "TypeResolveTest");
+");
 
         Assert.That(module.Resources.Count, Is.EqualTo(4));
+    }
+
+    private static ShaderModuleIr LowerSource(string source)
+    {
+        var diagnostics = new DiagnosticSink();
+        var lexer = new ValkyrieLexer(diagnostics);
+        var tokens = lexer.Tokenize(source);
+
+        var parser = new ValkyrieParser(ValkyrieLanguage.Shader, diagnostics);
+        var ast = parser.Parse(tokens);
+
+        if (ast is CompilationUnit unit)
+        {
+            var lowering = new ShaderAstLowering(diagnostics);
+            return lowering.Lower(unit);
+        }
+
+        throw new InvalidOperationException($"AST 解析失败：{string.Join(", ", diagnostics.Errors.Select(e => e.Message))}");
     }
 }
 

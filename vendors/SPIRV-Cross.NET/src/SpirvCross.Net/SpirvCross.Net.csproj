@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SpirvCross.Net</RootNamespace>
+    <AssemblyName>SpirvCross.Net</AssemblyName>
+    <Version>0.1.0</Version>
+    <Authors>nyar-vm</Authors>
+    <Description>纯 C# SPIR-V 交叉编译器，支持 SPIR-V → HLSL / GLSL / MSL / WGSL 文本生成</Description>
+    <PackageProjectUrl>https://github.com/nyar-vm/SpirvCross.Net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nyar-vm/SpirvCross.Net</RepositoryUrl>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+    <PackageTags>spirv;shader;cross-compile;hlsl;glsl;msl;wgsl;gpu;vulkan;directx;metal</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\Acorn.cs\projects\Acorn.SpirV\SpirV.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Readme.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

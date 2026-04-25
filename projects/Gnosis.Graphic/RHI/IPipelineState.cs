@@ -1,12 +1,22 @@
 namespace Gnosis.Graphic.RHI;
 
 /// <summary>
+///     管线类型
+/// </summary>
+public enum PipelineType
+{
+    Graphics = 0,
+    Compute = 1
+}
+
+/// <summary>
 ///     管线状态描述，包含完整的渲染管线配置
 /// </summary>
 public record PipelineStateDesc
 {
     public required IShaderProgram Shader { get; init; }
     public IResource[]? ShaderResources { get; init; }
+    public PipelineType PipelineType { get; init; } = PipelineType.Graphics;
     public PrimitiveTopology Topology { get; init; } = PrimitiveTopology.TriangleList;
     public BlendMode BlendMode { get; init; }
     public bool DepthTest { get; init; }

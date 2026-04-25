@@ -16,12 +16,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="Listener\AudioListenerComponent.cs" />
-        <Compile Remove="Source\AudioSourceComponent.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
         <ProjectReference Include="..\Gnosis.Runtime\Gnosis.Runtime.csproj" />
     </ItemGroup>
 </Project>

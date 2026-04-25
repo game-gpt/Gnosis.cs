@@ -13,6 +13,8 @@ public interface IWindow : IDisposable
     event Action<EventArgs>? OnClosing;
 
     void PollEvents();
+    void DoUpdate();
+    void DoRender();
 
     static abstract IWindow Create(WindowOptions options);
 }

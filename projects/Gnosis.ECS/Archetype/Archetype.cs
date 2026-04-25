@@ -137,7 +137,35 @@ public sealed class Archetype : IArchetype
 
     #endregion
 
-    #region 组件访问
+    #region 组件访问 - 槽位快速路径
+
+    /// <summary>
+    /// 获取指定组件类型的槽位索引，未找到返回 -1。
+    /// 同一 Archetype 的所有 Chunk 共享相同的槽位映射，
+    /// 因此只需查询一次即可用于所有 Chunk 的快速访问。
+    /// </summary>
+    public int GetComponentSlot<T>() where T : struct
+    {
+        if (_chunks.Count == 0)
+        {
+            return -1;
+        }
+
+        return _chunks[0].GetComponentSlot<T>();
+    }
+
+    /// <summary>
+    /// 尝试获取指定组件类型的槽位索引
+    /// </summary>
+    public bool TryGetComponentSlot<T>(out int slot) where T : struct
+    {
+        slot = GetComponentSlot<T>();
+        return slot >= 0;
+    }
+
+    #endregion
+
+    #region 组件访问 - Type 索引
 
     /// <summary>
     /// 检查是否包含指定类型的组件

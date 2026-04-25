@@ -16,11 +16,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="Collision\ColliderComponent.cs" />
-        <Compile Remove="Dynamics\RigidBodyComponent.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
+        <ProjectReference Include="..\Gnosis.ECS\Gnosis.ECS.csproj" />
     </ItemGroup>
 </Project>

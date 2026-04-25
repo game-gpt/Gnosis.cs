@@ -35,7 +35,7 @@ public enum ConfigFormat
     Json = 1,
     Xml = 2,
     Yaml = 3,
-    Toml = 4,
+    Gon = 4,
     Ini = 5,
     Binary = 6
 }

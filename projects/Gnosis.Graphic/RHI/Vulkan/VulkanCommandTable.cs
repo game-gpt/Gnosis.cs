@@ -21,6 +21,11 @@ internal sealed unsafe class VulkanCommandTable : RHI.ICommandTable
     private readonly VkCommandPool _commandPool;
 
     /// <summary>
+    /// 当前绑定的管线状态
+    /// </summary>
+    private VulkanPipelineState? _currentPipeline;
+
+    /// <summary>
     /// 是否已释放
     /// </summary>
     private bool _isDisposed;
@@ -137,7 +142,8 @@ internal sealed unsafe class VulkanCommandTable : RHI.ICommandTable
     {
         var vkPipelineState = (VulkanPipelineState)pipelineState;
         vkPipelineState.EnsurePipelineCreated();
-        VulkanNative.vkCmdBindPipeline(CommandBuffer, VkPipelineBindPoint.Graphics, vkPipelineState.Pipeline);
+        _currentPipeline = vkPipelineState;
+        VulkanNative.vkCmdBindPipeline(CommandBuffer, vkPipelineState.BindPoint, vkPipelineState.Pipeline);
     }
 
     /// <summary>
@@ -228,8 +234,9 @@ internal sealed unsafe class VulkanCommandTable : RHI.ICommandTable
         vkDescriptorSet.Flush();
         var descriptorSetHandle = vkDescriptorSet.Handle;
         var pipelineLayout = vkDescriptorSet.BoundPipelineLayout;
+        var bindPoint = _currentPipeline?.BindPoint ?? VkPipelineBindPoint.Graphics;
 
-        VulkanNative.vkCmdBindDescriptorSets(CommandBuffer, VkPipelineBindPoint.Graphics, pipelineLayout, setIndex, 1, &descriptorSetHandle, 0, null);
+        VulkanNative.vkCmdBindDescriptorSets(CommandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSetHandle, 0, null);
     }
 
     /// <summary>
@@ -249,10 +256,11 @@ internal sealed unsafe class VulkanCommandTable : RHI.ICommandTable
     }
 
     /// <summary>
-    /// 计算调度（尚未实现）
+    /// 计算调度
     /// </summary>
     public void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
     {
+        VulkanNative.vkCmdDispatch(CommandBuffer, groupCountX, groupCountY, groupCountZ);
     }
 
     /// <summary>

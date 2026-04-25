@@ -315,6 +315,13 @@ public sealed unsafe class OpenGLDevice : IDevice
         GlNative.Finish!();
     }
 
+    public void Clear(float r, float g, float b, float a)
+    {
+        GlNative.ClearColor!(r, g, b, a);
+        GlNative.Clear!(0x00004000 | 0x00000100);
+        GlNative.Flush!();
+    }
+
     #endregion
 
     #region IDisposable

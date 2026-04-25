@@ -265,10 +265,41 @@ public sealed class NodeCanvas : ContainerElement
             var midX = (sx + ex) / 2;
 
             var portType = sourceNode.OutputPorts[sourcePortIndex].Type;
-            var color = GetPortColor(portType);
+            var color = GetConnectionColor(sourceNode, conn.SourcePortName, portType);
 
             DrawBezierConnection(renderer, sx, sy, midX, ex, ey, midX, color);
         }
+    }
+
+    private static Color GetConnectionColor(EditorNode sourceNode, string sourcePortName, PortType portType)
+    {
+        if (sourceNode.Category == "Control" && sourceNode.Title == "条件分支")
+        {
+            return sourcePortName switch
+            {
+                "✓ 真" => new Color(0.3f, 0.9f, 0.3f, 1.0f),
+                "✗ 假" => new Color(0.9f, 0.3f, 0.3f, 1.0f),
+                _ => GetPortColor(portType)
+            };
+        }
+
+        if (sourceNode.Category == "Control" && sourceNode.Title == "选项菜单")
+        {
+            var choiceColors = new[]
+            {
+                new Color(0.4f, 0.6f, 0.9f, 1.0f),
+                new Color(0.6f, 0.4f, 0.9f, 1.0f),
+                new Color(0.9f, 0.6f, 0.4f, 1.0f)
+            };
+
+            var portIndex = sourceNode.OutputPorts.FindIndex(p => p.Name == sourcePortName);
+            if (portIndex >= 0 && portIndex < choiceColors.Length)
+            {
+                return choiceColors[portIndex];
+            }
+        }
+
+        return GetPortColor(portType);
     }
 
     private void PaintPendingConnection(IWidgetRenderer renderer, Rect contentRect)
@@ -292,7 +323,7 @@ public sealed class NodeCanvas : ContainerElement
         var midX = (sx + ex) / 2;
 
         var portType = sourceNode.OutputPorts[sourcePortIndex].Type;
-        var color = GetPortColor(portType);
+        var color = GetConnectionColor(sourceNode, _connectingSourcePortName!, portType);
 
         DrawBezierConnection(renderer, sx, sy, midX, ex, ey, midX, color);
     }

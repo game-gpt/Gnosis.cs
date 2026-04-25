@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SpirvCross.Net.Dxil</RootNamespace>
+    <AssemblyName>SpirvCross.Net.Dxil</AssemblyName>
+    <Version>0.1.0</Version>
+    <Authors>nyar-vm</Authors>
+    <Description>SpirvCross.Net DXIL 后端，支持 SPIR-V → DXIL 二进制生成</Description>
+    <PackageProjectUrl>https://github.com/nyar-vm/SpirvCross.Net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nyar-vm/SpirvCross.Net</RepositoryUrl>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <PackageTags>spirv;dxil;shader;directx;gpu;cross-compile</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SpirvCross.Net\SpirvCross.Net.csproj" />
+    <ProjectReference Include="..\..\..\..\..\Acorn.cs\projects\Acorn.Dxil\Acorn.Dxil.csproj" />
+    <ProjectReference Include="..\..\..\..\..\Acorn.cs\projects\Acorn.Llvm\LLVM.csproj" />
+  </ItemGroup>
+</Project>

@@ -19,7 +19,7 @@ public sealed class SilkNetWindow : IWindow
     private GnosisInputDevice.Keyboard? _gnosisKeyboard;
     private GnosisInputDevice.Mouse? _gnosisMouse;
     private bool _isDisposed;
-    private bool _isLoaded;
+    private bool _isInitialized;
 
     #endregion
 
@@ -78,14 +78,28 @@ public sealed class SilkNetWindow : IWindow
 
     public void PollEvents()
     {
-        _window.DoEvents();
-
-        if (!_isLoaded)
+        if (!_isInitialized)
         {
             _window.Initialize();
             InitializeInput();
-            _isLoaded = true;
+            _isInitialized = true;
         }
+
+        _window.DoEvents();
+    }
+
+    public void DoUpdate()
+    {
+        _window.DoUpdate();
+    }
+
+    public void DoRender()
+    {
+        _window.DoRender();
+    }
+
+    public void MakeCurrent()
+    {
     }
 
     public static IWindow Create(WindowOptions options)
@@ -244,7 +258,7 @@ public sealed class SilkNetWindow : IWindow
         }
 
         _inputContext?.Dispose();
-        _window.Dispose();
+        _window.Reset();
 
         _isDisposed = true;
     }

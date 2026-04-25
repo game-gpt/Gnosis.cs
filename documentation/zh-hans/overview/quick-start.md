@@ -77,20 +77,23 @@ dotnet build -c Release
 
 ### 创建游戏配置
 
-在项目根目录创建 `game.toml`：
+在项目根目录创建 `game.von`：
 
-```toml
-[game]
-name = "my-first-game"
-version = "0.1.0"
-author = "Your Name"
+```von
+GameConfig {
+    name: "my-first-game"
+    version: "0.1.0"
+    author: "Your Name"
 
-[engine]
-target_arch = "WASM"
+    engine: {
+        target_arch: "WASM"
+    }
 
-[assets]
-source = "assets/"
-output = "cooked/"
+    assets: {
+        source: "assets/"
+        output: "cooked/"
+    }
+}
 ```
 
 ### 编写 gg 代码

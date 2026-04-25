@@ -44,7 +44,6 @@
     <ItemGroup>
         <Compile Remove="Capture\CameraControllerComponent.cs" />
         <Compile Remove="Shader\DiffusionShaderBackend.cs" />
-        <Compile Remove="RHI\IrGenerator.cs" />
         <Compile Remove="RHI\ITransform.cs" />
         <Compile Remove="Light\LightComponent.cs" />
         <Compile Remove="Shader\NeuralShaderBackend.cs" />

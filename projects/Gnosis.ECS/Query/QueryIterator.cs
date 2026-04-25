@@ -37,6 +37,7 @@ public delegate void RefAction<T1, T2, T3, T4>(EntityId entityId, ref T1 comp1, 
 /// 查询迭代器，高效遍历匹配查询条件的实体和组件。
 /// 直接从 Archetype 的 Chunk 中读取组件数据，避免间接寻址开销。
 /// 支持 ref 返回值实现原地修改组件，支持变更过滤迭代。
+/// 优化策略：槽位快速访问、消除冗余 HasComponent 检查、无过滤器时跳过 ShouldIncludeEntity。
 /// </summary>
 public sealed class QueryIterator
 {
@@ -45,6 +46,7 @@ public sealed class QueryIterator
     private readonly List<ArchetypeEntity> _matchingArchetypes;
     private readonly ComponentVersionTracker? _versionTracker;
     private readonly Dictionary<Type, uint>? _changedSinceVersions;
+    private readonly bool _hasChangeFilter;
 
     #endregion
 
@@ -55,6 +57,11 @@ public sealed class QueryIterator
     /// </summary>
     public int ArchetypeCount => _matchingArchetypes.Count;
 
+    /// <summary>
+    /// 是否启用变更过滤
+    /// </summary>
+    public bool HasChangeFilter => _hasChangeFilter;
+
     #endregion
 
     #region 构造函数
@@ -64,6 +71,7 @@ public sealed class QueryIterator
         _matchingArchetypes = new List<ArchetypeEntity>(archetypes);
         _versionTracker = null;
         _changedSinceVersions = null;
+        _hasChangeFilter = false;
     }
 
     public QueryIterator(
@@ -74,6 +82,7 @@ public sealed class QueryIterator
         _matchingArchetypes = new List<ArchetypeEntity>(archetypes);
         _versionTracker = versionTracker;
         _changedSinceVersions = new Dictionary<Type, uint>(changedSinceVersions);
+        _hasChangeFilter = changedSinceVersions.Count > 0;
     }
 
     #endregion
@@ -108,20 +117,13 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>())
-            {
-                continue;
-            }
+            var slot = archetype.GetComponentSlot<T1>();
+            if (slot < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
-                if (!chunk.HasComponent<T1>())
-                {
-                    continue;
-                }
-
                 var entities = chunk.GetAllEntities();
-                var compArray = chunk.GetComponentArray<T1>();
+                var compArray = chunk.GetComponentArrayBySlot<T1>(slot);
 
                 for (var i = 0; i < entities.Count; i++)
                 {
@@ -135,33 +137,61 @@ public sealed class QueryIterator
     }
 
     /// <summary>
-    /// 遍历匹配实体及其单个组件（引用返回，支持原地修改）
+    /// 遍历匹配实体及其单个组件（引用返回，支持原地修改，零 GC 分配）
     /// </summary>
     public void EntitiesWithRef<T1>(RefAction<T1> action) where T1 : struct
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>())
-            {
-                continue;
-            }
+            var slot = archetype.GetComponentSlot<T1>();
+            if (slot < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
-                if (!chunk.HasComponent<T1>())
-                {
-                    continue;
-                }
+                var entityArray = chunk.GetEntityArray();
+                var compArray = chunk.GetComponentArrayBySlot<T1>(slot);
+                var count = chunk.Count;
 
-                var entities = chunk.GetAllEntities();
-                var compArray = chunk.GetComponentArray<T1>();
-
-                for (var i = 0; i < entities.Count; i++)
+                if (_hasChangeFilter)
                 {
-                    if (ShouldIncludeEntity(entities[i]))
+                    for (var i = 0; i < count; i++)
                     {
-                        action(entities[i], ref compArray[i]);
+                        if (ShouldIncludeEntity(entityArray[i]))
+                        {
+                            action(entityArray[i], ref compArray[i]);
+                        }
                     }
+                }
+                else
+                {
+                    for (var i = 0; i < count; i++)
+                    {
+                        action(entityArray[i], ref compArray[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 零分配遍历匹配实体及其单个组件（无变更过滤快速路径）
+    /// </summary>
+    public void ForEach<T1>(RefAction<T1> action) where T1 : struct
+    {
+        foreach (var archetype in _matchingArchetypes)
+        {
+            var slot = archetype.GetComponentSlot<T1>();
+            if (slot < 0) continue;
+
+            foreach (var chunk in archetype.Chunks)
+            {
+                var entityArray = chunk.GetEntityArray();
+                var compArray = chunk.GetComponentArrayBySlot<T1>(slot);
+                var count = chunk.Count;
+
+                for (var i = 0; i < count; i++)
+                {
+                    action(entityArray[i], ref compArray[i]);
                 }
             }
         }
@@ -180,16 +210,15 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>() || !archetype.HasComponent<T2>())
-            {
-                continue;
-            }
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            if (slot1 < 0 || slot2 < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
                 var entities = chunk.GetAllEntities();
-                var comp1Array = chunk.GetComponentArray<T1>();
-                var comp2Array = chunk.GetComponentArray<T2>();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
 
                 for (var i = 0; i < entities.Count; i++)
                 {
@@ -203,7 +232,7 @@ public sealed class QueryIterator
     }
 
     /// <summary>
-    /// 遍历匹配实体及其两个组件（引用返回，支持原地修改）
+    /// 遍历匹配实体及其两个组件（引用返回，支持原地修改，零 GC 分配）
     /// </summary>
     public void EntitiesWithRef<T1, T2>(RefAction<T1, T2> action)
         where T1 : struct
@@ -211,23 +240,61 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>() || !archetype.HasComponent<T2>())
-            {
-                continue;
-            }
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            if (slot1 < 0 || slot2 < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
-                var entities = chunk.GetAllEntities();
-                var comp1Array = chunk.GetComponentArray<T1>();
-                var comp2Array = chunk.GetComponentArray<T2>();
+                var entityArray = chunk.GetEntityArray();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var count = chunk.Count;
 
-                for (var i = 0; i < entities.Count; i++)
+                if (_hasChangeFilter)
                 {
-                    if (ShouldIncludeEntity(entities[i]))
+                    for (var i = 0; i < count; i++)
                     {
-                        action(entities[i], ref comp1Array[i], ref comp2Array[i]);
+                        if (ShouldIncludeEntity(entityArray[i]))
+                        {
+                            action(entityArray[i], ref comp1Array[i], ref comp2Array[i]);
+                        }
                     }
+                }
+                else
+                {
+                    for (var i = 0; i < count; i++)
+                    {
+                        action(entityArray[i], ref comp1Array[i], ref comp2Array[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 零分配遍历匹配实体及其两个组件（无变更过滤快速路径）
+    /// </summary>
+    public void ForEach<T1, T2>(RefAction<T1, T2> action)
+        where T1 : struct
+        where T2 : struct
+    {
+        foreach (var archetype in _matchingArchetypes)
+        {
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            if (slot1 < 0 || slot2 < 0) continue;
+
+            foreach (var chunk in archetype.Chunks)
+            {
+                var entityArray = chunk.GetEntityArray();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var count = chunk.Count;
+
+                for (var i = 0; i < count; i++)
+                {
+                    action(entityArray[i], ref comp1Array[i], ref comp2Array[i]);
                 }
             }
         }
@@ -247,17 +314,17 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>() || !archetype.HasComponent<T2>() || !archetype.HasComponent<T3>())
-            {
-                continue;
-            }
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            var slot3 = archetype.GetComponentSlot<T3>();
+            if (slot1 < 0 || slot2 < 0 || slot3 < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
                 var entities = chunk.GetAllEntities();
-                var comp1Array = chunk.GetComponentArray<T1>();
-                var comp2Array = chunk.GetComponentArray<T2>();
-                var comp3Array = chunk.GetComponentArray<T3>();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var comp3Array = chunk.GetComponentArrayBySlot<T3>(slot3);
 
                 for (var i = 0; i < entities.Count; i++)
                 {
@@ -271,7 +338,7 @@ public sealed class QueryIterator
     }
 
     /// <summary>
-    /// 遍历匹配实体及其三个组件（引用返回，支持原地修改）
+    /// 遍历匹配实体及其三个组件（引用返回，支持原地修改，零 GC 分配）
     /// </summary>
     public void EntitiesWithRef<T1, T2, T3>(RefAction<T1, T2, T3> action)
         where T1 : struct
@@ -280,24 +347,66 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>() || !archetype.HasComponent<T2>() || !archetype.HasComponent<T3>())
-            {
-                continue;
-            }
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            var slot3 = archetype.GetComponentSlot<T3>();
+            if (slot1 < 0 || slot2 < 0 || slot3 < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
-                var entities = chunk.GetAllEntities();
-                var comp1Array = chunk.GetComponentArray<T1>();
-                var comp2Array = chunk.GetComponentArray<T2>();
-                var comp3Array = chunk.GetComponentArray<T3>();
+                var entityArray = chunk.GetEntityArray();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var comp3Array = chunk.GetComponentArrayBySlot<T3>(slot3);
+                var count = chunk.Count;
 
-                for (var i = 0; i < entities.Count; i++)
+                if (_hasChangeFilter)
                 {
-                    if (ShouldIncludeEntity(entities[i]))
+                    for (var i = 0; i < count; i++)
                     {
-                        action(entities[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i]);
+                        if (ShouldIncludeEntity(entityArray[i]))
+                        {
+                            action(entityArray[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i]);
+                        }
                     }
+                }
+                else
+                {
+                    for (var i = 0; i < count; i++)
+                    {
+                        action(entityArray[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 零分配遍历匹配实体及其三个组件（无变更过滤快速路径）
+    /// </summary>
+    public void ForEach<T1, T2, T3>(RefAction<T1, T2, T3> action)
+        where T1 : struct
+        where T2 : struct
+        where T3 : struct
+    {
+        foreach (var archetype in _matchingArchetypes)
+        {
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            var slot3 = archetype.GetComponentSlot<T3>();
+            if (slot1 < 0 || slot2 < 0 || slot3 < 0) continue;
+
+            foreach (var chunk in archetype.Chunks)
+            {
+                var entityArray = chunk.GetEntityArray();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var comp3Array = chunk.GetComponentArrayBySlot<T3>(slot3);
+                var count = chunk.Count;
+
+                for (var i = 0; i < count; i++)
+                {
+                    action(entityArray[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i]);
                 }
             }
         }
@@ -318,19 +427,19 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>() || !archetype.HasComponent<T2>() ||
-                !archetype.HasComponent<T3>() || !archetype.HasComponent<T4>())
-            {
-                continue;
-            }
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            var slot3 = archetype.GetComponentSlot<T3>();
+            var slot4 = archetype.GetComponentSlot<T4>();
+            if (slot1 < 0 || slot2 < 0 || slot3 < 0 || slot4 < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
                 var entities = chunk.GetAllEntities();
-                var comp1Array = chunk.GetComponentArray<T1>();
-                var comp2Array = chunk.GetComponentArray<T2>();
-                var comp3Array = chunk.GetComponentArray<T3>();
-                var comp4Array = chunk.GetComponentArray<T4>();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var comp3Array = chunk.GetComponentArrayBySlot<T3>(slot3);
+                var comp4Array = chunk.GetComponentArrayBySlot<T4>(slot4);
 
                 for (var i = 0; i < entities.Count; i++)
                 {
@@ -344,7 +453,7 @@ public sealed class QueryIterator
     }
 
     /// <summary>
-    /// 遍历匹配实体及其四个组件（引用返回，支持原地修改）
+    /// 遍历匹配实体及其四个组件（引用返回，支持原地修改，零 GC 分配）
     /// </summary>
     public void EntitiesWithRef<T1, T2, T3, T4>(RefAction<T1, T2, T3, T4> action)
         where T1 : struct
@@ -354,26 +463,71 @@ public sealed class QueryIterator
     {
         foreach (var archetype in _matchingArchetypes)
         {
-            if (!archetype.HasComponent<T1>() || !archetype.HasComponent<T2>() ||
-                !archetype.HasComponent<T3>() || !archetype.HasComponent<T4>())
-            {
-                continue;
-            }
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            var slot3 = archetype.GetComponentSlot<T3>();
+            var slot4 = archetype.GetComponentSlot<T4>();
+            if (slot1 < 0 || slot2 < 0 || slot3 < 0 || slot4 < 0) continue;
 
             foreach (var chunk in archetype.Chunks)
             {
-                var entities = chunk.GetAllEntities();
-                var comp1Array = chunk.GetComponentArray<T1>();
-                var comp2Array = chunk.GetComponentArray<T2>();
-                var comp3Array = chunk.GetComponentArray<T3>();
-                var comp4Array = chunk.GetComponentArray<T4>();
+                var entityArray = chunk.GetEntityArray();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var comp3Array = chunk.GetComponentArrayBySlot<T3>(slot3);
+                var comp4Array = chunk.GetComponentArrayBySlot<T4>(slot4);
+                var count = chunk.Count;
 
-                for (var i = 0; i < entities.Count; i++)
+                if (_hasChangeFilter)
                 {
-                    if (ShouldIncludeEntity(entities[i]))
+                    for (var i = 0; i < count; i++)
                     {
-                        action(entities[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i], ref comp4Array[i]);
+                        if (ShouldIncludeEntity(entityArray[i]))
+                        {
+                            action(entityArray[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i], ref comp4Array[i]);
+                        }
                     }
+                }
+                else
+                {
+                    for (var i = 0; i < count; i++)
+                    {
+                        action(entityArray[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i], ref comp4Array[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 零分配遍历匹配实体及其四个组件（无变更过滤快速路径）
+    /// </summary>
+    public void ForEach<T1, T2, T3, T4>(RefAction<T1, T2, T3, T4> action)
+        where T1 : struct
+        where T2 : struct
+        where T3 : struct
+        where T4 : struct
+    {
+        foreach (var archetype in _matchingArchetypes)
+        {
+            var slot1 = archetype.GetComponentSlot<T1>();
+            var slot2 = archetype.GetComponentSlot<T2>();
+            var slot3 = archetype.GetComponentSlot<T3>();
+            var slot4 = archetype.GetComponentSlot<T4>();
+            if (slot1 < 0 || slot2 < 0 || slot3 < 0 || slot4 < 0) continue;
+
+            foreach (var chunk in archetype.Chunks)
+            {
+                var entityArray = chunk.GetEntityArray();
+                var comp1Array = chunk.GetComponentArrayBySlot<T1>(slot1);
+                var comp2Array = chunk.GetComponentArrayBySlot<T2>(slot2);
+                var comp3Array = chunk.GetComponentArrayBySlot<T3>(slot3);
+                var comp4Array = chunk.GetComponentArrayBySlot<T4>(slot4);
+                var count = chunk.Count;
+
+                for (var i = 0; i < count; i++)
+                {
+                    action(entityArray[i], ref comp1Array[i], ref comp2Array[i], ref comp3Array[i], ref comp4Array[i]);
                 }
             }
         }
@@ -411,14 +565,14 @@ public sealed class QueryIterator
 
     private bool ShouldIncludeEntity(EntityId entityId)
     {
-        if (_versionTracker == null || _changedSinceVersions == null || _changedSinceVersions.Count == 0)
+        if (!_hasChangeFilter)
         {
             return true;
         }
 
-        foreach (var kvp in _changedSinceVersions)
+        foreach (var kvp in _changedSinceVersions!)
         {
-            if (_versionTracker.HasChanged(kvp.Key, entityId, kvp.Value))
+            if (_versionTracker!.HasChanged(kvp.Key, entityId, kvp.Value))
             {
                 return true;
             }

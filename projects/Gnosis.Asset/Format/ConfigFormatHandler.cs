@@ -38,6 +38,6 @@ public class ConfigFormatHandler : FormatHandlerBase, IConfigFormat
     
     protected override IReadOnlyList<string> GetSupportedExtensions()
     {
-        return new List<string> { ".gnosis-config", ".json", ".xml", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".config" };
+        return new List<string> { ".gnosis-config", ".json", ".xml", ".yaml", ".yml", ".gon", ".von", ".ini", ".cfg", ".config" };
     }
 }

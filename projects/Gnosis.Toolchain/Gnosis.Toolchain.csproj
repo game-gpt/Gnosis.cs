@@ -16,11 +16,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="ShaderCompiler\ShaderGenerator\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Remove="ShaderCompiler\ShaderGenerator\**" />
+        <Compile Remove="VerseCompiler\**" />
+        <Compile Remove="ScriptCompiler\ScriptFrontend\WidgetCompiler.cs" />
+        <Compile Remove="ScriptCompiler\AST\**" />
+        <Compile Remove="ScriptCompiler\Meta\CompileTimeHookRegistry.cs" />
+        <Compile Remove="ScriptCompiler\Meta\ICompileTimeHook.cs" />
+        <Compile Remove="ScriptCompiler\Meta\BuiltinSwizzleHook.cs" />
+        <Compile Remove="ScriptCompiler\SourceSpanExtensions.cs" />
+        <Compile Remove="ScriptCompiler\Backend\AstIrLowering.cs" />
     </ItemGroup>
 
     <ItemGroup>
