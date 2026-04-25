@@ -1,32 +1,35 @@
-struct SkyboxVertexInput {
-    position: vec3<f32>,
-    normal: vec3<f32>,
-    uv: vec2<f32>,
-}
+using gg_shader::f32::{vec2, vec3, vec4, mat4}
+using gg_shader::texture_cube
+using gg_shader::sampler
 
-struct SkyboxVertexOutput {
-    position: vec4<f32>,
-    uv: vec2<f32>,
-    ray_direction: vec3<f32>,
-}
+shader skybox {
+    uniform mvp: mat4,
+    uniform model: mat4,
 
-[Vertex]
-micro vs_main(input: SkyboxVertexInput) -> SkyboxVertexOutput {
-    let mut output: SkyboxVertexOutput;
-    output.position = uniforms.mvp * vec4<f32>(input.position, 1.0);
-    output.position.z = output.position.w;
-    output.ray_direction = normalize((uniforms.model * vec4<f32>(input.position, 1.0)).xyz);
-    output.uv = input.uv;
-    return output;
-}
+    texture skybox_cubemap: texture_cube,
+    sampler cube_sampler,
 
-[Fragment]
-micro fs_main(input: SkyboxVertexOutput) -> vec4<f32> {
-    let dir = normalize(input.ray_direction);
-    let color = sample_cubemap(skybox_cubemap, dir);
-    return vec4<f32>(color, 1.0);
-}
+    varying v_uv: vec2,
+    varying v_ray_direction: vec3,
 
-micro sample_cubemap(tex: sampler_cube, dir: vec3<f32>) -> vec3<f32> {
-    return texture(tex, dir).rgb;
+    [vertex_main]
+    vs_main(position: vec3, normal: vec3, uv: vec2) -> vec4 {
+        let clip_pos = mvp * vec4(position, 1.0)
+        v_uv = uv
+        v_ray_direction = normalize((model * vec4(position, 1.0)).xyz)
+        let mut output_pos = clip_pos
+        output_pos.z = clip_pos.w
+        return output_pos
+    }
+
+    [fragment_main]
+    fs_main() -> vec4 {
+        let dir = normalize(v_ray_direction)
+        let color = sample_cubemap(dir)
+        return vec4(color, 1.0)
+    }
+
+    micro sample_cubemap(dir: vec3) -> vec3 {
+        return texture(skybox_cubemap, cube_sampler, dir).rgb
+    }
 }

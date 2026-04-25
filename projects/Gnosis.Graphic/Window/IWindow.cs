@@ -1,3 +1,5 @@
+using Gnosis.Platform;
+
 namespace Gnosis.Graphic.Window;
 
 public interface IWindow : IDisposable

@@ -29,8 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Silk.NET.SDL" Version="2.22.0" />
-        <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+        <ProjectReference Include="..\Gnosis.Platform\Gnosis.Platform.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -52,5 +51,6 @@
         <Compile Remove="RHI\Software\SoftwareDevice.cs" />
         <Compile Remove="StoryCommands\EffectCommands.cs" />
         <Compile Remove="Pipeline\ClusteredRenderer.cs" />
+        <Compile Remove="UI\UIRenderPass.cs" />
     </ItemGroup>
 </Project>

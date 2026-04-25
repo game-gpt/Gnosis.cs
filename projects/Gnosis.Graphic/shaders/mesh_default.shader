@@ -1,22 +1,16 @@
-struct MeshVertexInput {
-    position: vec3<f32>,
-    color: vec3<f32>,
-}
+using gg_shader::f32::{vec3, vec4}
 
-struct MeshVertexOutput {
-    position: vec4<f32>,
-    color: vec3<f32>,
-}
+shader mesh_default {
+    varying v_color: vec3,
 
-[Vertex]
-micro vs_main(input: MeshVertexInput) -> MeshVertexOutput {
-    let mut output: MeshVertexOutput;
-    output.position = vec4<f32>(input.position, 1.0);
-    output.color = input.color;
-    return output;
-}
+    [vertex_main]
+    vs_main(position: vec3, color: vec3) -> vec4 {
+        v_color = color
+        return vec4(position, 1.0)
+    }
 
-[Fragment]
-micro fs_main(input: MeshVertexOutput) -> vec4<f32> {
-    return vec4<f32>(input.color, 1.0);
+    [fragment_main]
+    fs_main() -> vec4 {
+        return vec4(v_color, 1.0)
+    }
 }
