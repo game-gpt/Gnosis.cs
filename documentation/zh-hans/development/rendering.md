@@ -100,6 +100,10 @@ gg-shader 着色器语言通过 `Gnosis.Toolchain.ShaderCompiler` 编译为 SPIR
 
 ### 编译流程
 
+Gnosis 着色器编译采用双路径架构：
+
+#### 默认路径：SPIR-V 交叉编译（兼容性优先）
+
 ```mermaid
 flowchart LR
     GGShader["gg-shader"] --> Frontend["ShaderFrontend"]
@@ -110,9 +114,30 @@ flowchart LR
     Optimize --> SPIRV_Emit["SPIR-V 发射"]
     SPIRV_Emit --> SPIRV["SPIR-V 字节码"]
     SPIRV --> Vulkan["Vulkan Pipeline"]
-    SPIRV --> Metal_Compile["Metal 编译"]
-    SPIRV --> DXIL["DXIL 编译"]
+    SPIRV -->|"SpirvCross.Net"| DXIL["DXIL"]
+    SPIRV -->|"SpirvCross.Net"| MSL["MSL"]
+    SPIRV -->|"SpirvCross.Net"| GLSL["GLSL"]
+    SPIRV -->|"SpirvCross.Net"| WGSL["WGSL"]
+    SPIRV -->|"SpirvCross.Net"| HLSL["HLSL"]
 ```
+
+SPIR-V 作为枢纽格式，兼容性最强，验证工具链成熟。交叉编译由 `SpirvCross.Net`（纯 C# SPIR-V 交叉编译器）完成。
+
+#### 直出路径：IR 直接生成（产物更小，远期）
+
+```mermaid
+flowchart LR
+    GGShader["gg-shader"] --> Frontend["ShaderFrontend"]
+    Frontend --> AST["AST"]
+    AST --> Lowering["IR Lowering"]
+    Lowering --> IR["IR (SSA)"]
+    IR --> Optimize["优化 Pass"]
+    Optimize --> DXIL_Direct["DXIL 直出"]
+    Optimize --> MSL_Direct["MSL 直出"]
+    Optimize --> GLSL_Direct["GLSL 直出"]
+```
+
+直出路径省去 SPIR-V 中间步骤，产物更小，但编译器实现不成熟，暂不建议使用。
 
 ### 着色器反射
 

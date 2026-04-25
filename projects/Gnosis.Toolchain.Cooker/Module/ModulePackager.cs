@@ -196,7 +196,7 @@ public sealed class ModulePackager
             }
 
             var magic = reader.ReadUInt32();
-            return magic == 0x47474243;
+            return magic == 0x474E4F53;
         }
         catch (IOException)
         {

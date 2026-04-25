@@ -10,7 +10,7 @@ public class BytecodeGenerator : IBytecodeGenerator
 {
     #region Fields
 
-    private const uint MagicNumber = 0x47474243;
+    private const uint MagicNumber = 0x474E4F53;
 
     private const ushort CurrentVersion = 1;
 
