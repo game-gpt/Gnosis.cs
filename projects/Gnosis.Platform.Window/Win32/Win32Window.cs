@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Gnosis.Input.Device;
-using Gnosis.Platform.GL;
+using Gnosis.Platform.Window.GL;
 
-namespace Gnosis.Platform.Win32;
+namespace Gnosis.Platform.Window.Win32;
 
 public sealed unsafe class Win32Window : IPlatformWindow
 {

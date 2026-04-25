@@ -1,4 +1,4 @@
-namespace Gnosis.Platform;
+namespace Gnosis.Platform.Window;
 
 public sealed record WindowCreateInfo
 {

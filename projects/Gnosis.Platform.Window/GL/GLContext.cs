@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
-using System.Text;
 
-namespace Gnosis.Platform.GL;
+namespace Gnosis.Platform.Window.GL;
 
 public sealed unsafe class GLContext : IDisposable
 {

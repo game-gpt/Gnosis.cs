@@ -1,11 +1,9 @@
-using Gnosis.Platform.GL;
+using Gnosis.Platform.Window.GL;
 
-namespace Gnosis.Platform.Web;
+namespace Gnosis.Platform.Window.Web;
 
-public sealed unsafe class WebWindow : IPlatformWindow
+public sealed class WebWindow : IPlatformWindow
 {
-    #region IPlatformWindow 属性
-
     public nint Handle { get; private set; }
     public uint Width { get; private set; }
     public uint Height { get; private set; }
@@ -14,23 +12,12 @@ public sealed unsafe class WebWindow : IPlatformWindow
     public string Title { get; set; } = "";
     public GLContext? GL { get; private set; }
 
-    #endregion
-
-    #region IPlatformWindow 事件
-
     public event Action<uint, uint>? OnResize;
     public event Action? OnClosing;
 
-    #endregion
-
-    #region IPlatformWindow 方法
-
     public void PollEvents() => throw new PlatformNotSupportedException("WebAssembly WebGL 后端待实现");
-
     public void MakeCurrent() => throw new PlatformNotSupportedException("WebAssembly WebGL 后端待实现");
-
     public void SwapBuffers() => throw new PlatformNotSupportedException("WebAssembly WebGL 后端待实现");
-
     public nint GetProcAddress(string name) => throw new PlatformNotSupportedException("WebAssembly WebGL 后端待实现");
 
     public static WebWindow Create(WindowCreateInfo info)
@@ -45,11 +32,5 @@ public sealed unsafe class WebWindow : IPlatformWindow
             "  5. canvas.toDataURL → 截图功能");
     }
 
-    #endregion
-
-    #region IDisposable
-
     public void Dispose() { }
-
-    #endregion
 }

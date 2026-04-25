@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Gnosis.Platform\Gnosis.Platform.csproj" />
+        <ProjectReference Include="..\Gnosis.Platform.Window\Gnosis.Platform.Window.csproj" />
     </ItemGroup>
 
     <ItemGroup>

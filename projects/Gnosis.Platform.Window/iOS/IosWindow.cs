@@ -1,11 +1,9 @@
-using Gnosis.Platform.GL;
+using Gnosis.Platform.Window.GL;
 
-namespace Gnosis.Platform.iOS;
+namespace Gnosis.Platform.Window.iOS;
 
-public sealed unsafe class IosWindow : IPlatformWindow
+public sealed class IosWindow : IPlatformWindow
 {
-    #region IPlatformWindow 属性
-
     public nint Handle { get; private set; }
     public uint Width { get; private set; }
     public uint Height { get; private set; }
@@ -14,23 +12,12 @@ public sealed unsafe class IosWindow : IPlatformWindow
     public string Title { get; set; } = "";
     public GLContext? GL { get; private set; }
 
-    #endregion
-
-    #region IPlatformWindow 事件
-
     public event Action<uint, uint>? OnResize;
     public event Action? OnClosing;
 
-    #endregion
-
-    #region IPlatformWindow 方法
-
     public void PollEvents() => throw new PlatformNotSupportedException("iOS EGL 后端待实现");
-
     public void MakeCurrent() => throw new PlatformNotSupportedException("iOS EGL 后端待实现");
-
     public void SwapBuffers() => throw new PlatformNotSupportedException("iOS EGL 后端待实现");
-
     public nint GetProcAddress(string name) => throw new PlatformNotSupportedException("iOS EGL 后端待实现");
 
     public static IosWindow Create(WindowCreateInfo info)
@@ -45,11 +32,5 @@ public sealed unsafe class IosWindow : IPlatformWindow
             "  5. presentRenderbuffer → 交换缓冲区");
     }
 
-    #endregion
-
-    #region IDisposable
-
     public void Dispose() { }
-
-    #endregion
 }

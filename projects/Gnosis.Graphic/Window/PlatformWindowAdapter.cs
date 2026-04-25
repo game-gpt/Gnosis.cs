@@ -1,5 +1,5 @@
-using Gnosis.Platform;
-using Gnosis.Platform.GL;
+using Gnosis.Platform.Window;
+using Gnosis.Platform.Window.GL;
 
 namespace Gnosis.Graphic.Window;
 
@@ -68,7 +68,7 @@ public sealed class PlatformWindowAdapter : IWindow
             Visible = options.Visible
         };
 
-        var platformWindow = PlatformFactory.CreateWindow(createInfo);
+        var platformWindow = PlatformWindowFactory.Create(createInfo);
         return new PlatformWindowAdapter(platformWindow);
     }
 

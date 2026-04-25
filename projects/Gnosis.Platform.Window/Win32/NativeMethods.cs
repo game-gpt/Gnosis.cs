@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
-using System.Text;
 
-namespace Gnosis.Platform.Win32;
+namespace Gnosis.Platform.Window.Win32;
 
 internal static unsafe class NativeMethods
 {

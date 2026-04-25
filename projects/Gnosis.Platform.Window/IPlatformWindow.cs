@@ -1,6 +1,6 @@
-using Gnosis.Platform.GL;
+using Gnosis.Platform.Window.GL;
 
-namespace Gnosis.Platform;
+namespace Gnosis.Platform.Window;
 
 public interface IPlatformWindow : IDisposable
 {
