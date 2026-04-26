@@ -1,10 +1,11 @@
 using Gnosis.Core.Math;
+using Gnosis.Navigation.Dynamic;
 using Gnosis.Navigation.NavMesh;
 
 namespace Gnosis.Navigation.Tile;
 
 /// <summary>
-/// 分块导航管理器，管理导航网格分块的加载、卸载和流式调度
+/// 分块导航管理器，管理导航网格分块的加载、卸载、流式调度和局部重建
 /// </summary>
 public sealed class TileManager
 {
@@ -12,9 +13,11 @@ public sealed class TileManager
 
     private readonly Dictionary<TileCoord, NavMeshTile> _tiles = new();
     private readonly List<NavMeshTile> _loadedTiles = new();
+    private readonly List<NavMeshRebuildRegion> _pendingRebuildRegions = new();
     private Vector3 _viewerPosition;
     private float _loadRadius;
     private float _unloadRadius;
+    private int _maxRebuildsPerFrame = 2;
 
     #endregion
 
@@ -66,6 +69,25 @@ public sealed class TileManager
         get => _unloadRadius;
         set => _unloadRadius = Math.Max(_loadRadius, value);
     }
+
+    /// <summary>
+    /// 每帧最大重建分块数
+    /// </summary>
+    public int MaxRebuildsPerFrame
+    {
+        get => _maxRebuildsPerFrame;
+        set => _maxRebuildsPerFrame = Math.Max(1, value);
+    }
+
+    /// <summary>
+    /// 是否有待处理的重建区域
+    /// </summary>
+    public bool HasPendingRebuilds => _pendingRebuildRegions.Count > 0;
+
+    /// <summary>
+    /// 待处理重建区域数量
+    /// </summary>
+    public int PendingRebuildCount => _pendingRebuildRegions.Count;
 
     #endregion
 
@@ -212,11 +234,114 @@ public sealed class TileManager
     {
         UnloadAll();
         _tiles.Clear();
+        _pendingRebuildRegions.Clear();
+    }
+
+    /// <summary>
+    /// 提交重建区域到待处理队列
+    /// </summary>
+    /// <param name="region">重建区域</param>
+    public void SubmitRebuildRegion(NavMeshRebuildRegion region)
+    {
+        _pendingRebuildRegions.Add(region);
+    }
+
+    /// <summary>
+    /// 批量提交重建区域
+    /// </summary>
+    /// <param name="regions">重建区域列表</param>
+    public void SubmitRebuildRegions(IReadOnlyList<NavMeshRebuildRegion> regions)
+    {
+        foreach (var region in regions)
+        {
+            _pendingRebuildRegions.Add(region);
+        }
+    }
+
+    /// <summary>
+    /// 处理待重建的分块，每帧限制重建数量以控制帧预算
+    /// </summary>
+    /// <returns>本帧实际处理的重建区域数</returns>
+    public int ProcessRebuilds()
+    {
+        if (_pendingRebuildRegions.Count == 0)
+        {
+            return 0;
+        }
+
+        var processedCount = 0;
+        var rebuildBudget = _maxRebuildsPerFrame;
+
+        var i = 0;
+        while (i < _pendingRebuildRegions.Count && rebuildBudget > 0)
+        {
+            var region = _pendingRebuildRegions[i];
+            var affectedTiles = FindTilesInRegion(region);
+
+            var anyTileRebuilt = false;
+            foreach (var tile in affectedTiles)
+            {
+                if (!tile.IsLoaded)
+                {
+                    continue;
+                }
+
+                tile.ApplyRebuildRegion(region);
+                anyTileRebuilt = true;
+            }
+
+            if (anyTileRebuilt)
+            {
+                rebuildBudget--;
+            }
+
+            _pendingRebuildRegions.RemoveAt(i);
+            processedCount++;
+        }
+
+        return processedCount;
+    }
+
+    /// <summary>
+    /// 获取所有需要重建的分块
+    /// </summary>
+    public IReadOnlyList<NavMeshTile> GetTilesNeedingRebuild()
+    {
+        var result = new List<NavMeshTile>();
+
+        foreach (var tile in _loadedTiles)
+        {
+            if (tile.NeedsRebuild)
+            {
+                result.Add(tile);
+            }
+        }
+
+        return result;
     }
 
     #endregion
 
     #region 私有方法
+
+    private List<NavMeshTile> FindTilesInRegion(NavMeshRebuildRegion region)
+    {
+        var result = new List<NavMeshTile>();
+        var regionMin = region.Center - region.HalfExtents;
+        var regionMax = region.Center + region.HalfExtents;
+
+        foreach (var tile in _tiles.Values)
+        {
+            if (regionMin.X <= tile.BoundsMax.X && regionMax.X >= tile.BoundsMin.X &&
+                regionMin.Y <= tile.BoundsMax.Y && regionMax.Y >= tile.BoundsMin.Y &&
+                regionMin.Z <= tile.BoundsMax.Z && regionMax.Z >= tile.BoundsMin.Z)
+            {
+                result.Add(tile);
+            }
+        }
+
+        return result;
+    }
 
     private float DistanceToTile(NavMeshTile tile)
     {

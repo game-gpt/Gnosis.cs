@@ -10,6 +10,8 @@ public class NavMesh : INavMesh
     #region 字段
 
     private readonly List<NavMeshPolygon> _polygons = new();
+    private readonly HashSet<int> _blockedPolygonIds = new();
+    private readonly Dictionary<int, NavMeshPolygon> _polygonById = new();
     private NavMeshBuildSettings _settings;
     private bool _isBuilt;
 
@@ -89,7 +91,13 @@ public class NavMesh : INavMesh
         }
 
         var polygon = FindPolygon(point);
-        return polygon != null;
+
+        if (polygon is null)
+        {
+            return false;
+        }
+
+        return !_blockedPolygonIds.Contains(polygon.Value.Id);
     }
 
     /// <summary>
@@ -144,7 +152,13 @@ public class NavMesh : INavMesh
     public void SetPolygons(List<NavMeshPolygon> polygons)
     {
         _polygons.Clear();
+        _polygonById.Clear();
         _polygons.AddRange(polygons);
+
+        foreach (var polygon in polygons)
+        {
+            _polygonById[polygon.Id] = polygon;
+        }
     }
 
     /// <summary>
@@ -152,20 +166,105 @@ public class NavMesh : INavMesh
     /// </summary>
     public NavMeshPolygon? GetPolygonById(int id)
     {
+        return _polygonById.GetValueOrDefault(id);
+    }
+
+    /// <summary>
+    /// 标记多边形为阻塞状态
+    /// </summary>
+    public bool SetPolygonBlocked(int polygonId, bool blocked)
+    {
+        if (!_polygonById.ContainsKey(polygonId))
+        {
+            return false;
+        }
+
+        if (blocked)
+        {
+            _blockedPolygonIds.Add(polygonId);
+        }
+        else
+        {
+            _blockedPolygonIds.Remove(polygonId);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 检测多边形是否被阻塞
+    /// </summary>
+    public bool IsPolygonBlocked(int polygonId)
+    {
+        return _blockedPolygonIds.Contains(polygonId);
+    }
+
+    /// <summary>
+    /// 获取所有被阻塞的多边形 ID
+    /// </summary>
+    public IReadOnlySet<int> BlockedPolygonIds => _blockedPolygonIds;
+
+    /// <summary>
+    /// 清除所有阻塞标记
+    /// </summary>
+    public void ClearAllBlocked()
+    {
+        _blockedPolygonIds.Clear();
+    }
+
+    /// <summary>
+    /// 查找与指定区域相交的所有多边形
+    /// </summary>
+    public List<int> FindPolygonsInArea(Vector3 center, Vector3 halfExtents)
+    {
+        var result = new List<int>();
+        var min = center - halfExtents;
+        var max = center + halfExtents;
+
         foreach (var polygon in _polygons)
         {
-            if (polygon.Id == id)
+            if (PolygonIntersectsArea(polygon, min, max))
             {
-                return polygon;
+                result.Add(polygon.Id);
             }
         }
 
-        return null;
+        return result;
     }
 
     #endregion
 
     #region 私有方法
+
+    private static bool PolygonIntersectsArea(NavMeshPolygon polygon, Vector3 areaMin, Vector3 areaMax)
+    {
+        var vertexCount = polygon.Vertices.Length / 3;
+
+        var polyMinX = float.MaxValue;
+        var polyMinY = float.MaxValue;
+        var polyMinZ = float.MaxValue;
+        var polyMaxX = float.MinValue;
+        var polyMaxY = float.MinValue;
+        var polyMaxZ = float.MinValue;
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var x = polygon.Vertices[i * 3];
+            var y = polygon.Vertices[i * 3 + 1];
+            var z = polygon.Vertices[i * 3 + 2];
+
+            if (x < polyMinX) polyMinX = x;
+            if (y < polyMinY) polyMinY = y;
+            if (z < polyMinZ) polyMinZ = z;
+            if (x > polyMaxX) polyMaxX = x;
+            if (y > polyMaxY) polyMaxY = y;
+            if (z > polyMaxZ) polyMaxZ = z;
+        }
+
+        return polyMinX <= areaMax.X && polyMaxX >= areaMin.X &&
+               polyMinY <= areaMax.Y && polyMaxY >= areaMin.Y &&
+               polyMinZ <= areaMax.Z && polyMaxZ >= areaMin.Z;
+    }
 
     private static bool IsPointInPolygon(Vector3 point, NavMeshPolygon polygon)
     {

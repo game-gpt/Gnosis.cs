@@ -1,17 +1,20 @@
 using Gnosis.Core.Math;
+using Gnosis.Navigation.Dynamic;
 using Gnosis.Navigation.NavMesh;
 
 namespace Gnosis.Navigation.Tile;
 
 /// <summary>
-/// 导航网格分块实现，支持大世界流式加载
+/// 导航网格分块实现，支持大世界流式加载和局部重建
 /// </summary>
 public sealed class NavMeshTile : INavMeshTile
 {
     #region 字段
 
     private readonly List<NavMeshPolygon> _polygons = new();
+    private readonly HashSet<int> _blockedPolygonIds = new();
     private bool _isLoaded;
+    private bool _needsRebuild;
 
     #endregion
 
@@ -61,6 +64,16 @@ public sealed class NavMeshTile : INavMeshTile
     /// </summary>
     public Vector3 Center => (BoundsMin + BoundsMax) * 0.5f;
 
+    /// <summary>
+    /// 是否需要重建
+    /// </summary>
+    public bool NeedsRebuild => _needsRebuild;
+
+    /// <summary>
+    /// 被阻塞的多边形 ID 集合
+    /// </summary>
+    public IReadOnlySet<int> BlockedPolygonIds => _blockedPolygonIds;
+
     #endregion
 
     #region 构造函数
@@ -96,7 +109,9 @@ public sealed class NavMeshTile : INavMeshTile
     public void Unload()
     {
         _polygons.Clear();
+        _blockedPolygonIds.Clear();
         _isLoaded = false;
+        _needsRebuild = false;
     }
 
     /// <summary>
@@ -107,13 +122,12 @@ public sealed class NavMeshTile : INavMeshTile
     {
         _polygons.Clear();
         _polygons.AddRange(polygons);
+        _needsRebuild = false;
     }
 
     /// <summary>
     /// 检测点是否在分块范围内
     /// </summary>
-    /// <param name="point">检测点</param>
-    /// <returns>是否在分块范围内</returns>
     public bool ContainsPoint(Vector3 point)
     {
         return point.X >= BoundsMin.X && point.X <= BoundsMax.X &&
@@ -124,8 +138,6 @@ public sealed class NavMeshTile : INavMeshTile
     /// <summary>
     /// 在分块中查找包含指定点的多边形
     /// </summary>
-    /// <param name="point">检测点</param>
-    /// <returns>多边形，不存在则返回 null</returns>
     public NavMeshPolygon? FindPolygon(Vector3 point)
     {
         foreach (var polygon in _polygons)
@@ -142,8 +154,6 @@ public sealed class NavMeshTile : INavMeshTile
     /// <summary>
     /// 检测点是否在分块中可行走
     /// </summary>
-    /// <param name="point">检测点</param>
-    /// <returns>是否可行走</returns>
     public bool IsPointWalkable(Vector3 point)
     {
         if (!_isLoaded)
@@ -151,12 +161,140 @@ public sealed class NavMeshTile : INavMeshTile
             return false;
         }
 
-        return FindPolygon(point) != null;
+        var polygon = FindPolygon(point);
+
+        if (polygon is null)
+        {
+            return false;
+        }
+
+        return !_blockedPolygonIds.Contains(polygon.Value.Id);
+    }
+
+    /// <summary>
+    /// 标记多边形为阻塞状态
+    /// </summary>
+    public bool SetPolygonBlocked(int polygonId, bool blocked)
+    {
+        if (blocked)
+        {
+            _blockedPolygonIds.Add(polygonId);
+        }
+        else
+        {
+            _blockedPolygonIds.Remove(polygonId);
+        }
+
+        _needsRebuild = true;
+        return true;
+    }
+
+    /// <summary>
+    /// 检测多边形是否被阻塞
+    /// </summary>
+    public bool IsPolygonBlocked(int polygonId)
+    {
+        return _blockedPolygonIds.Contains(polygonId);
+    }
+
+    /// <summary>
+    /// 查找与指定区域相交的所有多边形
+    /// </summary>
+    public List<int> FindPolygonsInArea(Vector3 center, Vector3 halfExtents)
+    {
+        var result = new List<int>();
+        var min = center - halfExtents;
+        var max = center + halfExtents;
+
+        foreach (var polygon in _polygons)
+        {
+            if (PolygonIntersectsArea(polygon, min, max))
+            {
+                result.Add(polygon.Id);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 应用重建区域到分块
+    /// </summary>
+    public void ApplyRebuildRegion(NavMeshRebuildRegion region)
+    {
+        if (!ContainsPoint(region.Center) && !RegionOverlaps(region))
+        {
+            return;
+        }
+
+        foreach (var polygonId in region.AffectedPolygonIds)
+        {
+            SetPolygonBlocked(polygonId, region.IsAdded);
+        }
+    }
+
+    /// <summary>
+    /// 清除所有阻塞标记
+    /// </summary>
+    public void ClearAllBlocked()
+    {
+        _blockedPolygonIds.Clear();
+        _needsRebuild = true;
+    }
+
+    /// <summary>
+    /// 标记分块需要重建
+    /// </summary>
+    public void MarkNeedsRebuild()
+    {
+        _needsRebuild = true;
+    }
+
+    /// <summary>
+    /// 清除重建标记
+    /// </summary>
+    public void ClearRebuildFlag()
+    {
+        _needsRebuild = false;
     }
 
     #endregion
 
     #region 私有方法
+
+    private bool RegionOverlaps(NavMeshRebuildRegion region)
+    {
+        var regionMin = region.Center - region.HalfExtents;
+        var regionMax = region.Center + region.HalfExtents;
+
+        return regionMin.X <= BoundsMax.X && regionMax.X >= BoundsMin.X &&
+               regionMin.Y <= BoundsMax.Y && regionMax.Y >= BoundsMin.Y &&
+               regionMin.Z <= BoundsMax.Z && regionMax.Z >= BoundsMin.Z;
+    }
+
+    private static bool PolygonIntersectsArea(NavMeshPolygon polygon, Vector3 areaMin, Vector3 areaMax)
+    {
+        var vertexCount = polygon.Vertices.Length / 3;
+
+        var polyMinX = float.MaxValue;
+        var polyMinZ = float.MaxValue;
+        var polyMaxX = float.MinValue;
+        var polyMaxZ = float.MinValue;
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var x = polygon.Vertices[i * 3];
+            var z = polygon.Vertices[i * 3 + 2];
+
+            if (x < polyMinX) polyMinX = x;
+            if (z < polyMinZ) polyMinZ = z;
+            if (x > polyMaxX) polyMaxX = x;
+            if (z > polyMaxZ) polyMaxZ = z;
+        }
+
+        return polyMinX <= areaMax.X && polyMaxX >= areaMin.X &&
+               polyMinZ <= areaMax.Z && polyMaxZ >= areaMin.Z;
+    }
 
     private static bool IsPointInPolygon(Vector3 point, NavMeshPolygon polygon)
     {

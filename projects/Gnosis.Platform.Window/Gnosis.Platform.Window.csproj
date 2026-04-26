@@ -19,5 +19,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Gnosis.Core\Gnosis.Core.csproj" />
         <ProjectReference Include="..\Gnosis.Input\Gnosis.Input.csproj" />
+        <ProjectReference Include="..\Gnosis.Platform\Gnosis.Platform.csproj" />
     </ItemGroup>
 </Project>

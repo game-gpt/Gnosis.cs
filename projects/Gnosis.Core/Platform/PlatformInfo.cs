@@ -4,13 +4,17 @@ using System.Runtime.InteropServices;
 namespace Gnosis.Core.Platform;
 
 /// <summary>
-/// 提供运行时平台检测功能
+/// 提供运行时平台检测功能（已过时）
+/// 平台身份请使用 Gnosis.Platform.Platform.Current 替代
+/// 系统信息查询功能保留在此类中
 /// </summary>
 public static class PlatformInfo
 {
     /// <summary>
-    /// 获取当前运行平台类型
+    /// 获取当前运行平台类型（已过时）
+    /// 请使用 Gnosis.Platform.Platform.Current.Architecture 替代
     /// </summary>
+    [Obsolete("请使用 Gnosis.Platform.Platform.Current.Architecture 替代。平台应在编译期确定")]
     public static PlatformType CurrentPlatform { get; } = DetectPlatform();
 
     /// <summary>
@@ -48,9 +52,7 @@ public static class PlatformInfo
     /// </summary>
     public static string RuntimeVersion { get; } = RuntimeInformation.FrameworkDescription;
 
-    /// <summary>
-    /// 检测当前运行平台类型
-    /// </summary>
+    [Obsolete("平台应在编译期确定，请使用 Gnosis.Platform.Platform.Current")]
     private static PlatformType DetectPlatform()
     {
         if (RuntimeInformation.FrameworkDescription.Contains("Browser"))
@@ -76,9 +78,6 @@ public static class PlatformInfo
         return PlatformType.Windows;
     }
 
-    /// <summary>
-    /// 检测当前 CPU 架构
-    /// </summary>
     private static SystemArchitecture DetectArchitecture()
     {
         var arch = RuntimeInformation.ProcessArchitecture;
@@ -111,12 +110,14 @@ public static class PlatformInfo
         return SystemArchitecture.Unknown;
     }
 
-    /// <summary>
-    /// 检测当前是否为移动平台
-    /// </summary>
     private static bool DetectMobile()
     {
-        if (CurrentPlatform == PlatformType.iOS || CurrentPlatform == PlatformType.Android)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("ANDROID")))
+        {
+            return true;
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64)
         {
             return true;
         }
@@ -124,18 +125,8 @@ public static class PlatformInfo
         return false;
     }
 
-    /// <summary>
-    /// 检测当前是否为控制台平台
-    /// </summary>
     private static bool DetectConsole()
     {
-        if (CurrentPlatform == PlatformType.PlayStation ||
-            CurrentPlatform == PlatformType.Xbox ||
-            CurrentPlatform == PlatformType.Switch)
-        {
-            return true;
-        }
-
         return false;
     }
 }

@@ -10,8 +10,8 @@
         <RootNamespace>Gnosis.Platform</RootNamespace>
         <Version>0.0.1</Version>
         <Authors>Gnosis Engine Team</Authors>
-        <Description>Gnosis Platform - 基础平台服务（平台检测、文件系统等）</Description>
-        <PackageTags>gnosis;game-engine;platform</PackageTags>
+        <Description>Gnosis Platform - 平台身份模型（Architecture + Channel = Platform）</Description>
+        <PackageTags>gnosis;game-engine;platform;architecture;channel</PackageTags>
         <RepositoryUrl>https://github.com/game-gpt/Gnosis.cs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
     </PropertyGroup>

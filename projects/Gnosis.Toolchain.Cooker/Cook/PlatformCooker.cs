@@ -1,12 +1,16 @@
 using Gnosis.Asset.Bundle;
 using Gnosis.Asset.Format;
-using Gnosis.Core.Platform;
+using Gnosis.Platform;
 
 namespace Gnosis.Toolchain.Cooker.Cook;
 
 public sealed record CookOptions
 {
-    public PlatformType TargetPlatform { get; init; } = PlatformType.Windows;
+    public Platform TargetPlatform { get; init; } = new Platform
+    {
+        OS = PlatformOS.Windows,
+        ISA = PlatformISA.X64
+    };
     public TextureCompressionFormat TextureCompression { get; init; } = TextureCompressionFormat.Bc7;
     public AudioEncodingFormat AudioEncoding { get; init; } = AudioEncodingFormat.Vorbis;
     public bool StripDebugInfo { get; init; } = true;
@@ -43,7 +47,7 @@ public sealed record CookResult
     public bool Success { get; init; }
     public string AssetPath { get; init; } = string.Empty;
     public string? OutputPath { get; init; }
-    public PlatformType TargetPlatform { get; init; }
+    public Platform TargetPlatform { get; init; } = null!;
     public string? ErrorMessage { get; init; }
 }
 
@@ -56,33 +60,52 @@ public sealed class PlatformCooker
         _formatRegistry = formatRegistry ?? throw new ArgumentNullException(nameof(formatRegistry));
     }
 
-    public TextureCompressionFormat GetDefaultTextureCompression(PlatformType platform)
+    /// <summary>
+    /// 根据 ISA 推断默认纹理压缩格式
+    /// X64 主机/桌面 → BC7，Arm64 移动端 → ASTC
+    /// </summary>
+    public TextureCompressionFormat GetDefaultTextureCompression(PlatformISA isa)
     {
-        return platform switch
+        return isa switch
         {
-            PlatformType.Windows or PlatformType.Linux or PlatformType.PlayStation or PlatformType.Xbox
+            PlatformISA.X64 => TextureCompressionFormat.Bc7,
+            PlatformISA.Arm64 => TextureCompressionFormat.Astc6x6,
+            PlatformISA.Wasm => TextureCompressionFormat.Bc7,
+            _ => TextureCompressionFormat.Bc7
+        };
+    }
+
+    /// <summary>
+    /// 根据 OS 推断默认纹理压缩格式（考虑主机平台特殊需求）
+    /// </summary>
+    public TextureCompressionFormat GetDefaultTextureCompression(PlatformOS os)
+    {
+        return os switch
+        {
+            PlatformOS.Windows or PlatformOS.Linux or PlatformOS.macOS
                 => TextureCompressionFormat.Bc7,
-            PlatformType.macOS
-                => TextureCompressionFormat.Bc7,
-            PlatformType.Android
+            PlatformOS.Android or PlatformOS.iOS
                 => TextureCompressionFormat.Astc6x6,
-            PlatformType.iOS
-                => TextureCompressionFormat.Astc6x6,
-            PlatformType.WebAssembly
+            PlatformOS.Web
                 => TextureCompressionFormat.Bc7,
-            PlatformType.Switch
+            PlatformOS.PlayStation or PlatformOS.Xbox
+                => TextureCompressionFormat.Bc7,
+            PlatformOS.Switch
                 => TextureCompressionFormat.Astc4x4,
             _ => TextureCompressionFormat.Bc7
         };
     }
 
-    public AudioEncodingFormat GetDefaultAudioEncoding(PlatformType platform)
+    /// <summary>
+    /// 根据 OS 推断默认音频编码格式
+    /// </summary>
+    public AudioEncodingFormat GetDefaultAudioEncoding(PlatformOS os)
     {
-        return platform switch
+        return os switch
         {
-            PlatformType.Android or PlatformType.iOS
+            PlatformOS.Android or PlatformOS.iOS
                 => AudioEncodingFormat.Vorbis,
-            PlatformType.WebAssembly
+            PlatformOS.Web
                 => AudioEncodingFormat.Mp3,
             _ => AudioEncodingFormat.Vorbis
         };

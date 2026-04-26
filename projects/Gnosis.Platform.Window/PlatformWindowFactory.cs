@@ -1,4 +1,3 @@
-using Gnosis.Core.Platform;
 using Gnosis.Platform.Window.Android;
 using Gnosis.Platform.Window.Handheld;
 using Gnosis.Platform.Window.iOS;
@@ -13,20 +12,20 @@ public static class PlatformWindowFactory
 {
     public static IPlatformWindow Create(WindowCreateInfo info)
     {
-        var platform = PlatformInfo.CurrentPlatform;
+        var os = Platform.Current.OS;
 
-        return platform switch
+        return os switch
         {
-            PlatformType.Windows => Win32Window.Create(info),
-            PlatformType.Linux => X11Window.Create(info),
-            PlatformType.macOS => CocoaWindow.Create(info),
-            PlatformType.WebAssembly => WebWindow.Create(info),
-            PlatformType.Android => AndroidWindow.Create(info),
-            PlatformType.iOS => IosWindow.Create(info),
-            PlatformType.PlayStation => ConsoleWindow.Create(info),
-            PlatformType.Xbox => ConsoleWindow.Create(info),
-            PlatformType.Switch => ConsoleWindow.Create(info),
-            _ => throw new PlatformNotSupportedException($"不支持的平台: {platform}")
+            PlatformOS.Windows => Win32Window.Create(info),
+            PlatformOS.Linux => X11Window.Create(info),
+            PlatformOS.macOS => CocoaWindow.Create(info),
+            PlatformOS.Web => WebWindow.Create(info),
+            PlatformOS.Android => AndroidWindow.Create(info),
+            PlatformOS.iOS => IosWindow.Create(info),
+            PlatformOS.PlayStation => ConsoleWindow.Create(info),
+            PlatformOS.Xbox => ConsoleWindow.Create(info),
+            PlatformOS.Switch => ConsoleWindow.Create(info),
+            _ => throw new PlatformNotSupportedException($"不支持的操作系统: {os}")
         };
     }
 }
